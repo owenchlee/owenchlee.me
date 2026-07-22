@@ -1,29 +1,44 @@
-.page-header,
 .page-footer {
-  max-width: 640px;
+  max-width: 680px;
   margin: 0 auto;
-  padding: 32px 20px;
+  padding: 48px 20px;
+  text-align: center;
+  font-family: var(--font-terminal);
+}
+
+/* --- HUD nameplate ---
+   Sits directly over the top of the grass, not in a banner of its own: it's
+   an absolutely-positioned child of .stage-track (not .stage-box, which is
+   sticky) so it scrolls away normally with the page the moment the user
+   scrolls, instead of staying pinned like .minimap does. No background —
+   just the text with a hard pixel-style shadow for contrast, so it reads as
+   painted onto the world rather than a UI bar sitting on top of it. */
+
+.hud-nameplate {
+  position: absolute;
+  top: 170px;
+  left: 16px;
+  right: 16px;
+  z-index: 6;
   text-align: center;
 }
 
-.page-header h1 {
-  font-size: 28px;
-  margin: 0 0 8px;
+.hud-name {
+  font-family: var(--font-pixel);
+  font-size: clamp(40px, 8vw, 72px);
+  color: var(--pal-cream);
+  line-height: 1.3;
+  text-shadow: 4px 4px 0 var(--pal-ink), -3px -3px 0 var(--pal-ink), 3px -3px 0 var(--pal-ink),
+    -3px 3px 0 var(--pal-ink), 3px 0 0 var(--pal-ink), -3px 0 0 var(--pal-ink);
 }
 
-.page-header p {
-  margin: 4px 0;
-  color: #666;
-}
-
-.mode-badge {
-  font-size: 13px;
-}
-
-.mode-badge code {
-  background: #eee;
-  padding: 2px 5px;
-  border-radius: 3px;
+.hud-role {
+  font-family: var(--font-terminal);
+  font-size: clamp(18px, 3vw, 28px);
+  color: var(--pal-cream);
+  margin-top: 10px;
+  text-shadow: 1px 1px 0 var(--pal-ink), -1px -1px 0 var(--pal-ink), 1px -1px 0 var(--pal-ink),
+    -1px 1px 0 var(--pal-ink);
 }
 
 /* --- Stage --- */
@@ -39,9 +54,7 @@
   height: 100dvh;
   width: 100%;
   overflow: hidden;
-  background: #0e2a12;
-  perspective: 1400px;
-  perspective-origin: 50% 35%;
+  background: var(--pal-grass);
 }
 
 .world {
@@ -49,98 +62,229 @@
   left: 0;
   top: 0;
   will-change: transform;
-  transform-style: preserve-3d;
-  /* Initial pose before JS/CSS takes over on mount. */
-  transform: rotateX(45deg);
+  /* Initial position before JS/CSS takes over on mount. */
+  transform: translate(calc(50% - 1280px), calc(50% - 960px));
 }
 
 .tile-grid {
   display: grid;
+  image-rendering: pixelated;
 }
+
 
 .tile {
   width: 100%;
   height: 100%;
+  background-size: cover;
+  image-rendering: pixelated;
 }
 
-.tile-grass-a {
-  background: #4f9d5a;
+.tile-grass {
+  background-image: url('./assets/grass.png');
 }
+/* Two subtle shade variants of the same grass tile, scattered with the same
+   deterministic hash used for tree/flower placement, so the field doesn't
+   read as one texture stamped edge to edge. */
 .tile-grass-b {
-  background: #479153;
+  background-image: url('./assets/grass.png');
+  filter: hue-rotate(-6deg) brightness(0.94);
+}
+.tile-grass-c {
+  background-image: url('./assets/grass.png');
+  filter: hue-rotate(6deg) brightness(1.05);
 }
 .tile-path {
-  background: #d8c390;
-}
-.tile-water-a {
-  background: #4a90c4;
-}
-.tile-water-b {
-  background: #4283b6;
+  background-image: url('./assets/path.png');
 }
 
-/* --- Character --- */
+/* Path autotiling — straight/corner pieces plus dirt-to-grass edge blends,
+   so the route reads as built from discrete tiles instead of one freeform
+   painted shape. Each piece is authored once and rotated per orientation:
+   path-straight.png as a horizontal (E-W) run, path-corner.png connecting
+   North+East, path-edge.png with the dirt bleed on its top edge. */
+.tile-path-straight-h {
+  background-image: url('./assets/path-straight.png');
+}
+.tile-path-straight-v {
+  background-image: url('./assets/path-straight.png');
+  transform: rotate(90deg);
+}
+.tile-path-corner-ne {
+  background-image: url('./assets/path-corner.png');
+}
+.tile-path-corner-es {
+  background-image: url('./assets/path-corner.png');
+  transform: rotate(90deg);
+}
+.tile-path-corner-sw {
+  background-image: url('./assets/path-corner.png');
+  transform: rotate(180deg);
+}
+.tile-path-corner-wn {
+  background-image: url('./assets/path-corner.png');
+  transform: rotate(270deg);
+}
+.tile-path-edge-n {
+  background-image: url('./assets/path-edge.png');
+}
+.tile-path-edge-e {
+  background-image: url('./assets/path-edge.png');
+  transform: rotate(90deg);
+}
+.tile-path-edge-s {
+  background-image: url('./assets/path-edge.png');
+  transform: rotate(180deg);
+}
+.tile-path-edge-w {
+  background-image: url('./assets/path-edge.png');
+  transform: rotate(270deg);
+}
+.tile-water {
+  background-image: url('./assets/water.png');
+}
+.tile-tree,
+.tile-flower {
+  background-image: url('./assets/plant.png'), url('./assets/grass.png');
+  background-repeat: no-repeat, no-repeat;
+  background-position: center, center;
+  background-size: 85%, cover;
+}
+.tile-flower {
+  background-size: 55%, cover;
+}
 
-.character {
+/* --- Character ---
+   Integer scale (3x) keeps every source pixel mapping to a whole number of
+   screen pixels, so edges stay crisp instead of getting subpixel blur —
+   non-integer scale factors are the usual cause of "soft" pixel art. */
+
+.character-wrap {
   position: absolute;
   left: 50%;
   top: 50%;
-  transform: translate(-50%, -50%);
-  width: 32px;
+  width: 48px;
   height: 48px;
-  filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.45));
+  transform: translate(-50%, -50%);
   z-index: 5;
 }
 
-/* --- Houses --- */
+.character-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: 1px;
+  transform: translateX(-50%);
+  width: 32px;
+  height: 10px;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 50%;
+}
+
+.character {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.35));
+}
+
+/* --- Houses / lab / shop ---
+   Three genuinely different building silhouettes (see tileMap.js kind
+   comment), each grounded with a foundation + soft shadow so they read as
+   built on a plot rather than pasted on top of the grass. */
 
 .house {
   position: absolute;
   width: 56px;
-  height: 48px;
+  /* Tall enough to actually contain the rendered sprite (66px wide source
+     at ~1.08 aspect ratio → ~72px tall) instead of the old fixed 48px,
+     which let the sprite silently overflow the box and paint over the
+     foundation/shadow sitting "beneath" it at the box's nominal bottom. */
+  height: 74px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  /* Counter-rotate against the tilted ground plane so the house reads as
-     standing upright rather than lying flat with the tiles. */
-  transform: rotateX(-45deg);
-  transform-origin: center bottom;
   transition: transform 0.25s ease;
 }
 
-.house-roof {
-  width: 0;
-  height: 0;
-  border-left: 30px solid transparent;
-  border-right: 30px solid transparent;
-  border-bottom: 22px solid var(--house-color);
-  filter: brightness(1.15);
+.house-sprite {
+  width: 66px;
+  height: auto;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.35));
 }
 
-.house-body {
-  width: 48px;
-  height: 26px;
-  background: var(--house-color);
-  border: 2px solid rgba(0, 0, 0, 0.25);
-  border-top: none;
+.decor-house-wrap {
+  position: absolute;
+  width: 58px;
+  height: 66px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Tower sprites are much taller relative to their width than the
+   house/shop template, so they need a taller wrapper or the same
+   overflow-hides-the-foundation bug shows up again just for this shape. */
+.decor-house-wrap--tower {
+  height: 106px;
+}
+
+/* Decoration-only scenery buildings — same rendering as .house-sprite, but
+   never get a .house-label pill or the active-state glow. That absence is
+   the entire signal that these aren't checkpoints: only the 4 real section
+   houses ever show a name or light up as you approach. */
+.decor-house {
+  width: 58px;
+  height: auto;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.3));
+}
+
+/* Foundation + shadow, shared by real checkpoints and decor buildings alike
+   — a plot the structure visibly sits on, not a floating icon. Rendered
+   before the sprite in DOM order so they sit underneath it with no z-index
+   trickery needed. */
+.building-foundation {
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  transform: translateX(-50%);
+  width: 84px;
+  height: 12px;
+  background: #b8a888;
+  border: 2px solid #8a7a5c;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15);
+}
+
+.building-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: -2px;
+  transform: translateX(-50%);
+  width: 64px;
+  height: 14px;
+  background: rgba(0, 0, 0, 0.32);
+  border-radius: 50%;
+  filter: blur(2px);
 }
 
 .house-label {
   position: absolute;
-  bottom: -20px;
-  font-size: 11px;
-  font-weight: 600;
-  color: #fff;
+  bottom: -22px;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--pal-cream);
   background: rgba(0, 0, 0, 0.55);
-  padding: 2px 6px;
-  border-radius: 3px;
+  padding: 4px 6px;
+  border-radius: 0;
   white-space: nowrap;
   opacity: 0.75;
   transition: opacity 0.25s ease, background 0.25s ease;
 }
 
 .house.active {
-  transform: rotateX(-45deg) scale(1.15);
+  transform: scale(1.15);
 }
 
 .house.active .house-label {
@@ -148,12 +292,492 @@
   background: var(--house-color);
 }
 
-.house.active .house-body {
-  box-shadow: 0 0 0 3px #fff, 0 0 16px 4px var(--house-color);
+.house.active .house-sprite {
+  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.35)) drop-shadow(0 0 10px var(--house-color))
+    drop-shadow(0 0 10px var(--house-color));
 }
 
 @media (prefers-reduced-motion: reduce) {
   .house {
+    transition: none;
+  }
+}
+
+/* --- Decoration --- */
+
+.fence-post {
+  position: absolute;
+  width: 5px;
+  height: 20px;
+  background: #8a6a45;
+  border: 1px solid #5c4630;
+}
+
+/* --- NPCs ---
+   Purely decorative townsfolk patrolling a short back-and-forth walk, so the
+   town reads as lived-in rather than an empty stage set. They live inside
+   `.world` like the houses/trees, so they pan and scale with the camera
+   exactly like everything else in the overworld. */
+
+.npc {
+  position: absolute;
+  width: 32px;
+  height: 40px;
+}
+
+.npc-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: 1px;
+  transform: translateX(-50%);
+  width: 22px;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 50%;
+  filter: blur(1px);
+}
+
+.npc-sprite {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.3));
+}
+
+.npc--x {
+  animation: npc-walk-x var(--npc-duration) ease-in-out infinite;
+}
+
+.npc--y {
+  animation: npc-walk-y var(--npc-duration) ease-in-out infinite;
+}
+
+@keyframes npc-walk-x {
+  0% {
+    transform: translateX(calc(var(--npc-range) * -0.5)) scaleX(1);
+  }
+  48% {
+    transform: translateX(calc(var(--npc-range) * 0.5)) scaleX(1);
+  }
+  50% {
+    transform: translateX(calc(var(--npc-range) * 0.5)) scaleX(-1);
+  }
+  98% {
+    transform: translateX(calc(var(--npc-range) * -0.5)) scaleX(-1);
+  }
+  100% {
+    transform: translateX(calc(var(--npc-range) * -0.5)) scaleX(1);
+  }
+}
+
+@keyframes npc-walk-y {
+  0%,
+  100% {
+    transform: translateY(calc(var(--npc-range) * -0.5));
+  }
+  50% {
+    transform: translateY(calc(var(--npc-range) * 0.5));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .npc--x,
+  .npc--y {
+    animation: none;
+  }
+}
+
+/* --- Critters ---
+   Small wandering wildlife, same layering as NPCs (inside .world so they
+   pan/scale with the camera) but a smaller range and no directional flip —
+   they should read as idle/twitchy background life, not villagers walking
+   somewhere with intent. */
+
+.critter {
+  position: absolute;
+  width: 22px;
+  height: 18px;
+}
+
+.critter-sprite {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3));
+}
+
+.critter--x {
+  animation: critter-wander-x var(--critter-duration) ease-in-out infinite;
+}
+
+.critter--y {
+  animation: critter-wander-y var(--critter-duration) ease-in-out infinite;
+}
+
+@keyframes critter-wander-x {
+  0%,
+  100% {
+    transform: translateX(calc(var(--critter-range) * -0.5)) scaleX(1);
+  }
+  49% {
+    transform: translateX(calc(var(--critter-range) * 0.5)) scaleX(1);
+  }
+  51% {
+    transform: translateX(calc(var(--critter-range) * 0.5)) scaleX(-1);
+  }
+}
+
+@keyframes critter-wander-y {
+  0%,
+  100% {
+    transform: translateY(calc(var(--critter-range) * -0.5));
+  }
+  50% {
+    transform: translateY(calc(var(--critter-range) * 0.5));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .critter--x,
+  .critter--y {
+    animation: none;
+  }
+}
+
+/* --- Minimap HUD ---
+   Fixed in the corner and rendered at the app root (not inside the stage),
+   so it stays visible through every section takeover — the one element
+   that persists across the whole scroll, reading as "you're still in the
+   same place" rather than having navigated to a new page. */
+
+.minimap {
+  position: fixed;
+  right: 14px;
+  bottom: 14px;
+  z-index: 30;
+  width: 100px;
+  height: 126px;
+  background: var(--pal-ink);
+  border: 3px solid var(--pal-cream);
+  box-shadow: 3px 3px 0 #000;
+  overflow: hidden;
+}
+
+.minimap-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.minimap-bg {
+  fill: var(--pal-grass);
+}
+
+.minimap-path {
+  fill: none;
+  stroke: var(--pal-path);
+  stroke-width: 40;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.minimap-marker {
+  stroke: var(--pal-cream);
+  stroke-width: 10;
+}
+
+.minimap-player {
+  fill: #fff;
+  stroke: var(--pal-ink);
+  stroke-width: 12;
+  animation: minimap-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes minimap-pulse {
+  0%,
+  100% {
+    r: 60;
+  }
+  50% {
+    r: 85;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .minimap-player {
+    animation: none;
+  }
+}
+
+/* --- Section showcase panels ---
+   Full-screen takeovers, not popups: each panel is framed as a location
+   you've walked into (a tiled floor consistent with the overworld), not a
+   separate page design. Entrance uses a clip-path "iris" reveal (small
+   circle expanding to fill the screen) to read as walking through a
+   doorway rather than a dialog fading in over the game. */
+
+.section-panel {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  opacity: 0;
+  pointer-events: none;
+  clip-path: circle(0% at 50% 50%);
+  transition: clip-path 0.8s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.2s ease;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.section-panel.visible {
+  opacity: 1;
+  pointer-events: auto;
+  clip-path: circle(120% at 50% 50%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .section-panel {
+    transition: opacity 0.3s ease;
+    clip-path: none;
+  }
+}
+
+.section-floor {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  image-rendering: pixelated;
+  background-repeat: repeat;
+  background-size: 48px 48px;
+}
+
+.section-floor--wood {
+  background-image: url('./assets/floor-wood.png');
+}
+
+.section-floor--stone {
+  background-image: url('./assets/floor-stone.png');
+}
+
+.section-floor--grass {
+  background-image: url('./assets/grass.png');
+}
+
+.section-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* Intro: the one "normal, plain" room — deliberately not pixel-fonted, as
+   a contrast to the game world, sitting on the same tiled floor as every
+   other interior so it still reads as a room in the same house. */
+
+.intro-hero {
+  max-width: 560px;
+  text-align: center;
+  padding: 40px 32px;
+  margin: 32px;
+  background: var(--pal-cream);
+  border: 4px solid var(--pal-ink);
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.35);
+}
+
+.intro-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e0714f, #f2a65a);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 20px;
+  margin: 0 auto 28px;
+  box-shadow: 0 12px 30px rgba(224, 113, 79, 0.35);
+}
+
+.intro-hero h1 {
+  margin: 0 0 18px;
+  font-size: 42px;
+  color: var(--pal-ink);
+}
+
+.intro-hero p {
+  margin: 0;
+  color: var(--pal-ink-soft);
+  line-height: 1.6;
+  font-size: 17px;
+}
+
+.scroll-hint {
+  margin-top: 36px !important;
+  font-size: 13px !important;
+  opacity: 0.6;
+}
+
+/* Projects: real project cards (image + title + date + description),
+   sitting on the same tiled floor as the rest of the town's interiors. */
+
+.projects-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 64px 48px;
+  width: 100%;
+}
+
+.projects-heading {
+  font-family: var(--font-pixel);
+  color: var(--pal-cream);
+  font-size: 20px;
+  margin: 0 0 40px;
+  text-align: center;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.4);
+}
+
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 32px;
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.project-card {
+  background: var(--pal-cream);
+  border: 3px solid var(--pal-ink);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.35);
+  padding: 16px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.project-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 6px 8px 0 rgba(0, 0, 0, 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .project-card {
+    transition: none;
+  }
+}
+
+.project-thumb {
+  aspect-ratio: 16 / 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.85);
+  font-family: var(--font-terminal);
+  font-size: 18px;
+}
+
+.project-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.project-meta h3 {
+  margin: 0;
+  color: var(--pal-ink);
+  font-size: 18px;
+}
+
+.project-date {
+  font-family: var(--font-terminal);
+  color: var(--pal-ink-soft);
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+.project-card p {
+  margin: 10px 0 0;
+  color: var(--pal-ink-soft);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* Hobbies: same card system as Projects (.projects-content/.projects-grid/
+   .project-card), just on a grass floor instead of an interior one — same
+   visual language, different content, not a separate design. */
+
+/* Contact: the retro dialogue-box scene, in the classic cream/ink pairing
+   that the rest of the palette is built from — no more a mismatched dark
+   purple page. */
+
+.contact-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+  font-family: var(--font-terminal);
+}
+
+.npc-portrait {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: var(--pal-path);
+  color: var(--pal-ink);
+  font-family: var(--font-pixel);
+  font-size: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 4px solid var(--pal-cream);
+}
+
+.dialogue-box {
+  width: min(680px, 90vw);
+  background: var(--pal-cream);
+  border: 4px solid var(--pal-ink);
+  box-shadow: 6px 6px 0 #000;
+  padding: 28px 32px;
+  color: var(--pal-ink);
+}
+
+.dialogue-text {
+  margin: 0 0 20px;
+  font-size: 22px;
+  line-height: 1.5;
+}
+
+.dialogue-links {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.dialogue-link {
+  background: var(--pal-grass-light);
+  color: var(--pal-ink);
+  text-decoration: none;
+  font-family: var(--font-pixel);
+  padding: 12px 18px;
+  font-size: 12px;
+  box-shadow: 3px 3px 0 var(--pal-ink);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dialogue-link:hover {
+  background: var(--pal-grass);
+  color: var(--pal-cream);
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 var(--pal-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialogue-link {
     transition: none;
   }
 }

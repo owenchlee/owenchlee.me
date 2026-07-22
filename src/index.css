@@ -1,6 +1,23 @@
 :root {
-  color-scheme: light dark;
+  color-scheme: dark;
   font: 16px/1.4 system-ui, 'Segoe UI', Roboto, sans-serif;
+
+  /* Palette sampled directly from the tile map (grass.png, path.png,
+     plant.png) plus the classic Game Boy-style dialogue-box cream/ink pair
+     — used everywhere, in and out of the overworld, so the whole site reads
+     as one connected space instead of a stack of unrelated page designs. */
+  --pal-grass: #197153;
+  --pal-grass-light: #4da338;
+  --pal-path: #a67a54;
+  --pal-path-dark: #7a5a3d;
+  --pal-water: #26a8b1;
+  --pal-cream: #f8f0dc;
+  --pal-ink: #1c1712;
+  --pal-ink-soft: #3a2f24;
+
+  --font-pixel: 'Press Start 2P', cursive;
+  --font-terminal: 'VT323', monospace;
+  --font-hand: 'Caveat', cursive;
 }
 
 * {
@@ -9,8 +26,21 @@
 
 body {
   margin: 0;
+  background: var(--pal-ink);
+  color: var(--pal-cream);
 }
 
 #root {
   min-height: 100svh;
+}
+
+a,
+button {
+  cursor: pointer;
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--pal-grass-light);
+  outline-offset: 2px;
 }
