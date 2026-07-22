@@ -1,6 +1,8 @@
-export function IntroPanel({ active }) {
+import { forwardRef } from 'react';
+
+export const IntroPanel = forwardRef(function IntroPanel({ active }, ref) {
   return (
-    <div className={`section-panel section-panel--intro ${active ? 'visible' : ''}`}>
+    <div ref={ref} className={`section-panel section-panel--intro ${active ? 'visible' : ''}`}>
       <div className="section-floor section-floor--wood" />
       <div className="intro-hero section-content">
         <div className="intro-avatar">YOU</div>
@@ -13,7 +15,7 @@ export function IntroPanel({ active }) {
       </div>
     </div>
   );
-}
+});
 
 const PROJECTS = [
   {
@@ -36,9 +38,9 @@ const PROJECTS = [
   },
 ];
 
-export function ProjectsPanel({ active }) {
+export const ProjectsPanel = forwardRef(function ProjectsPanel({ active }, ref) {
   return (
-    <div className={`section-panel section-panel--projects ${active ? 'visible' : ''}`}>
+    <div ref={ref} className={`section-panel section-panel--projects ${active ? 'visible' : ''}`}>
       <div className="section-floor section-floor--stone" />
       <div className="section-content projects-content">
         <h2 className="projects-heading">Projects</h2>
@@ -59,7 +61,7 @@ export function ProjectsPanel({ active }) {
       </div>
     </div>
   );
-}
+});
 
 const HOBBIES = [
   { label: 'Photography', color: '#e8b4bc', desc: 'Placeholder blurb about this hobby — swap in a real photo and a line or two.' },
@@ -70,9 +72,9 @@ const HOBBIES = [
   { label: 'Hiking', color: '#8fbf8a', desc: 'Placeholder blurb about this hobby — swap in a real photo and a line or two.' },
 ];
 
-export function HobbiesPanel({ active }) {
+export const HobbiesPanel = forwardRef(function HobbiesPanel({ active }, ref) {
   return (
-    <div className={`section-panel section-panel--hobbies ${active ? 'visible' : ''}`}>
+    <div ref={ref} className={`section-panel section-panel--hobbies ${active ? 'visible' : ''}`}>
       <div className="section-floor section-floor--grass" />
       <div className="section-content projects-content">
         <h2 className="projects-heading">Hobbies</h2>
@@ -92,7 +94,7 @@ export function HobbiesPanel({ active }) {
       </div>
     </div>
   );
-}
+});
 
 const CONTACT_LINKS = [
   { label: 'Email', href: '#' },
@@ -100,9 +102,9 @@ const CONTACT_LINKS = [
   { label: 'LinkedIn', href: '#' },
 ];
 
-export function ContactPanel({ active }) {
+export const ContactPanel = forwardRef(function ContactPanel({ active }, ref) {
   return (
-    <div className={`section-panel section-panel--contact ${active ? 'visible' : ''}`}>
+    <div ref={ref} className={`section-panel section-panel--contact ${active ? 'visible' : ''}`}>
       <div className="section-floor section-floor--wood" />
       <div className="section-content contact-content">
         <div className="npc-portrait">?</div>
@@ -119,4 +121,4 @@ export function ContactPanel({ active }) {
       </div>
     </div>
   );
-}
+});
