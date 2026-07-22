@@ -364,3 +364,70 @@ export function getWorldPosition(progress) {
   }
   return WAYPOINTS_PX[WAYPOINTS_PX.length - 1];
 }
+
+// --- House reveal curve ---
+// Section panels used to snap open/closed on a binary distance check, paired
+// with a fixed-duration CSS transition — the reveal pace had zero relation
+// to how fast the user was actually scrolling, which is what read as
+// abrupt/disconnected ("boom, next page"). Instead, reveal is a continuous
+// 0-1 function of scroll progress: a flat "fully open" plateau (so the panel
+// is comfortably interactive, not a single instantaneous point) plus eased
+// shoulders on either side (so it grows/shrinks in lockstep with scroll
+// speed rather than on its own timer).
+export const HOUSE_OPEN_PLATEAU = 0.03;
+export const HOUSE_REVEAL_SHOULDER = 0.035;
+
+export function getHouseReveal(progress, waypointFraction, { reducedMotion = false } = {}) {
+  const d = Math.abs(progress - waypointFraction);
+  if (reducedMotion) return d <= HOUSE_OPEN_PLATEAU ? 1 : 0;
+  if (d <= HOUSE_OPEN_PLATEAU) return 1;
+  const s = d - HOUSE_OPEN_PLATEAU;
+  if (s >= HOUSE_REVEAL_SHOULDER) return 0;
+  const t = 1 - s / HOUSE_REVEAL_SHOULDER;
+  return t * t * (3 - 2 * t); // smoothstep
+}
+
+// Adjacent houses' reveal bands must never overlap, or two panels could be
+// simultaneously non-zero — verified here at module load (dev only) rather
+// than just in a comment, so it can't silently regress if a waypoint moves.
+if (import.meta.env.DEV) {
+  const band = 2 * (HOUSE_OPEN_PLATEAU + HOUSE_REVEAL_SHOULDER);
+  const fractions = HOUSES.map((h) => WAYPOINT_FRACTIONS[h.waypointIndex]).sort((a, b) => a - b);
+  for (let i = 0; i < fractions.length - 1; i++) {
+    const gap = fractions[i + 1] - fractions[i];
+    if (gap < band) {
+      console.warn(
+        `[tileMap] House reveal bands overlap: gap ${gap.toFixed(3)} between waypoint fractions ` +
+          `${fractions[i].toFixed(3)} and ${fractions[i + 1].toFixed(3)} is smaller than band width ${band.toFixed(3)}.`,
+      );
+    }
+  }
+}
+
+// --- Lighting cycle ---
+// One monotonic wash across the whole path (dawn -> day -> dusk -> night),
+// purely atmospheric — not a repeating loop, since the player only ever
+// walks the route once in a given direction.
+const LIGHT_STOPS = [
+  { at: 0, rgba: [255, 223, 168, 0.1] },
+  { at: 0.35, rgba: [255, 255, 255, 0] },
+  { at: 0.7, rgba: [91, 110, 168, 0.16] },
+  { at: 1, rgba: [20, 20, 40, 0.38] },
+];
+
+export function getLightingTint(progress) {
+  const p = Math.min(1, Math.max(0, progress));
+  for (let i = 0; i < LIGHT_STOPS.length - 1; i++) {
+    const a = LIGHT_STOPS[i];
+    const b = LIGHT_STOPS[i + 1];
+    if (p >= a.at && p <= b.at) {
+      const t = b.at === a.at ? 0 : (p - a.at) / (b.at - a.at);
+      const [r, g, bl, aAlpha] = a.rgba;
+      const [r2, g2, b2, aAlpha2] = b.rgba;
+      const lerp = (x, y) => x + (y - x) * t;
+      return `rgba(${Math.round(lerp(r, r2))}, ${Math.round(lerp(g, g2))}, ${Math.round(lerp(bl, b2))}, ${lerp(aAlpha, aAlpha2).toFixed(3)})`;
+    }
+  }
+  const last = LIGHT_STOPS[LIGHT_STOPS.length - 1].rgba;
+  return `rgba(${last[0]}, ${last[1]}, ${last[2]}, ${last[3]})`;
+}

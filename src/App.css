@@ -1,9 +1,20 @@
 .page-footer {
   max-width: 680px;
   margin: 0 auto;
-  padding: 48px 20px;
+  padding: 48px 20px 40px;
   text-align: center;
   font-family: var(--font-terminal);
+  font-size: 19px;
+  border-top: 4px dashed var(--pal-path-dark);
+}
+
+.page-footer .footer-sign {
+  display: block;
+  margin-top: 14px;
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  color: var(--pal-cream);
+  opacity: 0.7;
 }
 
 /* --- HUD nameplate ---
@@ -69,6 +80,27 @@
 .tile-grid {
   display: grid;
   image-rendering: pixelated;
+  /* Whole-grid pulse rather than per-tile animation — animating ~10,600
+     individual tile nodes would mean thousands of concurrently-running CSS
+     animations, a real paint/perf risk. One element, one paint region, still
+     reads as the field gently breathing instead of a static texture. */
+  animation: grass-breathe 9s ease-in-out infinite;
+}
+
+@keyframes grass-breathe {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.02);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile-grid {
+    animation: none;
+  }
 }
 
 
@@ -141,6 +173,26 @@
 }
 .tile-water {
   background-image: url('./assets/water.png');
+  /* Only ~50 water tiles total across both ponds — cheap enough to animate
+     individually, unlike the grass field. animationDelay is set per-tile
+     inline (App.jsx) from row/col so the two ponds don't pulse in lockstep. */
+  animation: water-shimmer 4s ease-in-out infinite;
+}
+
+@keyframes water-shimmer {
+  0%,
+  100% {
+    filter: brightness(1) saturate(1);
+  }
+  50% {
+    filter: brightness(1.08) saturate(1.15);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile-water {
+    animation: none;
+  }
 }
 .tile-tree,
 .tile-flower {
@@ -151,6 +203,30 @@
 }
 .tile-flower {
   background-size: 55%, cover;
+}
+
+/* --- Lighting cycle ---
+   A single viewport-sized (not world-sized) flat-color layer tinted from
+   getLightingTint(progress) in tileMap.js — one monotonic dawn->day->dusk
+   ->night wash across the whole path. Deliberately not a child of .world
+   (which is ~2944x3712px): tinting only the viewport avoids painting a huge
+   offscreen layer. Sits above .world but below section panels (z-index 9),
+   so interiors are never tinted by outdoor lighting, and below the
+   character (z-index 5) so the player sprite itself is lit by it. No CSS
+   transition — background-color is written every scroll tick already, same
+   reasoning as the house/panel reveal above. */
+.lighting-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lighting-overlay {
+    display: none;
+  }
 }
 
 /* --- Character ---
@@ -204,7 +280,13 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  transition: transform 0.25s ease;
+  /* --house-reveal is written every scroll tick from getHouseReveal() in
+     App.jsx (0-1, continuous with scroll progress) — no CSS transition here,
+     since a timer competing with a value already being driven every frame is
+     exactly what used to make the panel/house reveal feel disconnected from
+     actual scroll speed. Scale grows as the character approaches, giving the
+     "arrival" cue a place to live on the world itself. */
+  transform: scale(calc(1 + var(--house-reveal, 0) * 0.15));
 }
 
 .house-sprite {
@@ -279,28 +361,21 @@
   padding: 4px 6px;
   border-radius: 0;
   white-space: nowrap;
-  opacity: 0.75;
-  transition: opacity 0.25s ease, background 0.25s ease;
+  opacity: calc(0.75 + var(--house-reveal, 0) * 0.25);
 }
 
-.house.active {
-  transform: scale(1.15);
-}
-
+/* .active is a hard on/off (only true once reveal hits its plateau, see
+   App.jsx) — reserved for the one thing that genuinely reads better as a
+   discrete state than a continuous blend: the label swapping to its full
+   house color, and the sprite's glow turning on. Scale/opacity above are
+   already continuous via --house-reveal, so this isn't fighting them. */
 .house.active .house-label {
-  opacity: 1;
   background: var(--house-color);
 }
 
 .house.active .house-sprite {
   filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.35)) drop-shadow(0 0 10px var(--house-color))
     drop-shadow(0 0 10px var(--house-color));
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .house {
-    transition: none;
-  }
 }
 
 /* --- Decoration --- */
@@ -516,33 +591,38 @@
 /* --- Section showcase panels ---
    Full-screen takeovers, not popups: each panel is framed as a location
    you've walked into (a tiled floor consistent with the overworld), not a
-   separate page design. Entrance uses a clip-path "iris" reveal (small
-   circle expanding to fill the screen) to read as walking through a
-   doorway rather than a dialog fading in over the game. */
+   separate page design. The iris reveal (circle expanding to fill the
+   screen) is driven directly by --reveal, a 0-1 value written every scroll
+   tick from getHouseReveal() in App.jsx — there's no CSS transition here on
+   purpose: a fixed-duration timer paired with a value already being updated
+   every frame is what used to make the reveal snap open/closed regardless
+   of how fast the user was actually scrolling. Because opacity/clip-path
+   are a pure function of --reveal, scrolling backward through a house plays
+   the exact same curve in reverse — exit is the entry, mirrored, for free. */
 
 .section-panel {
+  --reveal: 0;
   position: absolute;
   inset: 0;
   z-index: 9;
-  opacity: 0;
+  opacity: var(--reveal);
   pointer-events: none;
-  clip-path: circle(0% at 50% 50%);
-  transition: clip-path 0.8s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.2s ease;
+  clip-path: circle(calc(var(--reveal) * 120%) at 50% 50%);
   overflow: auto;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
+/* .visible only ever becomes true once --reveal has reached 1 (see
+   `fullyOpenId` in App.jsx), so this is purely about interactivity — link
+   clicks/focus shouldn't work while the panel is still mid-reveal. */
 .section-panel.visible {
-  opacity: 1;
   pointer-events: auto;
-  clip-path: circle(120% at 50% 50%);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .section-panel {
-    transition: opacity 0.3s ease;
     clip-path: none;
   }
 }
@@ -573,9 +653,9 @@
   z-index: 1;
 }
 
-/* Intro: the one "normal, plain" room — deliberately not pixel-fonted, as
-   a contrast to the game world, sitting on the same tiled floor as every
-   other interior so it still reads as a room in the same house. */
+/* Intro: same dialogue-box/pixel-art language as every other interior — the
+   whole site reads as one connected space, not a plain webpage dropped into
+   the middle of a game. */
 
 .intro-hero {
   max-width: 560px;
@@ -596,28 +676,31 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
-  font-size: 20px;
+  font-family: var(--font-pixel);
+  font-size: 12px;
   margin: 0 auto 28px;
   box-shadow: 0 12px 30px rgba(224, 113, 79, 0.35);
 }
 
 .intro-hero h1 {
   margin: 0 0 18px;
-  font-size: 42px;
+  font-family: var(--font-pixel);
+  font-size: clamp(20px, 4vw, 28px);
+  line-height: 1.6;
   color: var(--pal-ink);
 }
 
 .intro-hero p {
   margin: 0;
   color: var(--pal-ink-soft);
+  font-family: var(--font-terminal);
   line-height: 1.6;
-  font-size: 17px;
+  font-size: 19px;
 }
 
 .scroll-hint {
   margin-top: 36px !important;
-  font-size: 13px !important;
+  font-size: 15px !important;
   opacity: 0.6;
 }
 

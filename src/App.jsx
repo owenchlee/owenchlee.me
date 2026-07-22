@@ -17,6 +17,8 @@ import {
   TOTAL_PATH_LENGTH,
   tileToPx,
   getWorldPosition,
+  getHouseReveal,
+  getLightingTint,
 } from './tileMap';
 import { IntroPanel, ProjectsPanel, HobbiesPanel, ContactPanel } from './sections';
 import Minimap from './Minimap';
@@ -74,9 +76,6 @@ const DECOR_SPRITES = {
 // Scroll distance scales with the actual path length so pacing stays
 // consistent if the path shape changes.
 const TRACK_HEIGHT = Math.round(TOTAL_PATH_LENGTH * 1.6);
-// How close (as a fraction of total path progress) the character needs to be
-// to a house's waypoint for that house's panel to trigger.
-const HOUSE_TRIGGER_WIDTH = 0.055;
 
 function computeProgress(trackEl) {
   const rect = trackEl.getBoundingClientRect();
@@ -97,7 +96,25 @@ function App() {
   const lastToggleRef = useRef(0);
   const facingRef = useRef({ direction: 'down', mirror: false });
   const idleTimeoutRef = useRef(null);
+  const houseElRefs = useRef({});
+  const panelRefs = useRef({});
+  const lastRevealRef = useRef({});
+  const lightingRef = useRef(null);
+  const reducedMotionRef = useRef(false);
   const [activeHouse, setActiveHouse] = useState(null);
+
+  // Read once + subscribe: everything that consumes this ref lives inside a
+  // scroll-driven update() loop, so a plain mutable ref (not state) avoids
+  // re-running/re-rendering anything when the OS-level setting changes.
+  useEffect(() => {
+    const mql = window.matchMedia('(prefers-reduced-motion: reduce)');
+    reducedMotionRef.current = mql.matches;
+    const onChange = (e) => {
+      reducedMotionRef.current = e.matches;
+    };
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
+  }, []);
 
   const [usesCss] = useState(() => {
     const supports =
@@ -195,16 +212,22 @@ function App() {
   }, [usesCss]);
 
   // House activation + minimap dot: both driven by scroll progress (not
-  // screen position). A house is "active" when progress is within
-  // HOUSE_TRIGGER_WIDTH of its waypoint's fraction along the path.
-  // Screen-position-based detection (e.g. IntersectionObserver watching
-  // where a house lands on screen) breaks once the path folds back on
-  // itself — the up-right leg to Projects puts it at a smaller row than
-  // Intro even though it comes later, so its projected depth could cross
-  // the trigger band first. Progress is one-dimensional and always
-  // monotonic, so it can't misfire like that regardless of path shape.
-  // This same progress value also positions the minimap's player dot, so
-  // that HUD stays in sync with the game world in both camera modes.
+  // screen position). Screen-position-based detection (e.g.
+  // IntersectionObserver watching where a house lands on screen) breaks once
+  // the path folds back on itself — the up-right leg to Projects puts it at
+  // a smaller row than Intro even though it comes later, so its projected
+  // depth could cross the trigger band first. Progress is one-dimensional
+  // and always monotonic, so it can't misfire like that regardless of path
+  // shape. This same progress value also positions the minimap's player dot,
+  // so that HUD stays in sync with the game world in both camera modes.
+  //
+  // Each house's reveal (0-1, from getHouseReveal) is written straight to
+  // its house element and section panel via CSS custom properties every
+  // tick — never through React state — so the panel's clip-path/opacity and
+  // the house's scale/glow track actual scroll speed instead of snapping on
+  // a boolean and then playing out on their own fixed-duration timer. State
+  // (`activeHouse`) is only used for the few things that must be a hard
+  // on/off: pointer-events on the panel and the label's color swap.
   useEffect(() => {
     const track = trackRef.current;
     if (!track) return undefined;
@@ -214,16 +237,27 @@ function App() {
     function update() {
       rafId = null;
       const progress = computeProgress(track);
+      const reducedMotion = reducedMotionRef.current;
 
-      const match = HOUSES.find(
-        (h) => Math.abs(progress - WAYPOINT_FRACTIONS[h.waypointIndex]) <= HOUSE_TRIGGER_WIDTH,
-      );
-      setActiveHouse((current) => {
-        const next = match ? match.id : null;
-        return current === next ? current : next;
+      let fullyOpenId = null;
+      HOUSES.forEach((h) => {
+        const reveal = getHouseReveal(progress, WAYPOINT_FRACTIONS[h.waypointIndex], { reducedMotion });
+        if (reveal >= 1) fullyOpenId = h.id;
+
+        if (lastRevealRef.current[h.id] === reveal) return;
+        lastRevealRef.current[h.id] = reveal;
+
+        houseElRefs.current[h.id]?.style.setProperty('--house-reveal', reveal);
+        panelRefs.current[h.id]?.style.setProperty('--reveal', reveal);
       });
 
+      setActiveHouse((current) => (current === fullyOpenId ? current : fullyOpenId));
+
       const { x, y } = getWorldPosition(progress);
+
+      if (lightingRef.current) {
+        lightingRef.current.style.backgroundColor = getLightingTint(progress);
+      }
 
       if (minimapDotRef.current) {
         minimapDotRef.current.setAttribute('cx', x);
@@ -311,7 +345,11 @@ function App() {
             >
               {TILE_GRID.flatMap((row, r) =>
                 row.map((type, c) => (
-                  <div key={`${r}-${c}`} className={`tile tile-${type}`} />
+                  <div
+                    key={`${r}-${c}`}
+                    className={`tile tile-${type}`}
+                    style={type === 'water' ? { animationDelay: `${((r * 7 + c * 13) % 5) * -0.4}s` } : undefined}
+                  />
                 )),
               )}
             </div>
@@ -341,6 +379,9 @@ function App() {
               return (
                 <div
                   key={house.id}
+                  ref={(el) => {
+                    houseElRefs.current[house.id] = el;
+                  }}
                   className={`house house--${house.kind} house-${house.side} ${
                     activeHouse === house.id ? 'active' : ''
                   }`}
@@ -392,6 +433,8 @@ function App() {
             })}
           </div>
 
+          <div className="lighting-overlay" ref={lightingRef} aria-hidden="true" />
+
           <div className="character-wrap">
             <div className="character-shadow" />
             <img
@@ -403,15 +446,36 @@ function App() {
             />
           </div>
 
-          <IntroPanel active={activeHouse === 'intro'} />
-          <ProjectsPanel active={activeHouse === 'projects'} />
-          <HobbiesPanel active={activeHouse === 'hobbies'} />
-          <ContactPanel active={activeHouse === 'contact'} />
+          <IntroPanel
+            ref={(el) => {
+              panelRefs.current.intro = el;
+            }}
+            active={activeHouse === 'intro'}
+          />
+          <ProjectsPanel
+            ref={(el) => {
+              panelRefs.current.projects = el;
+            }}
+            active={activeHouse === 'projects'}
+          />
+          <HobbiesPanel
+            ref={(el) => {
+              panelRefs.current.hobbies = el;
+            }}
+            active={activeHouse === 'hobbies'}
+          />
+          <ContactPanel
+            ref={(el) => {
+              panelRefs.current.contact = el;
+            }}
+            active={activeHouse === 'contact'}
+          />
         </div>
       </div>
 
       <footer className="page-footer">
         <p>End of prototype path.</p>
+        <span className="footer-sign">OWEN LEE</span>
       </footer>
 
       <Minimap ref={minimapDotRef} />
