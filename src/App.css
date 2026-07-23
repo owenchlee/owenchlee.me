@@ -1,22 +1,3 @@
-.page-footer {
-  max-width: 680px;
-  margin: 0 auto;
-  padding: 48px 20px 40px;
-  text-align: center;
-  font-family: var(--font-terminal);
-  font-size: 19px;
-  border-top: 4px dashed var(--pal-path-dark);
-}
-
-.page-footer .footer-sign {
-  display: block;
-  margin-top: 14px;
-  font-family: var(--font-pixel);
-  font-size: 11px;
-  color: var(--pal-cream);
-  opacity: 0.7;
-}
-
 /* --- HUD nameplate ---
    Sits directly over the top of the grass, not in a banner of its own: it's
    an absolutely-positioned child of .stage-track (not .stage-box, which is
@@ -36,7 +17,7 @@
 
 .hud-name {
   font-family: var(--font-pixel);
-  font-size: clamp(40px, 8vw, 72px);
+  font-size: clamp(52px, 10vw, 96px);
   color: var(--pal-cream);
   line-height: 1.3;
   text-shadow: 4px 4px 0 var(--pal-ink), -3px -3px 0 var(--pal-ink), 3px -3px 0 var(--pal-ink),
@@ -172,20 +153,22 @@
   transform: rotate(270deg);
 }
 .tile-water {
-  background-image: url('./assets/water.png');
-  /* Only ~50 water tiles total across both ponds — cheap enough to animate
+  background-image: url('./assets/water-lpc.png');
+  /* Only ~50-80 water tiles total across the ponds — cheap enough to animate
      individually, unlike the grass field. animationDelay is set per-tile
-     inline (App.jsx) from row/col so the two ponds don't pulse in lockstep. */
-  animation: water-shimmer 4s ease-in-out infinite;
+     inline (App.jsx) from row/col so the ponds don't pulse in lockstep. */
+  animation: water-shimmer 3.2s ease-in-out infinite;
 }
 
 @keyframes water-shimmer {
   0%,
   100% {
     filter: brightness(1) saturate(1);
+    background-position: 0 0;
   }
   50% {
-    filter: brightness(1.08) saturate(1.15);
+    filter: brightness(1.15) saturate(1.3);
+    background-position: 2px 1px;
   }
 }
 
@@ -289,27 +272,28 @@
   transform: scale(calc(1 + var(--house-reveal, 0) * 0.15));
 }
 
+/* All buildings share one sourced cottage sprite (src/assets/cottage.png,
+   see ASSET_CREDITS.md) recolored per building via --house-tint, a CSS
+   filter string set inline from HOUSES/DECOR_HOUSES data in App.jsx. It has
+   to be a custom property rather than setting `filter` directly inline:
+   inline styles always win over stylesheet rules, so a plain inline
+   `filter` would silently discard the drop-shadow (and, for real
+   checkpoints, the active-state glow) declared below instead of combining
+   with it. */
 .house-sprite {
-  width: 66px;
+  width: 74px;
   height: auto;
   image-rendering: pixelated;
-  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.35));
+  filter: var(--house-tint, none) drop-shadow(0 3px 2px rgba(0, 0, 0, 0.35));
 }
 
 .decor-house-wrap {
   position: absolute;
-  width: 58px;
-  height: 66px;
+  width: 66px;
+  height: 74px;
   display: flex;
   flex-direction: column;
   align-items: center;
-}
-
-/* Tower sprites are much taller relative to their width than the
-   house/shop template, so they need a taller wrapper or the same
-   overflow-hides-the-foundation bug shows up again just for this shape. */
-.decor-house-wrap--tower {
-  height: 106px;
 }
 
 /* Decoration-only scenery buildings — same rendering as .house-sprite, but
@@ -317,10 +301,10 @@
    the entire signal that these aren't checkpoints: only the 4 real section
    houses ever show a name or light up as you approach. */
 .decor-house {
-  width: 58px;
+  width: 66px;
   height: auto;
   image-rendering: pixelated;
-  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.3));
+  filter: var(--house-tint, none) drop-shadow(0 3px 2px rgba(0, 0, 0, 0.3));
 }
 
 /* Foundation + shadow, shared by real checkpoints and decor buildings alike
@@ -374,18 +358,28 @@
 }
 
 .house.active .house-sprite {
-  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.35)) drop-shadow(0 0 10px var(--house-color))
-    drop-shadow(0 0 10px var(--house-color));
+  filter: var(--house-tint, none) drop-shadow(0 3px 2px rgba(0, 0, 0, 0.35))
+    drop-shadow(0 0 10px var(--house-color)) drop-shadow(0 0 10px var(--house-color));
 }
 
-/* --- Decoration --- */
+/* --- Decoration ---
+   Sourced wooden post+rail panel (src/assets/fence-lpc.png, see
+   ASSET_CREDITS.md), one 32x32 tile per yard-perimeter cell. The source
+   panel is authored as a horizontal run, so vertical runs (the yard's
+   left/right edges) reuse the same image rotated 90deg rather than needing
+   a second sprite. */
 
 .fence-post {
   position: absolute;
-  width: 5px;
-  height: 20px;
-  background: #8a6a45;
-  border: 1px solid #5c4630;
+  width: 32px;
+  height: 32px;
+  background-image: url('./assets/fence-lpc.png');
+  background-size: cover;
+  image-rendering: pixelated;
+}
+
+.fence-post--v {
+  transform: rotate(90deg);
 }
 
 /* --- NPCs ---

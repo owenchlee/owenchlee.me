@@ -22,22 +22,12 @@ import {
 } from './tileMap';
 import { IntroPanel, ProjectsPanel, HobbiesPanel, ContactPanel } from './sections';
 import Minimap from './Minimap';
-import houseIntroSprite from './assets/house-intro.png';
-import houseLabSprite from './assets/house-lab.png';
-import houseContactSprite from './assets/house-contact.png';
-import houseHobbiesSprite from './assets/house-hobbies.png';
+import cottageSprite from './assets/cottage.png';
 import npcASprite from './assets/npc-a.png';
 import npcBSprite from './assets/npc-b.png';
 import npcCSprite from './assets/npc-c.png';
 import critterRatSprite from './assets/critter-rat.png';
 import critterBirdSprite from './assets/critter-bird.png';
-import houseDecorTan from './assets/house-decor-tan.png';
-import houseDecorTeal from './assets/house-decor-teal.png';
-import houseDecorPlum from './assets/house-decor-plum.png';
-import houseDecorStone from './assets/house-decor-stone.png';
-import houseDecorShop from './assets/house-decor-shop.png';
-import houseDecorShopBlue from './assets/house-decor-shop-blue.png';
-import houseDecorTower from './assets/house-decor-tower.png';
 import charDownIdle from './assets/char/char-down-idle.png';
 import charDownWalkA from './assets/char/char-down-walk-a.png';
 import charDownWalkB from './assets/char/char-down-walk-b.png';
@@ -54,24 +44,8 @@ const CHAR_SPRITES = {
   side: { idle: charSideIdle, 'walk-a': charSideWalkA, 'walk-b': charSideWalkB },
 };
 
-const HOUSE_SPRITES = {
-  'house-intro': houseIntroSprite,
-  'house-lab': houseLabSprite,
-  'house-contact': houseContactSprite,
-  'house-hobbies': houseHobbiesSprite,
-};
-
 const NPC_SPRITES = { a: npcASprite, b: npcBSprite, c: npcCSprite };
 const CRITTER_SPRITES = { rat: critterRatSprite, bird: critterBirdSprite };
-const DECOR_SPRITES = {
-  'house-decor-tan': houseDecorTan,
-  'house-decor-teal': houseDecorTeal,
-  'house-decor-plum': houseDecorPlum,
-  'house-decor-stone': houseDecorStone,
-  'house-decor-shop': houseDecorShop,
-  'house-decor-shop-blue': houseDecorShopBlue,
-  'house-decor-tower': houseDecorTower,
-};
 
 // Scroll distance scales with the actual path length so pacing stays
 // consistent if the path shape changes.
@@ -356,20 +330,27 @@ function App() {
 
             {FENCES.map((post) => {
               const { x, y } = tileToPx(post.col, post.row);
-              return <div key={post.id} className="fence-post" style={{ left: x, top: y }} />;
+              return (
+                <div
+                  key={post.id}
+                  className={`fence-post fence-post--${post.orientation}`}
+                  style={{ left: x, top: y }}
+                />
+              );
             })}
 
             {DECOR_HOUSES.map((house) => {
               const { x, y } = tileToPx(house.col, house.row);
               return (
-                <div
-                  key={house.id}
-                  className={`decor-house-wrap ${house.sprite.includes('tower') ? 'decor-house-wrap--tower' : ''}`}
-                  style={{ left: x, top: y }}
-                >
+                <div key={house.id} className="decor-house-wrap" style={{ left: x, top: y }}>
                   <div className="building-shadow" />
                   <div className="building-foundation" />
-                  <img src={DECOR_SPRITES[house.sprite]} className="decor-house" alt="" />
+                  <img
+                    src={cottageSprite}
+                    className="decor-house"
+                    style={{ '--house-tint': house.tint }}
+                    alt=""
+                  />
                 </div>
               );
             })}
@@ -389,7 +370,12 @@ function App() {
                 >
                   <div className="building-shadow" />
                   <div className="building-foundation" />
-                  <img src={HOUSE_SPRITES[house.sprite]} className="house-sprite" alt="" />
+                  <img
+                    src={cottageSprite}
+                    className="house-sprite"
+                    style={{ '--house-tint': house.tint }}
+                    alt=""
+                  />
                   <span className="house-label">{house.label}</span>
                 </div>
               );
@@ -472,11 +458,6 @@ function App() {
           />
         </div>
       </div>
-
-      <footer className="page-footer">
-        <p>End of prototype path.</p>
-        <span className="footer-sign">OWEN LEE</span>
-      </footer>
 
       <Minimap ref={minimapDotRef} />
     </>
