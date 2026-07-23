@@ -23,17 +23,15 @@ const WAYPOINTS_TILE = [
 // up-right leg puts Projects at a *smaller* row than Intro even though it
 // comes later on the path).
 //
-// `kind` controls what marker renders at this spot: 'house' (peaked-roof
-// pixel-sprite cottage), 'lab' (flat-roofed pixel-sprite building), or
-// 'shop' (storefront with a striped awning + display window) — three
-// genuinely different silhouettes, not just recolors of one template, so
-// the four checkpoints don't all read as the same building. `sprite` names
-// the PNG in src/assets for that building.
+// All 4 checkpoints share one sourced cottage sprite (see cottage.png credit
+// in ASSET_CREDITS.md) — `tint` is a CSS filter string applied per-building
+// for visual variety, the same trick already used for grass shade variants,
+// rather than maintaining several hand-authored building silhouettes.
 export const HOUSES = [
-  { id: 'intro', label: 'Intro', col: 44, row: 48, side: 'left', color: '#e0714f', waypointIndex: 1, kind: 'house', sprite: 'house-intro' },
-  { id: 'projects', label: 'Projects', col: 66, row: 35, side: 'right', color: '#5b7a94', waypointIndex: 2, kind: 'lab', sprite: 'house-lab' },
-  { id: 'hobbies', label: 'Hobbies', col: 39, row: 64, side: 'left', color: '#4da338', waypointIndex: 3, kind: 'shop', sprite: 'house-hobbies' },
-  { id: 'contact', label: 'Contact', col: 64, row: 83, side: 'right', color: '#c9463e', waypointIndex: 4, kind: 'house', sprite: 'house-contact' },
+  { id: 'intro', label: 'Intro', col: 44, row: 48, side: 'left', color: '#e0714f', waypointIndex: 1, kind: 'house', tint: 'hue-rotate(-20deg) saturate(1.15)' },
+  { id: 'projects', label: 'Projects', col: 66, row: 35, side: 'right', color: '#5b7a94', waypointIndex: 2, kind: 'lab', tint: 'hue-rotate(150deg) saturate(0.85) brightness(1.05)' },
+  { id: 'hobbies', label: 'Hobbies', col: 39, row: 64, side: 'left', color: '#4da338', waypointIndex: 3, kind: 'shop', tint: 'hue-rotate(70deg) saturate(1.2)' },
+  { id: 'contact', label: 'Contact', col: 64, row: 83, side: 'right', color: '#c9463e', waypointIndex: 4, kind: 'house', tint: 'hue-rotate(-8deg) saturate(1.3) brightness(0.95)' },
 ];
 
 // Purely decorative townsfolk that patrol a short back-and-forth walk near
@@ -57,21 +55,34 @@ export const NPCS = [
 // distinct from the 4 real section checkpoints in HOUSES, which are the
 // only buildings that ever show a name pill or light up. Kept off to the
 // west/east sides, clear of the path's central band.
+//
+// Same shared cottage sprite as HOUSES, tinted per named variant so the
+// scattered decor buildings still read as different structures.
+const DECOR_TINTS = {
+  tan: 'saturate(0.75) brightness(1.08)',
+  teal: 'hue-rotate(140deg) saturate(1.05)',
+  plum: 'hue-rotate(-60deg) saturate(1.15) brightness(0.92)',
+  stone: 'grayscale(0.6) brightness(1.1)',
+  shop: 'hue-rotate(40deg) saturate(1.25)',
+  shopBlue: 'hue-rotate(170deg) saturate(1.05)',
+  tower: 'hue-rotate(200deg) saturate(0.7) brightness(1.15)',
+};
+
 export const DECOR_HOUSES = [
-  { id: 'decor-1', col: 22, row: 33, sprite: 'house-decor-tan' },
-  { id: 'decor-2', col: 78, row: 40, sprite: 'house-decor-shop-blue' },
-  { id: 'decor-3', col: 20, row: 58, sprite: 'house-decor-plum' },
-  { id: 'decor-4', col: 75, row: 62, sprite: 'house-decor-tower' },
-  { id: 'decor-5', col: 18, row: 78, sprite: 'house-decor-teal' },
-  { id: 'decor-6', col: 76, row: 82, sprite: 'house-decor-shop' },
-  { id: 'decor-7', col: 30, row: 95, sprite: 'house-decor-stone' },
-  { id: 'decor-8', col: 70, row: 100, sprite: 'house-decor-plum' },
-  { id: 'decor-9', col: 14, row: 16, sprite: 'house-decor-tower' },
-  { id: 'decor-10', col: 33, row: 12, sprite: 'house-decor-teal' },
-  { id: 'decor-11', col: 26, row: 42, sprite: 'house-decor-shop' },
-  { id: 'decor-12', col: 82, row: 55, sprite: 'house-decor-plum' },
-  { id: 'decor-13', col: 12, row: 68, sprite: 'house-decor-shop-blue' },
-  { id: 'decor-14', col: 84, row: 90, sprite: 'house-decor-teal' },
+  { id: 'decor-1', col: 22, row: 33, tint: DECOR_TINTS.tan },
+  { id: 'decor-2', col: 78, row: 40, tint: DECOR_TINTS.shopBlue },
+  { id: 'decor-3', col: 20, row: 58, tint: DECOR_TINTS.plum },
+  { id: 'decor-4', col: 75, row: 62, tint: DECOR_TINTS.tower },
+  { id: 'decor-5', col: 18, row: 78, tint: DECOR_TINTS.teal },
+  { id: 'decor-6', col: 76, row: 82, tint: DECOR_TINTS.shop },
+  { id: 'decor-7', col: 30, row: 95, tint: DECOR_TINTS.stone },
+  { id: 'decor-8', col: 70, row: 100, tint: DECOR_TINTS.plum },
+  { id: 'decor-9', col: 14, row: 16, tint: DECOR_TINTS.tower },
+  { id: 'decor-10', col: 33, row: 12, tint: DECOR_TINTS.teal },
+  { id: 'decor-11', col: 26, row: 42, tint: DECOR_TINTS.shop },
+  { id: 'decor-12', col: 82, row: 55, tint: DECOR_TINTS.plum },
+  { id: 'decor-13', col: 12, row: 68, tint: DECOR_TINTS.shopBlue },
+  { id: 'decor-14', col: 84, row: 90, tint: DECOR_TINTS.teal },
 ];
 
 // A flavor side street with no destination building, just so the town
@@ -106,12 +117,15 @@ export const CRITTERS = [
   { id: 'critter-5', col: 72, row: 74, sprite: 'rat', axis: 'y', range: 16, duration: 3.8 },
 ];
 
-// Two ponds — a big one off to the side near the start, a smaller one near
-// the Hobbies clearing — both with corners nicked off so they read as
-// rounded ponds rather than plain rectangles.
+// Three ponds — a big one off to the side near the start, a smaller one near
+// the Hobbies clearing, and a third along the Intro-to-Projects stretch —
+// all with corners nicked off so they read as rounded ponds rather than
+// plain rectangles. Rows must stay outside the 10-29 spawn-clearing band
+// (see buildTileGrid) or that pass would wipe the pond back to grass.
 const WATER_PATCHES = [
   { col: 10, row: 42, w: 6, h: 6 },
   { col: 26, row: 70, w: 4, h: 4 },
+  { col: 58, row: 58, w: 5, h: 5 },
 ];
 
 // How many tiles from each world edge count as "the edge of town" — this
@@ -187,6 +201,23 @@ function buildTileGrid() {
 
   const nearAnyHouse = (c, r) =>
     HOUSES.some((h) => Math.abs(h.col - c) <= 3 && Math.abs(h.row - r) <= 3);
+
+  // Spawn clearing: the HUD nameplate is a screen-fixed overlay sitting
+  // near the top of the very first view (progress 0, camera centered on the
+  // start waypoint at row 30). Several nearby decorative houses' driveways
+  // (and the flavor spur) cross through the rows just above that hub on
+  // their way there, which used to run straight behind the name. The real
+  // route never touches rows above 30 except the shared hub tile itself, so
+  // it's safe to force this whole band back to plain grass. This must run
+  // *before* autotiling/edge-blending below, not after — reverting cells to
+  // grass after those passes already ran leaves the boundary tile holding a
+  // stale autotile choice computed against a neighbor that no longer
+  // exists, which is what produced the hard, unblended cut.
+  for (let r = 10; r <= 29; r++) {
+    for (let c = 0; c < COLS; c++) {
+      grid[r][c] = 'grass';
+    }
+  }
 
   // Route framing: low fence/tree lining along both sides of the *real*
   // path only (not the decorative spurs), at a sparse interval, like a GBA
@@ -277,9 +308,9 @@ function buildTileGrid() {
         continue;
       }
 
-      if (roll < 0.08) {
+      if (roll < 0.14) {
         grid[r][c] = 'tree';
-      } else if (roll < 0.2) {
+      } else if (roll < 0.26) {
         grid[r][c] = 'flower';
       } else {
         const shadeRoll = hash(c - 1000, r - 1000);
@@ -296,6 +327,10 @@ export const TILE_GRID = buildTileGrid();
 // A fenced yard perimeter around each checkpoint building — purely
 // decorative. Leaves a gap in the bottom edge, centered on the building, as
 // a walk-through entrance.
+// `orientation` records which edge of the yard a post sits on ('h' for the
+// top/bottom runs, 'v' for the left/right runs) so the sourced fence sprite
+// — a horizontal post+rail panel — can be rotated 90deg for the vertical
+// runs instead of just being stacked sideways.
 function yardFence(h) {
   const left = h.col - 3;
   const right = h.col + 3;
@@ -304,12 +339,12 @@ function yardFence(h) {
   const posts = [];
 
   for (let c = left; c <= right; c++) {
-    posts.push({ col: c, row: top });
-    if (c !== h.col) posts.push({ col: c, row: bottom });
+    posts.push({ col: c, row: top, orientation: 'h' });
+    if (c !== h.col) posts.push({ col: c, row: bottom, orientation: 'h' });
   }
   for (let r = top + 1; r < bottom; r++) {
-    posts.push({ col: left, row: r });
-    posts.push({ col: right, row: r });
+    posts.push({ col: left, row: r, orientation: 'v' });
+    posts.push({ col: right, row: r, orientation: 'v' });
   }
 
   return posts;
@@ -320,6 +355,7 @@ export const FENCES = HOUSES.filter((h) => h.kind !== 'landmark').flatMap((h) =>
     id: `${h.id}-fence-${i}`,
     col: post.col,
     row: post.row,
+    orientation: post.orientation,
   })),
 );
 
