@@ -106,50 +106,40 @@
   background-image: url('./assets/grass.png');
   filter: hue-rotate(6deg) brightness(1.05);
 }
-.tile-path {
-  background-image: url('./assets/path.png');
+/* Path fill — a real speckled dirt texture (see ASSET_CREDITS.md), not a
+   flat color swatch. Every "interior" path piece (plain fill, straight runs,
+   corners) shares the same seamless tileable crop: a curving dirt trail
+   doesn't need direction-specific line art the way the grass/path *edge*
+   actually does, so one texture covers all of them. */
+.tile-path,
+.tile-path-straight-h,
+.tile-path-straight-v,
+.tile-path-corner-ne,
+.tile-path-corner-es,
+.tile-path-corner-sw,
+.tile-path-corner-wn {
+  background-image: url('./assets/dirt-lpc.png');
 }
 
-/* Path autotiling — straight/corner pieces plus dirt-to-grass edge blends,
-   so the route reads as built from discrete tiles instead of one freeform
-   painted shape. Each piece is authored once and rotated per orientation:
-   path-straight.png as a horizontal (E-W) run, path-corner.png connecting
-   North+East, path-edge.png with the dirt bleed on its top edge. */
-.tile-path-straight-h {
-  background-image: url('./assets/path-straight.png');
-}
-.tile-path-straight-v {
-  background-image: url('./assets/path-straight.png');
-  transform: rotate(90deg);
-}
-.tile-path-corner-ne {
-  background-image: url('./assets/path-corner.png');
-}
-.tile-path-corner-es {
-  background-image: url('./assets/path-corner.png');
-  transform: rotate(90deg);
-}
-.tile-path-corner-sw {
-  background-image: url('./assets/path-corner.png');
-  transform: rotate(180deg);
-}
-.tile-path-corner-wn {
-  background-image: url('./assets/path-corner.png');
-  transform: rotate(270deg);
-}
-.tile-path-edge-n {
-  background-image: url('./assets/path-edge.png');
+/* Grass-to-dirt edge blend: dirt-edge-lpc.png is the real autotile edge
+   piece (dirt fading to transparent on its north side) layered directly over
+   grass.png, same "sprite + grass background" compositing already used for
+   trees/flowers — rotated per side the same way the old flat-color version
+   was, since it's still one piece authored for the north edge. */
+.tile-path-edge-n,
+.tile-path-edge-e,
+.tile-path-edge-s,
+.tile-path-edge-w {
+  background-image: url('./assets/dirt-edge-lpc.png'), url('./assets/grass.png');
+  background-size: cover, cover;
 }
 .tile-path-edge-e {
-  background-image: url('./assets/path-edge.png');
   transform: rotate(90deg);
 }
 .tile-path-edge-s {
-  background-image: url('./assets/path-edge.png');
   transform: rotate(180deg);
 }
 .tile-path-edge-w {
-  background-image: url('./assets/path-edge.png');
   transform: rotate(270deg);
 }
 .tile-water {
@@ -177,15 +167,33 @@
     animation: none;
   }
 }
-.tile-tree,
 .tile-flower {
   background-image: url('./assets/plant.png'), url('./assets/grass.png');
   background-repeat: no-repeat, no-repeat;
   background-position: center, center;
-  background-size: 85%, cover;
-}
-.tile-flower {
   background-size: 55%, cover;
+}
+
+/* --- Trees ---
+   Composed canopy+trunk sprites (see ASSET_CREDITS.md), rendered as overflow
+   overlays anchored to a tile position — like houses/NPCs — rather than a
+   tile-grid background-image. A tree reads as an actual tree (trunk + a
+   canopy taller and wider than one 32px cell) instead of a bush stamped
+   inside a single tile, which a background-image confined to one grid cell
+   could never do at a legible size. Anchored so the trunk's own base (not
+   the image's top-left) sits at the tile position: canopy overflows upward
+   and to both sides from there, same "anchor the ground contact point"
+   convention as .building-foundation. */
+.tree {
+  position: absolute;
+  width: 56px;
+  height: auto;
+  /* left/top (set inline) are the tile's bottom-center — translate pins the
+     sprite's own bottom-center (the trunk's base/shadow) there, so the
+     canopy overflows upward/outward from where the tree actually stands. */
+  transform: translate(-50%, -100%);
+  image-rendering: pixelated;
+  pointer-events: none;
 }
 
 /* --- Lighting cycle ---
@@ -217,6 +225,18 @@
    screen pixels, so edges stay crisp instead of getting subpixel blur —
    non-integer scale factors are the usual cause of "soft" pixel art. */
 
+/* transform/opacity are written directly (no class, no animation, no
+   transition) every scroll tick from App.jsx's walk-to-the-door pose math —
+   a pure function of scroll progress, same as --reveal/--house-reveal
+   elsewhere in this file. Two earlier versions (a value scrubbed by scroll
+   position through a *different* curve, then a fixed-duration CSS
+   @keyframes animation triggered once) both had the same problem from
+   opposite directions: the scrubbed version could be skipped clean over by
+   a single fast wheel notch, and the triggered animation kept playing for
+   a couple of real seconds even after the user had completely stopped
+   scrolling — every bit of scroll should move something, and nothing should
+   move without a bit of scroll, so it has to be a plain function of
+   scroll position with no independent timer at all. */
 .character-wrap {
   position: absolute;
   left: 50%;
@@ -272,19 +292,17 @@
   transform: scale(calc(1 + var(--house-reveal, 0) * 0.15));
 }
 
-/* All buildings share one sourced cottage sprite (src/assets/cottage.png,
-   see ASSET_CREDITS.md) recolored per building via --house-tint, a CSS
-   filter string set inline from HOUSES/DECOR_HOUSES data in App.jsx. It has
-   to be a custom property rather than setting `filter` directly inline:
-   inline styles always win over stylesheet rules, so a plain inline
-   `filter` would silently discard the drop-shadow (and, for real
-   checkpoints, the active-state glow) declared below instead of combining
-   with it. */
+/* Each building is its own distinct sourced sprite (src/assets/houses/,
+   see ASSET_CREDITS.md) rather than one image recolored per building — the
+   pack has 20 genuinely different pixel-art houses, already properly lit,
+   so no brightness/hue-rotate correction is needed. Sized by height (not
+   width) so buildings with different footprints still share a roofline
+   scale instead of some reading as tiny and others oversized. */
 .house-sprite {
-  width: 74px;
-  height: auto;
+  height: 70px;
+  width: auto;
   image-rendering: pixelated;
-  filter: var(--house-tint, none) drop-shadow(0 3px 2px rgba(0, 0, 0, 0.35));
+  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.35));
 }
 
 .decor-house-wrap {
@@ -301,10 +319,10 @@
    the entire signal that these aren't checkpoints: only the 4 real section
    houses ever show a name or light up as you approach. */
 .decor-house {
-  width: 66px;
-  height: auto;
+  height: 60px;
+  width: auto;
   image-rendering: pixelated;
-  filter: var(--house-tint, none) drop-shadow(0 3px 2px rgba(0, 0, 0, 0.3));
+  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.3));
 }
 
 /* Foundation + shadow, shared by real checkpoints and decor buildings alike
@@ -358,16 +376,19 @@
 }
 
 .house.active .house-sprite {
-  filter: var(--house-tint, none) drop-shadow(0 3px 2px rgba(0, 0, 0, 0.35))
-    drop-shadow(0 0 10px var(--house-color)) drop-shadow(0 0 10px var(--house-color));
+  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.35)) drop-shadow(0 0 10px var(--house-color))
+    drop-shadow(0 0 10px var(--house-color));
 }
 
 /* --- Decoration ---
-   Sourced wooden post+rail panel (src/assets/fence-lpc.png, see
-   ASSET_CREDITS.md), one 32x32 tile per yard-perimeter cell. The source
-   panel is authored as a horizontal run, so vertical runs (the yard's
-   left/right edges) reuse the same image rotated 90deg rather than needing
-   a second sprite. */
+   Sourced wooden fence pieces (see ASSET_CREDITS.md), one 32px-tall tile
+   per yard-perimeter cell. Horizontal runs (top/bottom yard edges) use the
+   full post+rail panel (fence-lpc.png). Vertical runs used to reuse that
+   same panel rotated 90deg, but rotating turns "posts spaced along a rail"
+   into a ladder-rung look — instead they use a second crop
+   (fence-post-lpc.png) isolating just one post from the same source panel,
+   narrow and un-rotated, which reads correctly as posts marching down the
+   column regardless of orientation. */
 
 .fence-post {
   position: absolute;
@@ -379,7 +400,14 @@
 }
 
 .fence-post--v {
-  transform: rotate(90deg);
+  width: 12px;
+  height: 32px;
+  /* fence-post-lpc.png is narrower than the 32px grid cell it's placed at
+     (left/top set from the same tileToPx() coords as the horizontal panel)
+     — recenter it within the cell instead of hugging the left edge. */
+  margin-left: 10px;
+  background-image: url('./assets/fence-post-lpc.png');
+  background-size: 100% 100%;
 }
 
 /* --- NPCs ---
@@ -515,6 +543,121 @@
   .critter--y {
     animation: none;
   }
+}
+
+/* --- Section nav HUD ---
+   Top-left counterpart to the minimap: same "fixed HUD that survives every
+   section takeover" role, but interactive — lets a visitor jump straight to
+   a section instead of walking/scrolling the whole route. `.active` mirrors
+   the same activeHouse state that lights up the in-world house label, so
+   the two never disagree about which section you're currently in. */
+
+.section-nav {
+  position: fixed;
+  left: 14px;
+  top: 14px;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--pal-ink);
+  border: 3px solid var(--pal-cream);
+  box-shadow: 3px 3px 0 #000;
+  padding: 10px 8px;
+}
+
+.section-nav-item {
+  background: none;
+  border: none;
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  color: var(--pal-cream);
+  text-align: left;
+  padding: 5px 8px;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 0.2s ease, text-shadow 0.2s ease, color 0.2s ease;
+}
+
+.section-nav-item:hover,
+.section-nav-item:focus-visible {
+  opacity: 0.9;
+}
+
+.section-nav-item.active {
+  opacity: 1;
+  color: var(--section-color, var(--pal-cream));
+  text-shadow: 0 0 6px var(--section-color), 0 0 10px var(--section-color);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .section-nav-item {
+    transition: none;
+  }
+}
+
+/* --- Sky clock HUD ---
+   Top-right fixed HUD, same "survives every section takeover" role as the
+   minimap/section nav. Sun and moon are two plain CSS shapes stacked in the
+   same spot, cross-fading via opacity from --night (written every scroll
+   tick in App.jsx) — no CSS transition, same reasoning as every other
+   reveal/tint value driven straight from scroll progress elsewhere in this
+   file: a timer competing with a value already updated every frame is what
+   used to make things feel disconnected from actual scroll speed. */
+
+.sky-clock {
+  --night: 0;
+  position: fixed;
+  right: 14px;
+  top: 14px;
+  z-index: 30;
+  width: 52px;
+  height: 52px;
+  background: var(--pal-ink);
+  border: 3px solid var(--pal-cream);
+  box-shadow: 3px 3px 0 #000;
+  overflow: hidden;
+}
+
+.sky-clock-sun,
+.sky-clock-moon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 28px;
+  height: 28px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+}
+
+.sky-clock-sun {
+  background: #ffd35c;
+  box-shadow: 0 0 0 4px rgba(255, 211, 92, 0.3), 0 0 10px 2px rgba(255, 211, 92, 0.55);
+  opacity: calc(1 - var(--night));
+}
+
+.sky-clock-moon {
+  background: #d7dee8;
+  box-shadow: 0 0 8px 1px rgba(215, 222, 232, 0.4);
+  opacity: var(--night);
+}
+
+.sky-clock-crater {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(140, 150, 170, 0.55);
+}
+.sky-clock-crater--a {
+  width: 6px;
+  height: 6px;
+  top: 6px;
+  left: 7px;
+}
+.sky-clock-crater--b {
+  width: 4px;
+  height: 4px;
+  top: 15px;
+  left: 15px;
 }
 
 /* --- Minimap HUD ---

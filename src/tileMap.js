@@ -23,15 +23,29 @@ const WAYPOINTS_TILE = [
 // up-right leg puts Projects at a *smaller* row than Intro even though it
 // comes later on the path).
 //
-// All 4 checkpoints share one sourced cottage sprite (see cottage.png credit
-// in ASSET_CREDITS.md) — `tint` is a CSS filter string applied per-building
-// for visual variety, the same trick already used for grass shade variants,
-// rather than maintaining several hand-authored building silhouettes.
+// Each checkpoint gets its own distinct sourced sprite (see house-XX credit
+// in ASSET_CREDITS.md) rather than one recolored building — the pack has 20
+// genuinely different pixel-art houses, so there's no need for the
+// hue-rotate-tint trick used elsewhere for one-off variety.
+//
+// col/row sit 4 tiles horizontal + 2 tiles vertical from this house's own
+// waypoint (see WAYPOINTS_TILE above and waypointIndex below) — close enough
+// that the camera being centered on the waypoint (which is what "reveal"
+// approaching 1 means) puts the actual building right there on screen, not
+// a few hundred pixels off in the distance. An earlier layout had houses
+// 6-7 tiles out, which combined with the reveal shoulder's own width meant
+// the section panel could already be half-visible while the building was
+// still ~200-300px away — not "arrived" in any visual sense. Pixel
+// positions (col*32, row*32), for reference:
+//   intro:    tile (46, 48) -> px (1472, 1536); waypoint (50, 50) -> px (1600, 1600)
+//   projects: tile (64, 35) -> px (2048, 1120); waypoint (60, 37) -> px (1920, 1184)
+//   hobbies:  tile (42, 63) -> px (1344, 2016); waypoint (46, 65) -> px (1472, 2080)
+//   contact:  tile (62, 83) -> px (1984, 2656); waypoint (58, 85) -> px (1856, 2720)
 export const HOUSES = [
-  { id: 'intro', label: 'Intro', col: 44, row: 48, side: 'left', color: '#e0714f', waypointIndex: 1, kind: 'house', tint: 'hue-rotate(-20deg) saturate(1.15)' },
-  { id: 'projects', label: 'Projects', col: 66, row: 35, side: 'right', color: '#5b7a94', waypointIndex: 2, kind: 'lab', tint: 'hue-rotate(150deg) saturate(0.85) brightness(1.05)' },
-  { id: 'hobbies', label: 'Hobbies', col: 39, row: 64, side: 'left', color: '#4da338', waypointIndex: 3, kind: 'shop', tint: 'hue-rotate(70deg) saturate(1.2)' },
-  { id: 'contact', label: 'Contact', col: 64, row: 83, side: 'right', color: '#c9463e', waypointIndex: 4, kind: 'house', tint: 'hue-rotate(-8deg) saturate(1.3) brightness(0.95)' },
+  { id: 'intro', label: 'Intro', col: 46, row: 48, side: 'left', color: '#e0714f', waypointIndex: 1, kind: 'house', sprite: 'house-07' },
+  { id: 'projects', label: 'Projects', col: 64, row: 35, side: 'right', color: '#5b7a94', waypointIndex: 2, kind: 'lab', sprite: 'house-05' },
+  { id: 'hobbies', label: 'Hobbies', col: 42, row: 63, side: 'left', color: '#4da338', waypointIndex: 3, kind: 'shop', sprite: 'house-08' },
+  { id: 'contact', label: 'Contact', col: 62, row: 83, side: 'right', color: '#c9463e', waypointIndex: 4, kind: 'house', sprite: 'house-04' },
 ];
 
 // Purely decorative townsfolk that patrol a short back-and-forth walk near
@@ -56,33 +70,24 @@ export const NPCS = [
 // only buildings that ever show a name pill or light up. Kept off to the
 // west/east sides, clear of the path's central band.
 //
-// Same shared cottage sprite as HOUSES, tinted per named variant so the
-// scattered decor buildings still read as different structures.
-const DECOR_TINTS = {
-  tan: 'saturate(0.75) brightness(1.08)',
-  teal: 'hue-rotate(140deg) saturate(1.05)',
-  plum: 'hue-rotate(-60deg) saturate(1.15) brightness(0.92)',
-  stone: 'grayscale(0.6) brightness(1.1)',
-  shop: 'hue-rotate(40deg) saturate(1.25)',
-  shopBlue: 'hue-rotate(170deg) saturate(1.05)',
-  tower: 'hue-rotate(200deg) saturate(0.7) brightness(1.15)',
-};
-
+// Same sourced house pack as HOUSES — each decor building gets one of the
+// remaining distinct sprites (none reused from the 4 real checkpoints) so
+// the scattered scenery buildings read as different structures too.
 export const DECOR_HOUSES = [
-  { id: 'decor-1', col: 22, row: 33, tint: DECOR_TINTS.tan },
-  { id: 'decor-2', col: 78, row: 40, tint: DECOR_TINTS.shopBlue },
-  { id: 'decor-3', col: 20, row: 58, tint: DECOR_TINTS.plum },
-  { id: 'decor-4', col: 75, row: 62, tint: DECOR_TINTS.tower },
-  { id: 'decor-5', col: 18, row: 78, tint: DECOR_TINTS.teal },
-  { id: 'decor-6', col: 76, row: 82, tint: DECOR_TINTS.shop },
-  { id: 'decor-7', col: 30, row: 95, tint: DECOR_TINTS.stone },
-  { id: 'decor-8', col: 70, row: 100, tint: DECOR_TINTS.plum },
-  { id: 'decor-9', col: 14, row: 16, tint: DECOR_TINTS.tower },
-  { id: 'decor-10', col: 33, row: 12, tint: DECOR_TINTS.teal },
-  { id: 'decor-11', col: 26, row: 42, tint: DECOR_TINTS.shop },
-  { id: 'decor-12', col: 82, row: 55, tint: DECOR_TINTS.plum },
-  { id: 'decor-13', col: 12, row: 68, tint: DECOR_TINTS.shopBlue },
-  { id: 'decor-14', col: 84, row: 90, tint: DECOR_TINTS.teal },
+  { id: 'decor-1', col: 22, row: 33, sprite: 'house-01' },
+  { id: 'decor-2', col: 78, row: 40, sprite: 'house-02' },
+  { id: 'decor-3', col: 20, row: 58, sprite: 'house-03' },
+  { id: 'decor-4', col: 75, row: 62, sprite: 'house-06' },
+  { id: 'decor-5', col: 18, row: 78, sprite: 'house-09' },
+  { id: 'decor-6', col: 76, row: 82, sprite: 'house-10' },
+  { id: 'decor-7', col: 30, row: 95, sprite: 'house-12' },
+  { id: 'decor-8', col: 70, row: 100, sprite: 'house-13' },
+  { id: 'decor-9', col: 14, row: 16, sprite: 'house-14' },
+  { id: 'decor-10', col: 33, row: 12, sprite: 'house-15' },
+  { id: 'decor-11', col: 26, row: 42, sprite: 'house-16' },
+  { id: 'decor-12', col: 82, row: 55, sprite: 'house-17' },
+  { id: 'decor-13', col: 12, row: 68, sprite: 'house-18' },
+  { id: 'decor-14', col: 84, row: 90, sprite: 'house-19' },
 ];
 
 // A flavor side street with no destination building, just so the town
@@ -202,6 +207,20 @@ function buildTileGrid() {
   const nearAnyHouse = (c, r) =>
     HOUSES.some((h) => Math.abs(h.col - c) <= 3 && Math.abs(h.row - r) <= 3);
 
+  // Trees are composed multi-tile sprites (canopy + trunk, see TREES below)
+  // rendered as overlays like houses/NPCs, not a tile-grid cell type — a
+  // single 32x32 background-image can't read as an actual tree at any
+  // convincing size. `treeReserved` tracks which grid cells a tree has
+  // already claimed so the later interior scatter pass (which also rolls
+  // trees) doesn't double-claim the same cell.
+  const trees = [];
+  const treeReserved = new Set();
+  const pickTreeVariant = (c, r) => (hash(c + 500, r + 500) < 0.5 ? 'round' : 'pine');
+  const addTree = (c, r) => {
+    trees.push({ col: c, row: r, variant: pickTreeVariant(c, r) });
+    treeReserved.add(`${c},${r}`);
+  };
+
   // Spawn clearing: the HUD nameplate is a screen-fixed overlay sitting
   // near the top of the very first view (progress 0, camera centered on the
   // start waypoint at row 30). Several nearby decorative houses' driveways
@@ -243,7 +262,8 @@ function buildTileGrid() {
         if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return;
         if (grid[r][c] !== 'grass') return;
         if (nearAnyHouse(c, r)) return;
-        grid[r][c] = hash(c, r) < 0.5 ? 'tree' : 'flower';
+        if (hash(c, r) < 0.5) addTree(c, r);
+        else grid[r][c] = 'flower';
       });
     }
   }
@@ -291,6 +311,23 @@ function buildTileGrid() {
     }
   }
 
+  // A 2-tile-radius buffer around any path cell where the *random* scatter
+  // below won't place a tree — the character is always screen-center while
+  // the path scrolls beneath it, so a tree landing right next to the route
+  // (previously possible with zero distance awareness — only the deliberate
+  // route-framing lining above, fixed at a 3-tile offset, was ever spaced
+  // out) made the character constantly look like it was standing inside a
+  // pine tree. Flowers/grass shading are unaffected, only trees are held
+  // back, so the corridor still reads as decorated, just not crowded.
+  const nearPath = (c, r) => {
+    for (let dr = -2; dr <= 2; dr++) {
+      for (let dc = -2; dc <= 2; dc++) {
+        if (pathAt(c + dc, r + dr)) return true;
+      }
+    }
+    return false;
+  };
+
   // Scatter trees/flowers over any tile that's still plain grass, keeping a
   // clear buffer around houses so decoration doesn't overlap them. Plain
   // grass tiles also get one of three subtle shade variants here so the
@@ -299,17 +336,18 @@ function buildTileGrid() {
     for (let c = 0; c < COLS; c++) {
       if (grid[r][c] !== 'grass') continue;
       if (nearAnyHouse(c, r)) continue;
+      if (treeReserved.has(`${c},${r}`)) continue;
 
       const onBorder = c < BORDER_MARGIN || c >= COLS - BORDER_MARGIN || r < BORDER_MARGIN || r >= ROWS - BORDER_MARGIN;
       const roll = hash(c, r);
 
       if (onBorder) {
-        if (roll < 0.55) grid[r][c] = 'tree';
+        if (roll < 0.55) addTree(c, r);
         continue;
       }
 
-      if (roll < 0.14) {
-        grid[r][c] = 'tree';
+      if (roll < 0.14 && !nearPath(c, r)) {
+        addTree(c, r);
       } else if (roll < 0.26) {
         grid[r][c] = 'flower';
       } else {
@@ -319,10 +357,12 @@ function buildTileGrid() {
     }
   }
 
-  return grid;
+  return { grid, trees };
 }
 
-export const TILE_GRID = buildTileGrid();
+const built = buildTileGrid();
+export const TILE_GRID = built.grid;
+export const TREES = built.trees;
 
 // A fenced yard perimeter around each checkpoint building — purely
 // decorative. Leaves a gap in the bottom edge, centered on the building, as
@@ -423,6 +463,30 @@ export function getHouseReveal(progress, waypointFraction, { reducedMotion = fal
   return t * t * (3 - 2 * t); // smoothstep
 }
 
+// Character walk-to-the-door amount (0-1), a pure function of scroll
+// progress like getHouseReveal above — no independent timer, no
+// requestAnimationFrame loop, nothing that plays on its own once triggered.
+// An earlier version played a fixed-duration CSS animation once a threshold
+// was crossed, so the character kept walking for a full ~2s even after the
+// user had completely stopped scrolling — every other reveal-driven visual
+// in this file is tied straight to scroll position, and this one needs to
+// be too: every bit of scroll should move something, and nothing should
+// move without a bit of scroll. Reuses almost all of HOUSE_REVEAL_SHOULDER
+// (linear, not smoothstepped — smoothstep flattens near both ends, which
+// compresses most of the visible change into a sliver of the actual scroll
+// distance) so there's still a wide, clearly visible band to walk through.
+const CHARACTER_WALK_FRACTION = 0.92;
+
+export function getCharacterWalkT(progress, waypointFraction, { reducedMotion = false } = {}) {
+  const d = Math.abs(progress - waypointFraction);
+  if (reducedMotion) return d <= HOUSE_OPEN_PLATEAU ? 1 : 0;
+  if (d <= HOUSE_OPEN_PLATEAU) return 1;
+  const s = d - HOUSE_OPEN_PLATEAU;
+  const band = HOUSE_REVEAL_SHOULDER * CHARACTER_WALK_FRACTION;
+  if (s >= band) return 0;
+  return 1 - s / band; // linear — constant rate across the whole band
+}
+
 // Adjacent houses' reveal bands must never overlap, or two panels could be
 // simultaneously non-zero — verified here at module load (dev only) rather
 // than just in a comment, so it can't silently regress if a waypoint moves.
@@ -466,4 +530,28 @@ export function getLightingTint(progress) {
   }
   const last = LIGHT_STOPS[LIGHT_STOPS.length - 1].rgba;
   return `rgba(${last[0]}, ${last[1]}, ${last[2]}, ${last[3]})`;
+}
+
+// Same dawn/day/dusk/night timing as LIGHT_STOPS above, collapsed to a plain
+// 0 (full day, sun out) - 1 (full night, moon out) scale for the sun/moon HUD
+// — kept separate from LIGHT_STOPS since that one is about tint color/alpha,
+// not a clean day/night amount (dawn's alpha is actually higher than day's).
+const SKY_STOPS = [
+  { at: 0, night: 0 },
+  { at: 0.35, night: 0 },
+  { at: 0.7, night: 1 },
+  { at: 1, night: 1 },
+];
+
+export function getNightAmount(progress) {
+  const p = Math.min(1, Math.max(0, progress));
+  for (let i = 0; i < SKY_STOPS.length - 1; i++) {
+    const a = SKY_STOPS[i];
+    const b = SKY_STOPS[i + 1];
+    if (p >= a.at && p <= b.at) {
+      const t = b.at === a.at ? 0 : (p - a.at) / (b.at - a.at);
+      return a.night + (b.night - a.night) * t;
+    }
+  }
+  return SKY_STOPS[SKY_STOPS.length - 1].night;
 }
