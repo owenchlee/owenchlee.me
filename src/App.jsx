@@ -12,22 +12,46 @@ import {
   FENCES,
   NPCS,
   CRITTERS,
+  TREES,
   WAYPOINTS_PX,
   WAYPOINT_FRACTIONS,
   TOTAL_PATH_LENGTH,
   tileToPx,
   getWorldPosition,
   getHouseReveal,
+  getCharacterWalkT,
   getLightingTint,
+  getNightAmount,
 } from './tileMap';
 import { IntroPanel, ProjectsPanel, HobbiesPanel, ContactPanel } from './sections';
 import Minimap from './Minimap';
-import cottageSprite from './assets/cottage.png';
+import SectionNav from './SectionNav';
+import SkyClock from './SkyClock';
+import house01 from './assets/houses/house-01.png';
+import house02 from './assets/houses/house-02.png';
+import house03 from './assets/houses/house-03.png';
+import house04 from './assets/houses/house-04.png';
+import house05 from './assets/houses/house-05.png';
+import house06 from './assets/houses/house-06.png';
+import house07 from './assets/houses/house-07.png';
+import house08 from './assets/houses/house-08.png';
+import house09 from './assets/houses/house-09.png';
+import house10 from './assets/houses/house-10.png';
+import house12 from './assets/houses/house-12.png';
+import house13 from './assets/houses/house-13.png';
+import house14 from './assets/houses/house-14.png';
+import house15 from './assets/houses/house-15.png';
+import house16 from './assets/houses/house-16.png';
+import house17 from './assets/houses/house-17.png';
+import house18 from './assets/houses/house-18.png';
+import house19 from './assets/houses/house-19.png';
 import npcASprite from './assets/npc-a.png';
 import npcBSprite from './assets/npc-b.png';
 import npcCSprite from './assets/npc-c.png';
 import critterRatSprite from './assets/critter-rat.png';
 import critterBirdSprite from './assets/critter-bird.png';
+import treeRoundSprite from './assets/tree-round-lpc.png';
+import treePineSprite from './assets/tree-pine-lpc.png';
 import charDownIdle from './assets/char/char-down-idle.png';
 import charDownWalkA from './assets/char/char-down-walk-a.png';
 import charDownWalkB from './assets/char/char-down-walk-b.png';
@@ -46,10 +70,44 @@ const CHAR_SPRITES = {
 
 const NPC_SPRITES = { a: npcASprite, b: npcBSprite, c: npcCSprite };
 const CRITTER_SPRITES = { rat: critterRatSprite, bird: critterBirdSprite };
+const TREE_SPRITES = { round: treeRoundSprite, pine: treePineSprite };
+const HOUSE_SPRITES = {
+  'house-01': house01,
+  'house-02': house02,
+  'house-03': house03,
+  'house-04': house04,
+  'house-05': house05,
+  'house-06': house06,
+  'house-07': house07,
+  'house-08': house08,
+  'house-09': house09,
+  'house-10': house10,
+  'house-12': house12,
+  'house-13': house13,
+  'house-14': house14,
+  'house-15': house15,
+  'house-16': house16,
+  'house-17': house17,
+  'house-18': house18,
+  'house-19': house19,
+};
 
 // Scroll distance scales with the actual path length so pacing stays
 // consistent if the path shape changes.
-const TRACK_HEIGHT = Math.round(TOTAL_PATH_LENGTH * 1.6);
+const TRACK_HEIGHT = Math.round(TOTAL_PATH_LENGTH * 2.4);
+
+// Fraction of getCharacterWalkT's 0-1 range spent on the first leg (path to
+// the yard's fence gate) before switching to the second leg (gate to the
+// door) — see the pose math in the scroll effect below. Purely a scroll-
+// driven split, not a timed one: at t=WALK_LEG1_END the character is exactly
+// at the gate, however fast or slow the user got there.
+const WALK_LEG1_END = 0.55;
+// Within the second leg, the fraction of *that* leg's own progress where the
+// character starts shrinking/fading — kept late so most of the walk plays at
+// full size (reads as "walk to the door") and only the last bit at the door
+// itself shrinks away (reads as "step inside"), instead of shrinking
+// continuously across the whole distance.
+const WALK_SHRINK_START = 0.7;
 
 function computeProgress(trackEl) {
   const rect = trackEl.getBoundingClientRect();
@@ -74,8 +132,17 @@ function App() {
   const panelRefs = useRef({});
   const lastRevealRef = useRef({});
   const lightingRef = useRef(null);
+  const skyClockRef = useRef(null);
+  const characterWrapRef = useRef(null);
   const reducedMotionRef = useRef(false);
   const [activeHouse, setActiveHouse] = useState(null);
+
+  // Which way the character should face to cover a given (dx, dy) leg —
+  // side + mirrored if that leg is mostly horizontal, else up/down.
+  function directionFromDelta(dx, dy) {
+    if (Math.abs(dx) > Math.abs(dy)) return { direction: 'side', mirror: dx < 0 };
+    return { direction: dy < 0 ? 'up' : 'down', mirror: false };
+  }
 
   // Read once + subscribe: everything that consumes this ref lives inside a
   // scroll-driven update() loop, so a plain mutable ref (not state) avoids
@@ -214,9 +281,23 @@ function App() {
       const reducedMotion = reducedMotionRef.current;
 
       let fullyOpenId = null;
+      let maxWalkT = 0;
+      let walkGate = null;
+      let walkDoor = null;
       HOUSES.forEach((h) => {
-        const reveal = getHouseReveal(progress, WAYPOINT_FRACTIONS[h.waypointIndex], { reducedMotion });
+        const waypointFraction = WAYPOINT_FRACTIONS[h.waypointIndex];
+        const reveal = getHouseReveal(progress, waypointFraction, { reducedMotion });
         if (reveal >= 1) fullyOpenId = h.id;
+
+        const walkT = getCharacterWalkT(progress, waypointFraction, { reducedMotion });
+        if (walkT > maxWalkT) {
+          maxWalkT = walkT;
+          const waypointPx = WAYPOINTS_PX[h.waypointIndex];
+          const gatePx = tileToPx(h.col, h.row + 3);
+          const doorPx = tileToPx(h.col, h.row + 2);
+          walkGate = { x: gatePx.x - waypointPx.x, y: gatePx.y - waypointPx.y };
+          walkDoor = { x: doorPx.x - waypointPx.x, y: doorPx.y - waypointPx.y };
+        }
 
         if (lastRevealRef.current[h.id] === reveal) return;
         lastRevealRef.current[h.id] = reveal;
@@ -227,11 +308,49 @@ function App() {
 
       setActiveHouse((current) => (current === fullyOpenId ? current : fullyOpenId));
 
+      // Character walk-to-the-door pose: a pure function of maxWalkT (itself
+      // a pure function of scroll progress — see getCharacterWalkT), two legs
+      // — path -> gate -> door, see WALK_LEG1_END — recomputed from scratch
+      // every scroll tick. Nothing here is a timer or an animation that plays
+      // once triggered: every bit of scroll moves the character by exactly
+      // that much, and it stops the instant scrolling does. Scrolling back
+      // out runs the same math with a shrinking maxWalkT, so the walk-out is
+      // the walk-in in reverse for free — same principle as every other
+      // reveal-driven visual in this file.
+      let walkFacing = null;
+      if (maxWalkT > 0 && walkGate && walkDoor) {
+        let posX;
+        let posY;
+        let doorLegT = 0;
+        if (maxWalkT <= WALK_LEG1_END) {
+          const legT = maxWalkT / WALK_LEG1_END;
+          posX = walkGate.x * legT;
+          posY = walkGate.y * legT;
+          walkFacing = directionFromDelta(walkGate.x, walkGate.y);
+        } else {
+          doorLegT = (maxWalkT - WALK_LEG1_END) / (1 - WALK_LEG1_END);
+          posX = walkGate.x + (walkDoor.x - walkGate.x) * doorLegT;
+          posY = walkGate.y + (walkDoor.y - walkGate.y) * doorLegT;
+          walkFacing = directionFromDelta(walkDoor.x - walkGate.x, walkDoor.y - walkGate.y);
+        }
+        const shrinkT = doorLegT < WALK_SHRINK_START ? 0 : (doorLegT - WALK_SHRINK_START) / (1 - WALK_SHRINK_START);
+        const scale = 1 - shrinkT * 0.7;
+        if (characterWrapRef.current) {
+          characterWrapRef.current.style.transform = `translate(calc(-50% + ${posX}px), calc(-50% + ${posY}px)) scale(${scale})`;
+          characterWrapRef.current.style.opacity = String(1 - shrinkT);
+        }
+      } else if (characterWrapRef.current) {
+        characterWrapRef.current.style.transform = 'translate(-50%, -50%)';
+        characterWrapRef.current.style.opacity = '1';
+      }
+
       const { x, y } = getWorldPosition(progress);
 
       if (lightingRef.current) {
         lightingRef.current.style.backgroundColor = getLightingTint(progress);
       }
+
+      skyClockRef.current?.style.setProperty('--night', getNightAmount(progress));
 
       if (minimapDotRef.current) {
         minimapDotRef.current.setAttribute('cx', x);
@@ -245,6 +364,9 @@ function App() {
       // human walking cadence (~140ms) rather than flickering at scroll
       // event rate. When scrolling stops, no more scroll events fire, so a
       // short timeout below falls the sprite back to its idle frame.
+      // walkFacing (computed above) overrides the normal path-direction
+      // facing while approaching/leaving a house, so the sprite faces the
+      // gate/door instead of whichever way the path itself happens to bend.
       const prev = prevPosRef.current;
       if (prev && characterImgRef.current) {
         const dx = x - prev.x;
@@ -252,7 +374,10 @@ function App() {
         if (Math.abs(dx) > 0.02 || Math.abs(dy) > 0.02) {
           let direction;
           let mirror = false;
-          if (Math.abs(dy) >= Math.abs(dx)) {
+          if (walkFacing) {
+            direction = walkFacing.direction;
+            mirror = walkFacing.mirror;
+          } else if (Math.abs(dy) >= Math.abs(dx)) {
             direction = dy >= 0 ? 'down' : 'up';
           } else {
             direction = 'side';
@@ -295,6 +420,21 @@ function App() {
       if (idleTimeoutRef.current) clearTimeout(idleTimeoutRef.current);
     };
   }, []);
+
+  // Lets both the corner nav (click a section) and any other future entry
+  // point jump straight to a waypoint without walking the route — computed
+  // from the track's live position rather than a cached one so it stays
+  // correct regardless of where the page is currently scrolled from.
+  function jumpToProgress(fraction) {
+    const track = trackRef.current;
+    if (!track) return;
+    const rect = track.getBoundingClientRect();
+    const scrollable = rect.height - window.innerHeight;
+    if (scrollable <= 0) return;
+    const trackTopInDocument = rect.top + window.scrollY;
+    const targetY = trackTopInDocument + fraction * scrollable;
+    window.scrollTo({ top: targetY, behavior: reducedMotionRef.current ? 'auto' : 'smooth' });
+  }
 
   return (
     <>
@@ -345,12 +485,7 @@ function App() {
                 <div key={house.id} className="decor-house-wrap" style={{ left: x, top: y }}>
                   <div className="building-shadow" />
                   <div className="building-foundation" />
-                  <img
-                    src={cottageSprite}
-                    className="decor-house"
-                    style={{ '--house-tint': house.tint }}
-                    alt=""
-                  />
+                  <img src={HOUSE_SPRITES[house.sprite]} className="decor-house" alt="" />
                 </div>
               );
             })}
@@ -370,14 +505,22 @@ function App() {
                 >
                   <div className="building-shadow" />
                   <div className="building-foundation" />
-                  <img
-                    src={cottageSprite}
-                    className="house-sprite"
-                    style={{ '--house-tint': house.tint }}
-                    alt=""
-                  />
+                  <img src={HOUSE_SPRITES[house.sprite]} className="house-sprite" alt="" />
                   <span className="house-label">{house.label}</span>
                 </div>
+              );
+            })}
+
+            {TREES.map((tree, i) => {
+              const { x, y } = tileToPx(tree.col, tree.row);
+              return (
+                <img
+                  key={`tree-${i}`}
+                  src={TREE_SPRITES[tree.variant]}
+                  className="tree"
+                  style={{ left: x + TILE_SIZE / 2, top: y + TILE_SIZE }}
+                  alt=""
+                />
               );
             })}
 
@@ -421,7 +564,7 @@ function App() {
 
           <div className="lighting-overlay" ref={lightingRef} aria-hidden="true" />
 
-          <div className="character-wrap">
+          <div className="character-wrap" ref={characterWrapRef}>
             <div className="character-shadow" />
             <img
               ref={characterImgRef}
@@ -459,6 +602,8 @@ function App() {
         </div>
       </div>
 
+      <SectionNav activeId={activeHouse} onJump={jumpToProgress} />
+      <SkyClock ref={skyClockRef} />
       <Minimap ref={minimapDotRef} />
     </>
   );
