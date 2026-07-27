@@ -63,8 +63,7 @@ export const CONTACT = {
   message: "Thanks for stopping by! Here's how to reach me:",
   links: [
     { label: 'Email', href: 'mailto:itsowenchlee@gmail.com' },
-    // TODO: add your GitHub profile URL here when ready.
-    { label: 'GitHub', href: '#' },
+    { label: 'GitHub', href: 'https://github.com/owenchlee' },
     { label: 'LinkedIn', href: 'https://www.linkedin.com/in/owenchlee/' },
   ],
 };
