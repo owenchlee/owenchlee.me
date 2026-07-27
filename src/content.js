@@ -23,6 +23,13 @@ export const PROJECTS = [
     desc: 'A puzzle-platformer built in GameMaker with a team of 3. I led level design, art direction, and the final pitch — taking 1st place out of 115+ competitors at the Daydream Hackathon.',
   },
   {
+    name: 'FoodFindr',
+    date: '2025',
+    color: '#e8877a',
+    image: null,
+    desc: 'A map-based restaurant finder that recommends one specific spot and dish for your budget, cuisine, and distance. Built with JavaScript, Node.js, Express, SQLite, and the Google Maps API.',
+  },
+  {
     name: 'Gesture Control App',
     date: '2025',
     color: '#26a8b1',
