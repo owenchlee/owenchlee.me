@@ -53,10 +53,13 @@ export const PROJECTS = [
 ];
 
 export const HOBBIES = [
-  { label: 'Basketball', color: '#f0a94e', image: null, desc: 'YRAA finalist — I play whenever I get the chance and love the pace and teamwork of the game.' },
-  { label: 'Game Development', color: '#a67a54', image: null, desc: 'Designing and building games in GameMaker, from level design to art direction — including a 1st-place hackathon win.' },
-  { label: 'Tinkering & Hardware', color: '#26a8b1', image: null, desc: 'Building with Arduino and Micro:bit, wiring up circuits, and turning ideas into physical projects.' },
-  { label: 'Art & Design', color: '#e8b4bc', image: null, desc: 'Creating pixel art, posters, and visual content — and helping run the Markham Teen Art Council.' },
+  { label: 'Video Games', color: '#a67a54', image: null, desc: 'Playing and studying games of all kinds — it\'s a big part of why I got into building them too.' },
+  { label: 'Working Out', color: '#f0a94e', image: null, desc: 'Hitting the gym to stay strong and clear my head.' },
+  { label: 'Running', color: '#4da338', image: null, desc: 'Getting outside for a run whenever I can — a good way to reset.' },
+  { label: 'Board Games', color: '#c9803f', image: null, desc: 'Gathering friends for a good strategy or party game.' },
+  { label: 'Singing', color: '#b79fd1', image: null, desc: 'Singing for fun and letting loose.' },
+  { label: 'Listening to Music', color: '#8ea9c9', image: null, desc: 'Always have something playing — music is the soundtrack to everything I do.' },
+  { label: 'Cooking', color: '#e8877a', image: null, desc: 'Experimenting in the kitchen and cooking up something new.' },
 ];
 
 export const CONTACT = {
