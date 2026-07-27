@@ -53,6 +53,7 @@ export const PROJECTS = [
 ];
 
 export const HOBBIES = [
+  { label: 'Making Tech Projects', color: '#26a8b1', image: null, desc: 'Building apps, games, and hardware for fun — from computer-vision tools to Arduino gadgets. It\'s my favorite way to learn.' },
   { label: 'Video Games', color: '#a67a54', image: null, desc: 'Playing and studying games of all kinds — it\'s a big part of why I got into building them too.' },
   { label: 'Working Out', color: '#f0a94e', image: null, desc: 'Hitting the gym to stay strong and clear my head.' },
   { label: 'Running', color: '#4da338', image: null, desc: 'Getting outside for a run whenever I can — a good way to reset.' },
