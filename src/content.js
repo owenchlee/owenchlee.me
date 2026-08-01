@@ -2,12 +2,16 @@
 // renders whatever's in these objects/arrays. Edit this file to change what
 // the site says; no JSX or layout code to touch.
 //
-// `image` (on PROJECTS/HOBBIES entries) is optional: point it at a real
+// `image` (on PROJECTS and HOBBIES entries) is optional: point it at a real
 // image — either `import myPhoto from './assets/projects/alpha.png'` up top
-// and reference `myPhoto` here, or a plain string path under `public/` — and
-// the card shows it. Leave it `null` and the card falls back to a colored
-// placeholder box instead, so sections can be filled in one at a time
+// and reference `myPhoto` here, or a plain string path under `public/` —
+// and the card/shelf item shows it. Leave it `null` and it falls back to a
+// colored placeholder instead, so entries can be filled in one at a time
 // without anything looking broken in the meantime.
+
+import foodfindrDemo from './assets/projects/foodfindr-demo.gif';
+import gestureBreakoutDemo from './assets/projects/gesture-breakout-demo.gif';
+import blobbyFitDemo from './assets/projects/blobby-fit-demo.gif';
 
 export const INTRO = {
   name: 'Owen Lee',
@@ -16,35 +20,65 @@ export const INTRO = {
 
 export const PROJECTS = [
   {
-    name: 'Project Alpha',
-    date: 'Mar 2026',
+    name: 'Personal Karaoke',
+    date: 'Jul 2026',
     color: '#26a8b1',
     image: null,
-    desc: 'One or two sentences on what this project is, what problem it solves, and the stack behind it.',
+    link: 'https://github.com/owenchlee/Personal-Karaoke',
+    desc: 'A self-hosted, Rock Band-style karaoke game. Point it at any song and it separates vocals from instrumentals with Demucs, extracts a reference melody and lyrics, then scores your live mic pitch against a scrolling note highway.',
   },
   {
-    name: 'Project Beta',
-    date: 'Jan 2026',
+    name: 'FoodFindr',
+    date: 'Jul 2026',
+    color: '#e8877a',
+    image: foodfindrDemo,
+    link: 'https://github.com/owenchlee/FoodFindr',
+    live: 'https://foodfindr.tech',
+    desc: "A map-based restaurant recommender that has Claude read real Google reviews to pick one specific spot and dish for your budget, cuisine, and group size — with visit logging, streaks, and a friends leaderboard. Live at foodfindr.tech.",
+  },
+  {
+    name: 'Beat the Bulk',
+    date: 'Apr 2026',
+    color: '#f0a94e',
+    image: blobbyFitDemo,
+    link: 'https://github.com/owenchlee/Beat-the-Bulk',
+    desc: '"Blobby Fit" — a playful browser workout tracker with a mascot blob that reacts to your progress, built to make logging workouts feel less like a chore.',
+  },
+  {
+    name: 'Gesture Breakout',
+    date: 'Apr 2026',
     color: '#4da338',
-    image: null,
-    desc: 'Placeholder case-study blurb — swap in a real screenshot and a short write-up of your role and impact.',
+    image: gestureBreakoutDemo,
+    link: 'https://github.com/owenchlee/ThumbGame',
+    desc: 'A browser Breakout clone controlled entirely by hand movement in front of a webcam — no mouse or keyboard, just gestures.',
   },
   {
-    name: 'Project Gamma',
-    date: 'Nov 2025',
+    name: 'Thumb Detector',
+    date: 'Apr 2026',
+    color: '#8ea9c9',
+    image: null,
+    link: 'https://github.com/owenchlee/Thumb-Detector',
+    desc: 'Real-time hand-tracking with OpenCV and MediaPipe that maps thumb and finger gestures to keyboard and mouse input, letting you drive your computer with just your hand.',
+  },
+  {
+    name: 'Vehicle Simulation',
+    date: 'Oct 2025',
     color: '#a67a54',
     image: null,
-    desc: 'A third placeholder entry. Each card is meant to hold one image and a few lines of context.',
+    link: 'https://github.com/owenchlee/Vehicle-Simulation',
+    desc: 'A Java/Greenfoot firetruck simulation built over a month of iteration: spreading fire physics, lane-based traffic, collisions, sound effects, and explosion animations.',
   },
 ];
 
+// Each entry renders as an item sitting on the shelf in HobbiesPanel —
+// `color` is the fallback swatch shown until `image` is set, `label` is the
+// nameplate under it. They're auto-chunked into shelf rows (see
+// HOBBY_COLS/HOBBY_ROWS in sections.jsx), and the shelf always shows at
+// least HOBBY_ROWS rows — so just add more entries here to fill in the
+// empty slots over time; no layout code to touch.
 export const HOBBIES = [
-  { label: 'Photography', color: '#e8b4bc', image: null, desc: 'Placeholder blurb about this hobby — swap in a real photo and a line or two.' },
-  { label: 'Basketball', color: '#f0a94e', image: null, desc: 'Placeholder blurb about this hobby — swap in a real photo and a line or two.' },
-  { label: 'Cooking', color: '#e8877a', image: null, desc: 'Placeholder blurb about this hobby — swap in a real photo and a line or two.' },
-  { label: 'Reading', color: '#8ea9c9', image: null, desc: 'Placeholder blurb about this hobby — swap in a real photo and a line or two.' },
-  { label: 'Music', color: '#b79fd1', image: null, desc: 'Placeholder blurb about this hobby — swap in a real photo and a line or two.' },
-  { label: 'Hiking', color: '#8fbf8a', image: null, desc: 'Placeholder blurb about this hobby — swap in a real photo and a line or two.' },
+  { label: 'Basketball', color: '#f0a94e', image: null, desc: "Pickup ball whenever I can get a run going — nothing like a fast break and a clean jump shot to clear my head." },
+  { label: 'Gaming', color: '#5b7a94', image: null, desc: "Everything from competitive shooters to cozy indie titles. It's my go-to way to unwind and hang out with friends online." },
 ];
 
 export const CONTACT = {

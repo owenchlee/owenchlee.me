@@ -746,6 +746,16 @@
   pointer-events: none;
   clip-path: circle(calc(var(--reveal) * 120%) at 50% 50%);
   overflow: auto;
+}
+
+/* Sizes to content, not just the viewport — .section-floor lives in here as
+   an absolute inset:0 child, so when a panel's content is taller than one
+   screen (e.g. a 6-card project grid), the floor grows to cover the whole
+   scrollable area instead of being clipped to the first viewport-height of it. */
+.section-panel-inner {
+  position: relative;
+  min-height: 100%;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -926,6 +936,15 @@
   font-size: 18px;
 }
 
+.project-meta h3 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.project-meta h3 a:hover {
+  text-decoration: underline;
+}
+
 .project-date {
   font-family: var(--font-terminal);
   color: var(--pal-ink-soft);
@@ -940,9 +959,241 @@
   line-height: 1.6;
 }
 
-/* Hobbies: same card system as Projects (.projects-content/.projects-grid/
-   .project-card), just on a grass floor instead of an interior one — same
-   visual language, different content, not a separate design. */
+/* Hobbies: a shelf that fills the whole room, not a card grid. Each hobby is
+   an item sitting on a shelf slot (see HOBBIES in content.js, chunked into a
+   fixed HOBBY_COLS x HOBBY_ROWS grid in sections.jsx) — unfilled slots stay
+   empty shelf space rather than shrinking the grid, so there's always room
+   to fill in more later. hobbies-content is deliberately position:absolute
+   inset:0 (like .section-floor) instead of a normal in-flow child: that's
+   what makes it size to exactly one screen rather than to whatever height
+   its own content asks for, which is what "fills the whole page" needs here
+   — the opposite of the projects-content growth .section-panel-inner exists
+   to support. Clicking an item grows .hobby-detail's flex-basis from 0;
+   because .bookshelf is flex:1 (not a fixed width), it reflows to fill
+   whatever's left every frame of that transition — no separate transform/
+   width to keep in sync, so the shelf can never end up sliding a mismatched
+   distance and clipping mid-shelf the way a hardcoded translateX would. */
+
+.hobbies-content {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 28px 40px 36px;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.bookshelf-stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  width: 100%;
+  overflow: hidden;
+}
+
+.bookshelf {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  /* floor-wood.png is the same tileable plank texture used for the Contact
+     panel floor (.section-floor--wood) — reused here at a much smaller tile
+     size so a wooden shelf reads as wood grain rather than as room flooring.
+     The gradient layers on top as a plain tint (no second image request) to
+     keep the existing top-lit/bottom-shaded depth cue. */
+  background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0.28) 100%),
+    url('./assets/floor-wood.png');
+  background-size: auto, 28px 28px;
+  background-repeat: repeat, repeat;
+  image-rendering: pixelated;
+  border: 4px solid var(--pal-ink);
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.35);
+  padding: 20px 16px 0;
+}
+
+.shelf {
+  flex: 1 1 0;
+  display: flex;
+  align-items: stretch;
+  min-height: 0;
+  padding-bottom: 14px;
+  border-bottom: 8px solid var(--pal-ink);
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.3);
+}
+
+.hobby-slot {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  background: none;
+  border: none;
+  padding: 6px 2px;
+  cursor: pointer;
+}
+
+.hobby-slot--empty {
+  cursor: default;
+}
+
+.hobby-item-thumb {
+  width: min(64px, 60%);
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid var(--pal-ink);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  image-rendering: pixelated;
+  transition: transform 0.15s ease;
+}
+
+.hobby-item-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hobby-item-fallback {
+  font-family: var(--font-pixel);
+  font-size: 22px;
+  color: var(--pal-cream);
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.4);
+}
+
+.hobby-item-label {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  color: var(--pal-cream);
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.4);
+  text-align: center;
+  line-height: 1.3;
+}
+
+.hobby-slot:hover .hobby-item-thumb,
+.hobby-slot.is-selected .hobby-item-thumb {
+  transform: translateY(-6px);
+}
+
+.hobby-slot.is-selected .hobby-item-thumb {
+  box-shadow: 3px 9px 0 rgba(0, 0, 0, 0.25);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hobby-item-thumb {
+    transition: none;
+  }
+}
+
+.hobby-detail {
+  flex: 0 0 0;
+  width: 0;
+  margin-left: 0;
+  align-self: stretch;
+  overflow: hidden;
+  transition: flex-basis 0.45s ease, width 0.45s ease, margin-left 0.45s ease;
+}
+
+.hobby-detail.is-open {
+  flex: 0 0 360px;
+  width: 360px;
+  margin-left: 24px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hobby-detail {
+    transition: none;
+  }
+}
+
+.hobby-detail-inner {
+  position: relative;
+  width: 360px;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+  background: var(--pal-cream);
+  border: 4px solid var(--pal-ink);
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.35);
+  padding: 28px 24px;
+  opacity: 0;
+  transition: opacity 0.3s ease 0.15s;
+}
+
+.hobby-detail.is-open .hobby-detail-inner {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hobby-detail-inner {
+    transition: none;
+  }
+}
+
+.hobby-detail h3 {
+  margin: 0;
+  font-family: var(--font-pixel);
+  font-size: 16px;
+}
+
+.hobby-detail p {
+  margin: 0;
+  color: var(--pal-ink-soft);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.hobby-detail-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--pal-ink);
+  background: var(--pal-cream);
+  color: var(--pal-ink);
+  font-family: var(--font-pixel);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .hobbies-content {
+    padding: 20px 16px 24px;
+  }
+
+  .bookshelf-stage {
+    flex-direction: column;
+  }
+
+  .hobby-detail {
+    width: 100%;
+    flex-basis: 0;
+    margin-left: 0;
+  }
+
+  .hobby-detail.is-open {
+    flex-basis: auto;
+    width: 100%;
+    min-height: 200px;
+    margin-top: 20px;
+  }
+
+  .hobby-detail-inner {
+    width: 100%;
+  }
+}
 
 /* Contact: the retro dialogue-box scene, in the classic cream/ink pairing
    that the rest of the palette is built from — no more a mismatched dark
