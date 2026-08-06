@@ -14,8 +14,16 @@ const WAYPOINTS_TILE = [
   { col: 60, row: 37 }, // up-right -> Projects
   { col: 46, row: 65 }, // down-left -> Hobbies
   { col: 58, row: 85 }, // down-right -> Contact
-  { col: 64, row: 93 }, // tail past Contact
 ];
+
+// Purely cosmetic: a short path stub painted past Contact (see buildTileGrid)
+// so the route doesn't dead-end abruptly right at the last house. Kept out
+// of WAYPOINTS_TILE itself — that array drives scroll length (TRACK_HEIGHT),
+// camera keyframes, and every reveal/waypointFraction calculation below, so
+// folding the tail into it would add scrollable distance after the Contact
+// panel is fully open with nothing left to reveal, letting the page keep
+// scrolling past the "end" of the site.
+const PATH_TAIL_TILE = { col: 64, row: 93 };
 
 // waypointIndex ties each house to the WAYPOINTS_TILE entry it sits next to,
 // so scroll progress (not screen position) can drive which house is "active"
@@ -24,9 +32,12 @@ const WAYPOINTS_TILE = [
 // comes later on the path).
 //
 // Each checkpoint gets its own distinct sourced sprite (see house-XX credit
-// in ASSET_CREDITS.md) rather than one recolored building — the pack has 20
-// genuinely different pixel-art houses, so there's no need for the
-// hue-rotate-tint trick used elsewhere for one-off variety.
+// in ASSET_CREDITS.md) rather than one recolored building. The sourced pack
+// has 18 usable houses, but about a third of them (house-05/10/12/14/15/19)
+// are stark modern/sci-fi builds that read as visually foreign next to the
+// hand-painted grass/path/fence tiles everywhere else — those are excluded
+// from both this list and DECOR_HOUSES below in favor of the cottage/shop
+// sprites that actually match the rest of the world.
 //
 // col/row sit 4 tiles horizontal + 2 tiles vertical from this house's own
 // waypoint (see WAYPOINTS_TILE above and waypointIndex below) — close enough
@@ -43,7 +54,7 @@ const WAYPOINTS_TILE = [
 //   contact:  tile (62, 83) -> px (1984, 2656); waypoint (58, 85) -> px (1856, 2720)
 export const HOUSES = [
   { id: 'intro', label: 'Intro', col: 46, row: 48, side: 'left', color: '#e0714f', waypointIndex: 1, kind: 'house', sprite: 'house-07' },
-  { id: 'projects', label: 'Projects', col: 64, row: 35, side: 'right', color: '#5b7a94', waypointIndex: 2, kind: 'lab', sprite: 'house-05' },
+  { id: 'projects', label: 'Projects', col: 64, row: 35, side: 'right', color: '#5b7a94', waypointIndex: 2, kind: 'lab', sprite: 'house-13' },
   { id: 'hobbies', label: 'Hobbies', col: 42, row: 63, side: 'left', color: '#4da338', waypointIndex: 3, kind: 'shop', sprite: 'house-08' },
   { id: 'contact', label: 'Contact', col: 62, row: 83, side: 'right', color: '#c9463e', waypointIndex: 4, kind: 'house', sprite: 'house-04' },
 ];
@@ -70,24 +81,26 @@ export const NPCS = [
 // only buildings that ever show a name pill or light up. Kept off to the
 // west/east sides, clear of the path's central band.
 //
-// Same sourced house pack as HOUSES — each decor building gets one of the
-// remaining distinct sprites (none reused from the 4 real checkpoints) so
-// the scattered scenery buildings read as different structures too.
+// Same sourced house pack as HOUSES, restricted to the same style-matching
+// subset (see the sprite-exclusion note above HOUSES) — with 14 decor slots
+// pulling from only ~12 usable sprites, a few repeat, but every repeat pair
+// sits far enough apart on the map (60+ tiles) that it doesn't read as two
+// copies of the same building.
 export const DECOR_HOUSES = [
   { id: 'decor-1', col: 22, row: 33, sprite: 'house-01' },
   { id: 'decor-2', col: 78, row: 40, sprite: 'house-02' },
   { id: 'decor-3', col: 20, row: 58, sprite: 'house-03' },
   { id: 'decor-4', col: 75, row: 62, sprite: 'house-06' },
   { id: 'decor-5', col: 18, row: 78, sprite: 'house-09' },
-  { id: 'decor-6', col: 76, row: 82, sprite: 'house-10' },
-  { id: 'decor-7', col: 30, row: 95, sprite: 'house-12' },
-  { id: 'decor-8', col: 70, row: 100, sprite: 'house-13' },
-  { id: 'decor-9', col: 14, row: 16, sprite: 'house-14' },
-  { id: 'decor-10', col: 33, row: 12, sprite: 'house-15' },
+  { id: 'decor-6', col: 76, row: 82, sprite: 'house-03' },
+  { id: 'decor-7', col: 30, row: 95, sprite: 'house-17' },
+  { id: 'decor-8', col: 70, row: 100, sprite: 'house-09' },
+  { id: 'decor-9', col: 14, row: 16, sprite: 'house-02' },
+  { id: 'decor-10', col: 33, row: 12, sprite: 'house-18' },
   { id: 'decor-11', col: 26, row: 42, sprite: 'house-16' },
   { id: 'decor-12', col: 82, row: 55, sprite: 'house-17' },
   { id: 'decor-13', col: 12, row: 68, sprite: 'house-18' },
-  { id: 'decor-14', col: 84, row: 90, sprite: 'house-19' },
+  { id: 'decor-14', col: 84, row: 90, sprite: 'house-16' },
 ];
 
 // A flavor side street with no destination building, just so the town
@@ -191,6 +204,7 @@ function buildTileGrid() {
   for (let i = 0; i < WAYPOINTS_TILE.length - 1; i++) {
     paintSegment(WAYPOINTS_TILE[i], WAYPOINTS_TILE[i + 1]);
   }
+  paintSegment(WAYPOINTS_TILE[WAYPOINTS_TILE.length - 1], PATH_TAIL_TILE);
 
   // Decorative side streets — same painter, but these tiles never feed into
   // WAYPOINTS_TILE/getWorldPosition, so they're purely visual dead ends.

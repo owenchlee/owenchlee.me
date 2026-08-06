@@ -183,7 +183,12 @@ export const ContactPanel = forwardRef(function ContactPanel({ active }, ref) {
             <p className="dialogue-text">{CONTACT.message}</p>
             <div className="dialogue-links">
               {CONTACT.links.map((l) => (
-                <a key={l.label} href={l.href} className="dialogue-link">
+                <a
+                  key={l.label}
+                  href={l.href}
+                  className="dialogue-link"
+                  {...(l.href.startsWith('mailto:') ? {} : { target: '_blank', rel: 'noopener noreferrer' })}
+                >
                   {l.label}
                 </a>
               ))}

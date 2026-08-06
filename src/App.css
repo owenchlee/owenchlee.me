@@ -201,9 +201,10 @@
    getLightingTint(progress) in tileMap.js — one monotonic dawn->day->dusk
    ->night wash across the whole path. Deliberately not a child of .world
    (which is ~2944x3712px): tinting only the viewport avoids painting a huge
-   offscreen layer. Sits above .world but below section panels (z-index 9),
-   so interiors are never tinted by outdoor lighting, and below the
-   character (z-index 5) so the player sprite itself is lit by it. No CSS
+   offscreen layer. Sits above .world but below section panels (z-index 9)
+   and the character (z-index 10, see .character-wrap) so interiors are
+   never tinted by outdoor lighting, while the player sprite itself still
+   gets lit by it while outdoors. No CSS
    transition — background-color is written every scroll tick already, same
    reasoning as the house/panel reveal above. */
 .lighting-overlay {
@@ -244,7 +245,17 @@
   width: 48px;
   height: 48px;
   transform: translate(-50%, -50%);
-  z-index: 5;
+  /* Above section panels (z-index 9), not below: during the walk-to-the-door
+     approach the panel's own opacity is already substantial (see --reveal)
+     while the character's own fade doesn't start until deep into the
+     approach (WALK_SHRINK_START in App.jsx), so a lower z-index left him
+     blended underneath a card full of text/floor art — technically
+     rendered, practically invisible. On top, he reads clearly as walking up
+     to the door for the whole approach, and still disappears right on cue
+     from his own opacity/scale animation once he's fully arrived — by then
+     the panel is fully opaque too, so there's no moment of him floating
+     oddly over the finished interior. */
+  z-index: 10;
 }
 
 .character-shadow {
