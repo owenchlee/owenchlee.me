@@ -108,6 +108,16 @@ const WALK_LEG1_END = 0.55;
 // itself shrinks away (reads as "step inside"), instead of shrinking
 // continuously across the whole distance.
 const WALK_SHRINK_START = 0.7;
+// Within leg 1 (see WALK_LEG1_END), the fraction of *that* leg's own
+// progress before the sprite commits to facing the gate instead of the
+// ambient path direction. posX/posY (the character's actual on-screen
+// position) already ease smoothly from 0 the moment maxWalkT ticks above
+// zero, but a sprite's facing is a discrete state (down/up/side + mirror) —
+// snapping it to point at the gate at that same instant reads as "he's
+// already beelining for the door" despite the body having barely nudged off
+// the path. Waiting until the position shift itself is visible before
+// committing the facing keeps the two in sync.
+const WALK_FACING_START = 0.2;
 
 function computeProgress(trackEl) {
   const rect = trackEl.getBoundingClientRect();
@@ -128,6 +138,7 @@ function App() {
   const lastToggleRef = useRef(0);
   const facingRef = useRef({ direction: 'down', mirror: false });
   const idleTimeoutRef = useRef(null);
+  const walkPoseRef = useRef({ x: 0, y: 0, scale: 1, opacity: 1 });
   const houseElRefs = useRef({});
   const panelRefs = useRef({});
   const lastRevealRef = useRef({});
@@ -303,7 +314,18 @@ function App() {
         lastRevealRef.current[h.id] = reveal;
 
         houseElRefs.current[h.id]?.style.setProperty('--house-reveal', reveal);
-        panelRefs.current[h.id]?.style.setProperty('--reveal', reveal);
+        // The panel's iris opens at 50% 50% — screen-center, i.e. wherever
+        // the character/camera currently is, not wherever the house's
+        // sprite happens to sit on screen. Early in the shoulder (small
+        // reveal), the house itself is still visually far off, but the
+        // panel's low-opacity text was already legible right at the
+        // character's position, reading as "already inside" a building
+        // that's nowhere near them yet. Squaring the (already-smoothstepped)
+        // reveal keeps panel opacity near-zero through the outer half of the
+        // approach and saves the visible ramp for the inner half, without
+        // touching the in-world house glow (--house-reveal above), the band
+        // width, or the arrival/exit symmetry.
+        panelRefs.current[h.id]?.style.setProperty('--reveal', reveal * reveal);
       });
 
       setActiveHouse((current) => (current === fullyOpenId ? current : fullyOpenId));
@@ -311,13 +333,20 @@ function App() {
       // Character walk-to-the-door pose: a pure function of maxWalkT (itself
       // a pure function of scroll progress — see getCharacterWalkT), two legs
       // — path -> gate -> door, see WALK_LEG1_END — recomputed from scratch
-      // every scroll tick. Nothing here is a timer or an animation that plays
-      // once triggered: every bit of scroll moves the character by exactly
-      // that much, and it stops the instant scrolling does. Scrolling back
-      // out runs the same math with a shrinking maxWalkT, so the walk-out is
-      // the walk-in in reverse for free — same principle as every other
-      // reveal-driven visual in this file.
+      // every scroll tick. The *target* pose is never a timer or an animation
+      // that plays once triggered: every bit of scroll moves the target by
+      // exactly that much. But a single native scroll event can jump progress
+      // clean across the whole reveal band (a brisk flick easily covers it
+      // in under one frame), which used to make the character teleport
+      // straight from "on the path" to "at the door" with no visible walk in
+      // between. The *rendered* pose below eases toward that target a few
+      // frames at a time so the walk is visible even under a big jump, while
+      // still settling in well under 300ms — nowhere near the fixed-duration
+      // "keeps walking 2s after you stopped scrolling" animation this was
+      // built to replace. Scrolling back out runs the same math with a
+      // shrinking maxWalkT, so the walk-out is the walk-in in reverse.
       let walkFacing = null;
+      let walkTarget;
       if (maxWalkT > 0 && walkGate && walkDoor) {
         let posX;
         let posY;
@@ -326,7 +355,9 @@ function App() {
           const legT = maxWalkT / WALK_LEG1_END;
           posX = walkGate.x * legT;
           posY = walkGate.y * legT;
-          walkFacing = directionFromDelta(walkGate.x, walkGate.y);
+          if (legT >= WALK_FACING_START) {
+            walkFacing = directionFromDelta(walkGate.x, walkGate.y);
+          }
         } else {
           doorLegT = (maxWalkT - WALK_LEG1_END) / (1 - WALK_LEG1_END);
           posX = walkGate.x + (walkDoor.x - walkGate.x) * doorLegT;
@@ -334,14 +365,37 @@ function App() {
           walkFacing = directionFromDelta(walkDoor.x - walkGate.x, walkDoor.y - walkGate.y);
         }
         const shrinkT = doorLegT < WALK_SHRINK_START ? 0 : (doorLegT - WALK_SHRINK_START) / (1 - WALK_SHRINK_START);
-        const scale = 1 - shrinkT * 0.7;
-        if (characterWrapRef.current) {
-          characterWrapRef.current.style.transform = `translate(calc(-50% + ${posX}px), calc(-50% + ${posY}px)) scale(${scale})`;
-          characterWrapRef.current.style.opacity = String(1 - shrinkT);
-        }
-      } else if (characterWrapRef.current) {
-        characterWrapRef.current.style.transform = 'translate(-50%, -50%)';
-        characterWrapRef.current.style.opacity = '1';
+        walkTarget = { x: posX, y: posY, scale: 1 - shrinkT * 0.7, opacity: 1 - shrinkT };
+      } else {
+        walkTarget = { x: 0, y: 0, scale: 1, opacity: 1 };
+      }
+
+      const pose = walkPoseRef.current;
+      if (reducedMotion) {
+        pose.x = walkTarget.x;
+        pose.y = walkTarget.y;
+        pose.scale = walkTarget.scale;
+        pose.opacity = walkTarget.opacity;
+      } else {
+        const WALK_EASE = 0.35;
+        pose.x += (walkTarget.x - pose.x) * WALK_EASE;
+        pose.y += (walkTarget.y - pose.y) * WALK_EASE;
+        pose.scale += (walkTarget.scale - pose.scale) * WALK_EASE;
+        pose.opacity += (walkTarget.opacity - pose.opacity) * WALK_EASE;
+      }
+
+      if (characterWrapRef.current) {
+        characterWrapRef.current.style.transform = `translate(calc(-50% + ${pose.x}px), calc(-50% + ${pose.y}px)) scale(${pose.scale})`;
+        characterWrapRef.current.style.opacity = String(pose.opacity);
+      }
+
+      const walkSettled =
+        Math.abs(walkTarget.x - pose.x) < 0.5 &&
+        Math.abs(walkTarget.y - pose.y) < 0.5 &&
+        Math.abs(walkTarget.scale - pose.scale) < 0.004 &&
+        Math.abs(walkTarget.opacity - pose.opacity) < 0.004;
+      if (!walkSettled && rafId == null) {
+        rafId = requestAnimationFrame(update);
       }
 
       const { x, y } = getWorldPosition(progress);

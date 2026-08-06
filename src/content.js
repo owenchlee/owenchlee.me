@@ -61,12 +61,36 @@ export const PROJECTS = [
     desc: 'Real-time hand-tracking with OpenCV and MediaPipe that maps thumb and finger gestures to keyboard and mouse input, letting you drive your computer with just your hand.',
   },
   {
+    name: 'ClashMate',
+    date: 'Jan 2026',
+    color: '#6f5fa3',
+    image: null,
+    link: null,
+    desc: 'A Greenfoot group project mashing up chess with Clash Royale — turn-based piece battles on a grid board, powered by an elixir bar and ability system.',
+  },
+  {
+    name: 'Supermarket Simulation',
+    date: 'Nov 2025',
+    color: '#d4b23c',
+    image: null,
+    link: null,
+    desc: 'A Greenfoot group project simulating a full supermarket — shelves, checkout lines, restocking trucks, and shopper AI ranging from bargain hunters to impulse buyers.',
+  },
+  {
     name: 'Vehicle Simulation',
     date: 'Oct 2025',
     color: '#a67a54',
     image: null,
     link: 'https://github.com/owenchlee/Vehicle-Simulation',
     desc: 'A Java/Greenfoot firetruck simulation built over a month of iteration: spreading fire physics, lane-based traffic, collisions, sound effects, and explosion animations.',
+  },
+  {
+    name: 'Just Die',
+    date: 'Sep 2025',
+    color: '#b5495b',
+    image: null,
+    link: 'https://abdullah-aloda.itch.io/just-die',
+    desc: 'A puzzle-platformer made with a friend where you sacrifice yourself to shape the level — each corpse becomes a permanent block that unlocks new routes and solves puzzles.',
   },
 ];
 
@@ -84,8 +108,8 @@ export const HOBBIES = [
 export const CONTACT = {
   message: "Thanks for stopping by! Here's how to reach me:",
   links: [
-    { label: 'Email', href: '#' },
-    { label: 'GitHub', href: '#' },
-    { label: 'LinkedIn', href: '#' },
+    { label: 'Email', href: 'mailto:itsowenchlee@gmail.com' },
+    { label: 'GitHub', href: 'https://github.com/owenchlee' },
+    { label: 'LinkedIn', href: 'https://www.linkedin.com/in/owenchlee/' },
   ],
 };
