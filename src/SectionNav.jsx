@@ -10,6 +10,14 @@ import { HOUSES, WAYPOINT_FRACTIONS } from './tileMap';
 function SectionNav({ activeId, onJump }) {
   return (
     <nav className="section-nav" aria-label="Jump to section">
+      <button
+        type="button"
+        className={`section-nav-item ${activeId == null ? 'active' : ''}`}
+        style={{ '--section-color': '#e0714f' }}
+        onClick={() => onJump(0)}
+      >
+        Intro
+      </button>
       {HOUSES.map((h) => (
         <button
           key={h.id}

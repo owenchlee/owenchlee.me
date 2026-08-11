@@ -1,0 +1,140 @@
+/* Deliberate visual break from App.css's pixel-art HUD styling — this is a
+   genuinely different "mode" of the site (plain, static, conventional),
+   not a themed variant of the game chrome. Readable measure, high contrast,
+   normal document flow, real focus rings (inherited from the global
+   a:focus-visible/button:focus-visible rule in index.css). */
+
+.quick-view {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: var(--pal-cream);
+  color: var(--pal-ink);
+  overflow-y: auto;
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+}
+
+.quick-view-panel {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 64px 24px 96px;
+}
+
+.quick-view-close {
+  display: inline-block;
+  background: none;
+  border: 2px solid var(--pal-ink);
+  color: var(--pal-ink);
+  font: inherit;
+  font-size: 14px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.quick-view-close:hover {
+  background: var(--pal-ink);
+  color: var(--pal-cream);
+}
+
+.quick-view h1 {
+  font-size: clamp(32px, 6vw, 48px);
+  margin: 32px 0 4px;
+}
+
+.quick-view-role {
+  font-size: 18px;
+  color: var(--pal-ink-soft);
+  margin: 0 0 8px;
+}
+
+.quick-view-status {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pal-ink);
+  background: var(--pal-grass-light);
+  border: 1px solid var(--pal-ink);
+  padding: 3px 10px;
+  border-radius: 999px;
+  margin: 0 0 16px;
+}
+
+.quick-view-bio {
+  font-size: 17px;
+  line-height: 1.6;
+  max-width: 60ch;
+  margin: 0 0 40px;
+}
+
+.quick-view h2 {
+  font-size: 24px;
+  border-bottom: 2px solid var(--pal-ink);
+  padding-bottom: 8px;
+  margin: 0 0 20px;
+}
+
+.quick-view-projects {
+  list-style: none;
+  margin: 0 0 48px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.quick-view-projects h3 {
+  font-size: 19px;
+  margin: 0;
+  display: inline;
+}
+
+.quick-view-date {
+  font-size: 14px;
+  color: var(--pal-ink-soft);
+  margin-left: 10px;
+}
+
+.quick-view-projects p {
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 8px 0 0;
+}
+
+.quick-view-links {
+  display: flex;
+  gap: 16px;
+  margin-top: 10px;
+  font-size: 15px;
+}
+
+.quick-view-links a {
+  color: var(--pal-ink);
+  font-weight: 600;
+}
+
+.quick-view-nolink {
+  font-size: 14px;
+  color: var(--pal-ink-soft);
+  font-style: italic;
+}
+
+.quick-view-contact {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.quick-view-contact a {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--pal-ink);
+}
+
+@media (max-width: 480px) {
+  .quick-view-panel {
+    padding: 48px 16px 72px;
+  }
+}

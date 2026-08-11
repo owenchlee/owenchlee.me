@@ -1,21 +1,5 @@
 import { forwardRef, useState } from 'react';
-import { INTRO, PROJECTS, HOBBIES, CONTACT } from './content';
-
-export const IntroPanel = forwardRef(function IntroPanel({ active }, ref) {
-  return (
-    <div ref={ref} className={`section-panel section-panel--intro ${active ? 'visible' : ''}`}>
-      <div className="section-panel-inner">
-        <div className="section-floor section-floor--wood" />
-        <div className="intro-hero section-content">
-          <div className="intro-avatar">YOU</div>
-          <h1>Hi, I'm {INTRO.name}</h1>
-          <p>{INTRO.bio}</p>
-          <p className="scroll-hint">Keep scrolling to continue exploring ↓</p>
-        </div>
-      </div>
-    </div>
-  );
-});
+import { PROJECTS, HOBBIES, CONTACT } from './content';
 
 // Shared by ProjectsPanel — falls back to a colored placeholder box when
 // neither `video` nor `image` is set yet (see content.js), so a section can
@@ -70,7 +54,19 @@ export const ProjectsPanel = forwardRef(function ProjectsPanel({ active }, ref) 
                   </h3>
                   <span className="project-date">{p.date}</span>
                 </div>
+                {p.live && (
+                  <a href={p.live} target="_blank" rel="noreferrer" className="project-live-link">
+                    Live Demo →
+                  </a>
+                )}
                 <p>{p.desc}</p>
+                {p.tech?.length > 0 && (
+                  <ul className="project-tech">
+                    {p.tech.map((t) => (
+                      <li key={t} className="tech-chip">{t}</li>
+                    ))}
+                  </ul>
+                )}
               </article>
             ))}
           </div>
