@@ -25,3 +25,6 @@ dist-ssr
 
 # Terminal Paste Image folder
 .cp-images/
+
+# Claude Code tooling, not app code
+.claude/

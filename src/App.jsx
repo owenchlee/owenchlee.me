@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import './App.css';
 import {
   TILE_SIZE,
@@ -10,23 +10,34 @@ import {
   HOUSES,
   DECOR_HOUSES,
   FENCES,
+  LAMPS,
   NPCS,
   CRITTERS,
+  PET_WALKERS,
+  SPORTS,
+  PICNICS,
   TREES,
   WAYPOINTS_PX,
   WAYPOINT_FRACTIONS,
   TOTAL_PATH_LENGTH,
   tileToPx,
   getWorldPosition,
+  getHouseFootprintWidth,
   getHouseReveal,
   getCharacterWalkT,
   getLightingTint,
   getNightAmount,
 } from './tileMap';
-import { IntroPanel, ProjectsPanel, HobbiesPanel, ContactPanel } from './sections';
+import { ProjectsPanel, HobbiesPanel, ContactPanel } from './sections';
+import { INTRO } from './content';
 import Minimap from './Minimap';
 import SectionNav from './SectionNav';
 import SkyClock from './SkyClock';
+import MusicPlayer from './MusicPlayer';
+import QuickView from './QuickView';
+// Swap for Plausible/Fathom/GA4 here if preferred — this is a zero-config
+// default, not a hard architectural commitment.
+import { Analytics } from '@vercel/analytics/react';
 import house01 from './assets/houses/house-01.png';
 import house02 from './assets/houses/house-02.png';
 import house03 from './assets/houses/house-03.png';
@@ -50,6 +61,12 @@ import npcBSprite from './assets/npc-b.png';
 import npcCSprite from './assets/npc-c.png';
 import critterRatSprite from './assets/critter-rat.png';
 import critterBirdSprite from './assets/critter-bird.png';
+import petDogA from './assets/pet-dog-a.png';
+import petDogB from './assets/pet-dog-b.png';
+import sportsBall from './assets/sports-ball.png';
+import picnicScene from './assets/picnic-scene.png';
+import npcSitA from './assets/npc-sit-a.png';
+import npcSitB from './assets/npc-sit-b.png';
 import treeRoundSprite from './assets/tree-round-lpc.png';
 import treePineSprite from './assets/tree-pine-lpc.png';
 import charDownIdle from './assets/char/char-down-idle.png';
@@ -70,6 +87,8 @@ const CHAR_SPRITES = {
 
 const NPC_SPRITES = { a: npcASprite, b: npcBSprite, c: npcCSprite };
 const CRITTER_SPRITES = { rat: critterRatSprite, bird: critterBirdSprite };
+const PET_SPRITES = { a: petDogA, b: petDogB };
+const SIT_SPRITES = { a: npcSitA, b: npcSitB };
 const TREE_SPRITES = { round: treeRoundSprite, pine: treePineSprite };
 const HOUSE_SPRITES = {
   'house-01': house01,
@@ -126,6 +145,45 @@ function computeProgress(trackEl) {
   return scrollable <= 0 ? 0 : Math.min(1, Math.max(0, -rect.top / scrollable));
 }
 
+// Painter's algorithm for the overworld: every decorative sprite inside
+// `.world` (trees, houses, NPCs, critters, pets, picnics) used to stack
+// purely by DOM insertion order, which is why NPCs — rendered after TREES —
+// always painted in front of a tree even when standing well above/behind it
+// on the path. Ground-truth for "in front of" in a top-down scene is how
+// far south (larger world-space Y) an entity's own ground-contact point
+// sits, not the order it happens to appear in JSX, so every entity below
+// gets an explicit z-index derived from that point instead. `.world`
+// establishes its own stacking context (it has `transform` set — see
+// App.css), so these values only ever compete with each other, never with
+// unrelated UI chrome elsewhere on the page.
+function zFromGroundY(groundY) {
+  return Math.round(groundY);
+}
+
+// Cycled across `**tag**` matches in a Highlighted string so a multi-tag
+// sentence reads as distinct callouts rather than one repeated color —
+// pulled from the same house-color family already used in HOUSES/SectionNav.
+const TAG_COLORS = ['#5b7a94', '#4da338', '#c9463e', '#d4b23c'];
+
+// Renders `**word**` segments of `text` as .hud-tag pill chips, everything
+// else as plain text — the inline "bold callout" look from the reference
+// design, without needing a markdown dependency for one tiny pattern.
+function Highlighted({ text }) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  let tagIndex = 0;
+  return parts.map((part, i) => {
+    const match = part.match(/^\*\*([^*]+)\*\*$/);
+    if (!match) return part;
+    const color = TAG_COLORS[tagIndex % TAG_COLORS.length];
+    tagIndex += 1;
+    return (
+      <span key={i} className="hud-tag" style={{ '--tag-color': color }}>
+        {match[1]}
+      </span>
+    );
+  });
+}
+
 function App() {
   const trackRef = useRef(null);
   const boxRef = useRef(null);
@@ -147,6 +205,18 @@ function App() {
   const characterWrapRef = useRef(null);
   const reducedMotionRef = useRef(false);
   const [activeHouse, setActiveHouse] = useState(null);
+  const [quickView, setQuickView] = useState(false);
+
+  // Escape closes Quick View, matching its own visible "Back to site"
+  // button — only listens while the overlay is actually open.
+  useEffect(() => {
+    if (!quickView) return;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setQuickView(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [quickView]);
 
   // Which way the character should face to cover a given (dx, dy) leg —
   // side + mirrored if that leg is mostly horizontal, else up/down.
@@ -266,9 +336,9 @@ function App() {
   // House activation + minimap dot: both driven by scroll progress (not
   // screen position). Screen-position-based detection (e.g.
   // IntersectionObserver watching where a house lands on screen) breaks once
-  // the path folds back on itself — the up-right leg to Projects puts it at
-  // a smaller row than Intro even though it comes later, so its projected
-  // depth could cross the trigger band first. Progress is one-dimensional
+  // the path folds back on itself — the down-left leg to Hobbies puts it at
+  // a smaller col than Contact even though it comes earlier, so its
+  // projected depth could cross the trigger band first. Progress is one-dimensional
   // and always monotonic, so it can't misfire like that regardless of path
   // shape. This same progress value also positions the minimap's player dot,
   // so that HUD stays in sync with the game world in both camera modes.
@@ -404,7 +474,17 @@ function App() {
         lightingRef.current.style.backgroundColor = getLightingTint(progress);
       }
 
-      skyClockRef.current?.style.setProperty('--night', getNightAmount(progress));
+      // Also written on :root (not just skyClockRef) so any element in the
+      // scene — lamp posts, house windows — can react to the same night
+      // amount via an inherited var(--night), not just the sun/moon HUD.
+      // skyClockRef still gets its own write too: .sky-clock declares a
+      // `--night: 0` stylesheet fallback (see App.css), and a property an
+      // element declares on itself always shadows an inherited value
+      // regardless of selector specificity, so the root write alone
+      // wouldn't reach it.
+      const nightAmount = getNightAmount(progress);
+      document.documentElement.style.setProperty('--night', nightAmount);
+      skyClockRef.current?.style.setProperty('--night', nightAmount);
 
       if (minimapDotRef.current) {
         minimapDotRef.current.setAttribute('cx', x);
@@ -492,11 +572,42 @@ function App() {
 
   return (
     <>
+      <div aria-hidden={quickView || undefined} inert={quickView || undefined}>
       <div className="stage-track" ref={trackRef} style={{ height: TRACK_HEIGHT }}>
         <header className="hud-nameplate">
-          <div className="hud-name">Owen Lee</div>
-          <div className="hud-role">Systems Design Engineering @ University of Waterloo</div>
+          <div className="hud-textbox">
+            <div className="hud-name">{INTRO.name}</div>
+            <div className="hud-role">
+              <span className="hud-tag hud-tag--role" style={{ '--tag-color': '#e0b23c' }}>
+                {INTRO.roleTitle}
+              </span>{' '}
+              @ {INTRO.roleOrg}
+            </div>
+            {INTRO.status && <div className="hud-status">{INTRO.status}</div>}
+            {INTRO.bio && <p className="hud-bio">{INTRO.bio}</p>}
+            <ul className="hud-highlights">
+              {INTRO.highlights.map((line) => (
+                <li key={line}>
+                  <Highlighted text={line} />
+                </li>
+              ))}
+            </ul>
+          </div>
         </header>
+
+        <div className="hud-cta-block">
+          <button
+            type="button"
+            className="hud-cta"
+            onClick={() => {
+              const projectsHouse = HOUSES.find((h) => h.id === 'projects');
+              jumpToProgress(WAYPOINT_FRACTIONS[projectsHouse.waypointIndex]);
+            }}
+          >
+            See My Projects →
+          </button>
+          <p className="hud-scroll-hint">or scroll for the adventure ↓</p>
+        </div>
 
         <div className="stage-box" ref={boxRef}>
           <div
@@ -533,19 +644,37 @@ function App() {
               );
             })}
 
+            {LAMPS.map((lamp) => {
+              const { x, y } = tileToPx(lamp.col, lamp.row);
+              return (
+                <div key={lamp.id} className="lamp-post" style={{ left: x, top: y }}>
+                  <div className="lamp-glow" />
+                  <div className="lamp-bulb" />
+                  <div className="lamp-pole" />
+                </div>
+              );
+            })}
+
             {DECOR_HOUSES.map((house) => {
               const { x, y } = tileToPx(house.col, house.row);
+              const footprint = getHouseFootprintWidth(house.sprite, 60);
               return (
-                <div key={house.id} className="decor-house-wrap" style={{ left: x, top: y }}>
+                <div
+                  key={house.id}
+                  className="decor-house-wrap"
+                  style={{ left: x, top: y, '--footprint-w': `${footprint}px`, zIndex: zFromGroundY(y + 70) }}
+                >
                   <div className="building-shadow" />
                   <div className="building-foundation" />
                   <img src={HOUSE_SPRITES[house.sprite]} className="decor-house" alt="" />
+                  <div className="building-window-glow" />
                 </div>
               );
             })}
 
             {HOUSES.map((house) => {
               const { x, y } = tileToPx(house.col, house.row);
+              const footprint = getHouseFootprintWidth(house.sprite, 70);
               return (
                 <div
                   key={house.id}
@@ -555,11 +684,18 @@ function App() {
                   className={`house house--${house.kind} house-${house.side} ${
                     activeHouse === house.id ? 'active' : ''
                   }`}
-                  style={{ left: x, top: y, '--house-color': house.color }}
+                  style={{
+                    left: x,
+                    top: y,
+                    '--house-color': house.color,
+                    '--footprint-w': `${footprint}px`,
+                    zIndex: zFromGroundY(y + 70),
+                  }}
                 >
                   <div className="building-shadow" />
                   <div className="building-foundation" />
                   <img src={HOUSE_SPRITES[house.sprite]} className="house-sprite" alt="" />
+                  <div className="building-window-glow" />
                   <span className="house-label">{house.label}</span>
                 </div>
               );
@@ -567,12 +703,13 @@ function App() {
 
             {TREES.map((tree, i) => {
               const { x, y } = tileToPx(tree.col, tree.row);
+              const groundY = y + TILE_SIZE;
               return (
                 <img
                   key={`tree-${i}`}
                   src={TREE_SPRITES[tree.variant]}
                   className="tree"
-                  style={{ left: x + TILE_SIZE / 2, top: y + TILE_SIZE }}
+                  style={{ left: x + TILE_SIZE / 2, top: groundY, zIndex: zFromGroundY(groundY) }}
                   alt=""
                 />
               );
@@ -589,6 +726,7 @@ function App() {
                     top: y,
                     '--npc-range': `${npc.range}px`,
                     '--npc-duration': `${npc.duration}s`,
+                    zIndex: zFromGroundY(y + 40),
                   }}
                 >
                   <div className="npc-shadow" />
@@ -608,9 +746,73 @@ function App() {
                     top: y,
                     '--critter-range': `${critter.range}px`,
                     '--critter-duration': `${critter.duration}s`,
+                    zIndex: zFromGroundY(y + 18),
                   }}
                 >
                   <img src={CRITTER_SPRITES[critter.sprite]} className="critter-sprite" alt="" />
+                </div>
+              );
+            })}
+
+            {PET_WALKERS.map((pet) => {
+              const { x, y } = tileToPx(pet.col, pet.row);
+              return (
+                <div
+                  key={pet.id}
+                  className={`npc npc--${pet.axis}`}
+                  style={{
+                    left: x,
+                    top: y,
+                    '--npc-range': `${pet.range}px`,
+                    '--npc-duration': `${pet.duration}s`,
+                    zIndex: zFromGroundY(y + 40),
+                  }}
+                >
+                  <div className="npc-shadow" />
+                  <img src={NPC_SPRITES[pet.npcSprite]} className="npc-sprite" alt="" />
+                  <div className="pet-leash" />
+                  <img src={PET_SPRITES[pet.dogSprite]} className="pet-dog" alt="" />
+                </div>
+              );
+            })}
+
+            {SPORTS.map((s) => {
+              const p1 = tileToPx(s.col, s.row);
+              const p2 = tileToPx(s.col + s.gap, s.row);
+              const z1 = zFromGroundY(p1.y + 40);
+              const z2 = zFromGroundY(p2.y + 40);
+              return (
+                <Fragment key={s.id}>
+                  <div className="npc" style={{ left: p1.x, top: p1.y, zIndex: z1 }}>
+                    <div className="npc-shadow" />
+                    <img src={NPC_SPRITES[s.npc1Sprite]} className="npc-sprite" alt="" />
+                  </div>
+                  <div className="npc" style={{ left: p2.x, top: p2.y, zIndex: z2 }}>
+                    <div className="npc-shadow" />
+                    <img src={NPC_SPRITES[s.npc2Sprite]} className="npc-sprite" alt="" />
+                  </div>
+                  <img
+                    src={sportsBall}
+                    className="sports-ball"
+                    style={{
+                      left: p1.x + 14,
+                      top: p1.y + 18,
+                      '--ball-dx': `${p2.x - p1.x}px`,
+                      zIndex: Math.max(z1, z2) + 1,
+                    }}
+                    alt=""
+                  />
+                </Fragment>
+              );
+            })}
+
+            {PICNICS.map((p) => {
+              const { x, y } = tileToPx(p.col, p.row);
+              return (
+                <div key={p.id} className="picnic-scene" style={{ left: x, top: y, zIndex: zFromGroundY(y + 24) }}>
+                  <img src={picnicScene} className="picnic-blanket" alt="" />
+                  <img src={SIT_SPRITES[p.sitterA]} className="picnic-sitter picnic-sitter--a" alt="" />
+                  <img src={SIT_SPRITES[p.sitterB]} className="picnic-sitter picnic-sitter--b" alt="" />
                 </div>
               );
             })}
@@ -629,12 +831,6 @@ function App() {
             />
           </div>
 
-          <IntroPanel
-            ref={(el) => {
-              panelRefs.current.intro = el;
-            }}
-            active={activeHouse === 'intro'}
-          />
           <ProjectsPanel
             ref={(el) => {
               panelRefs.current.projects = el;
@@ -659,6 +855,21 @@ function App() {
       <SectionNav activeId={activeHouse} onJump={jumpToProgress} />
       <SkyClock ref={skyClockRef} />
       <Minimap ref={minimapDotRef} />
+      <MusicPlayer />
+      </div>
+
+      <button
+        type="button"
+        className="quick-view-toggle"
+        onClick={() => setQuickView(true)}
+        aria-pressed={quickView}
+      >
+        Quick View
+      </button>
+
+      {quickView && <QuickView onClose={() => setQuickView(false)} />}
+
+      <Analytics />
     </>
   );
 }

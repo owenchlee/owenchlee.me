@@ -270,12 +270,102 @@ def bird_sprite():
     return im
 
 
-HAIR = (40, 26, 10, 255)
-SKIN = (250, 227, 159, 255)
+def dog_sprite(fur, fur_dark, ear):
+    # A small trotting dog for the "someone walking a pet" vignette — same
+    # ellipse-blob construction as rat/bird above, just bigger and with a
+    # raised head/snout so it silhouettes as a dog rather than another
+    # rodent.
+    W, H = 16, 13
+    im = new_canvas(W, H)
+    dark = (40, 30, 25, 255)
+
+    rect(im, 0, 5, 2, 7, fur_dark)  # tail
+    ellipse_blob(im, 8, 7, 6, 3, fur)
+    ellipse_blob(im, 8, 8, 6, 2, fur_dark)
+    ellipse_blob(im, 13, 4, 3, 3, fur)  # head
+    rect(im, 12, 1, 14, 4, ear)
+    rect(im, 15, 4, 16, 5, dark)  # snout tip
+
+    px = im.load()
+    px[14, 3] = dark
+
+    rect(im, 4, 10, 6, 13, fur_dark)
+    rect(im, 10, 10, 12, 13, fur_dark)
+    return im
+
+
+def ball_sprite():
+    # Small striped ball, tossed back and forth via CSS animation in the
+    # sports vignette (see .sports-ball in App.css) rather than drawn as a
+    # walk cycle.
+    W, H = 10, 10
+    im = new_canvas(W, H)
+    outline = (60, 55, 50, 255)
+    base = (238, 232, 214, 255)
+    stripe = (198, 62, 52, 255)
+    ellipse_blob(im, 5, 5, 5, 5, outline)
+    ellipse_blob(im, 5, 5, 4, 4, base)
+    rect(im, 4, 1, 6, 9, stripe)
+    return im
+
+
+def picnic_scene_sprite():
+    # A checkered blanket + basket, static ground decoration the two seated
+    # npc_sitting_sprite() figures (placed by the app, not baked into this
+    # image) sit on top of.
+    W, H = 40, 24
+    im = new_canvas(W, H)
+    red = (196, 64, 58, 255)
+    cream = (240, 224, 196, 255)
+    cell = 5
+    blanket_h = H - 6
+    for gy in range(0, blanket_h, cell):
+        for gx in range(0, W, cell):
+            color = red if ((gx // cell) + (gy // cell)) % 2 == 0 else cream
+            rect(im, gx, gy, min(gx + cell, W), min(gy + cell, blanket_h), color)
+    seam = (150, 46, 40, 255)
+    rect(im, 0, blanket_h - 1, W, blanket_h, seam)
+
+    basket = (150, 100, 56, 255)
+    basket_dark = (110, 70, 38, 255)
+    handle = (90, 58, 30, 255)
+    rect(im, W - 13, H - 9, W - 2, H - 1, basket)
+    rect(im, W - 13, H - 9, W - 2, H - 6, basket_dark)
+    rect(im, W - 10, H - 12, W - 5, H - 9, handle)
+    return im
+
+
+def npc_sitting_sprite(hair, skin, shirt_light, shirt_dark):
+    # Same head/torso construction as npc_sprite (see above), but legs
+    # replaced with a shorter, cross-legged seated silhouette so a
+    # background figure can read as sitting on the picnic blanket instead
+    # of standing on top of it.
+    im = new_canvas(16, 14)
+    rect(im, 5, 0, 11, 3, hair)
+    rect(im, 4, 2, 5, 3, hair)
+    rect(im, 11, 2, 12, 3, hair)
+    rect(im, 5, 3, 11, 8, skin)
+    px = im.load()
+    px[6, 5] = (26, 26, 26, 255)
+    px[9, 5] = (26, 26, 26, 255)
+    rect(im, 6, 8, 10, 9, skin)
+    rect(im, 3, 9, 13, 13, shirt_dark)
+    rect(im, 3, 9, 8, 13, shirt_light)
+    rect(im, 2, 11, 6, 13, shirt_dark)
+    rect(im, 10, 11, 14, 13, shirt_dark)
+    return im
+
+
+# Tuned to Owen's actual reference photo: near-black hair, warm-tan skin,
+# dark eyes, and a black hoodie rather than the red/gold shirts tried
+# earlier — those read as arbitrary recolors of a background NPC instead of
+# the actual person the site is about.
+HAIR = (26, 24, 28, 255)
+SKIN = (241, 197, 155, 255)
 EYE = (26, 26, 26, 255)
-SHIRT_L = (208, 62, 52, 255)
-SHIRT_D = (163, 42, 35, 255)
-SHOE = (40, 30, 20, 255)
+SHIRT_L = (46, 46, 52, 255)
+SHIRT_D = (24, 24, 29, 255)
+SHOE = (52, 50, 58, 255)
 
 
 def _torso_and_arms(im, arm_l_dy, arm_r_dy):
@@ -304,8 +394,10 @@ def character_down(frame):
     stride = {'idle': 0, 'walk-a': 1, 'walk-b': -1}[frame]
     arm = {'idle': (0, 0), 'walk-a': (1, -1), 'walk-b': (-1, 1)}[frame]
 
-    # Short, square-cut hair (flat top, sharp sides) rather than a rounded
-    # bob — reads more like a crew cut.
+    # Head: a fuller, wider crop (not the narrow tapered-crown template
+    # shared with background NPCs) matching Owen's actual dark, fairly full
+    # hair — flat-topped with hair coming down past the ears on both sides,
+    # so there's real hair silhouette instead of a thin cap.
     rect(im, 3, 0, 13, 2, HAIR)
     rect(im, 2, 1, 14, 4, HAIR)
     rect(im, 2, 4, 4, 6, HAIR)
@@ -328,10 +420,10 @@ def character_up(frame):
     stride = {'idle': 0, 'walk-a': 1, 'walk-b': -1}[frame]
     arm = {'idle': (0, 0), 'walk-a': (1, -1), 'walk-b': (-1, 1)}[frame]
 
-    # Back of the head: fully hair, no face. Matches the wider/squarer cut
+    # Back of the head: fully hair, no face. Matches the wider/fuller cut
     # used from the front.
     rect(im, 2, 0, 14, 7, HAIR)
-    rect(im, 4, 5, 12, 7, (52, 35, 0, 255))
+    rect(im, 4, 5, 12, 7, (18, 16, 20, 255))
     rect(im, 6, 7, 10, 8, SKIN)
 
     _torso_and_arms(im, *arm)
@@ -422,6 +514,18 @@ if __name__ == '__main__':
 
     rat_sprite().save(os.path.join(OUT, 'critter-rat.png'))
     bird_sprite().save(os.path.join(OUT, 'critter-bird.png'))
+
+    dog_sprite((196, 150, 96, 255), (162, 116, 66, 255), (120, 80, 44, 255)).save(
+        os.path.join(OUT, 'pet-dog-a.png'))
+    dog_sprite((90, 88, 92, 255), (60, 58, 62, 255), (40, 38, 42, 255)).save(
+        os.path.join(OUT, 'pet-dog-b.png'))
+    ball_sprite().save(os.path.join(OUT, 'sports-ball.png'))
+    picnic_scene_sprite().save(os.path.join(OUT, 'picnic-scene.png'))
+
+    npc_sitting_sprite((63, 43, 0, 255), (250, 227, 159, 255), (214, 100, 92, 255), (170, 65, 60, 255)).save(
+        os.path.join(OUT, 'npc-sit-a.png'))
+    npc_sitting_sprite((90, 60, 30, 255), (232, 194, 150, 255), (91, 122, 148, 255), (66, 92, 112, 255)).save(
+        os.path.join(OUT, 'npc-sit-b.png'))
 
     char_dir = os.path.join(OUT, 'char')
     os.makedirs(char_dir, exist_ok=True)

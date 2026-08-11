@@ -7,15 +7,47 @@
 // and reference `myPhoto` here, or a plain string path under `public/` —
 // and the card/shelf item shows it. Leave it `null` and it falls back to a
 // colored placeholder instead, so entries can be filled in one at a time
-// without anything looking broken in the meantime.
+// without anything looking broken in the meantime. PROJECTS entries can use
+// `video` instead — a muted autoplay/loop `<video>` (see CardThumb in
+// sections.jsx) rather than a still image; use it for short compressed mp4
+// clips instead of raw GIFs, which are 50-100x larger for the same footage.
+//
+// `tech` is an optional array of stack tags rendered as chips on the card —
+// keep it short and accurate, recruiters scan these for keyword matches.
+// `link` is the repo/source URL; `live` (optional) is a separate deployed-
+// site URL rendered as its own "Live Demo" link alongside the title link.
 
-import foodfindrDemo from './assets/projects/foodfindr-demo.gif';
-import gestureBreakoutDemo from './assets/projects/gesture-breakout-demo.gif';
-import blobbyFitDemo from './assets/projects/blobby-fit-demo.gif';
+// Demo clips live under public/projects/ (not src/assets/) and are
+// referenced by plain path — Vite's dev-server asset-import pipeline hangs
+// on Range requests for video files of this size, so these skip it entirely
+// and are served as static files in both dev and prod.
+const foodfindrDemo = '/projects/foodfindr-demo.mp4';
+const clashmateDemo = '/projects/clashmate-demo.mp4';
+const supermarketDemo = '/projects/supermarket-simulation-demo.mp4';
+const vehicleSimDemo = '/projects/vehicle-simulation-demo.mp4';
+const justDieDemo = '/projects/just-die-demo.mp4';
+const karaokeDemo = '/projects/karaoke-demo.mp4';
+const ladderGameDemo = '/projects/ladder-game-demo.mp4';
 
+// `**word**` inside a highlight string renders as a colored tag chip (see
+// Highlighted in App.jsx) instead of plain text — same "bold callout" trick
+// as the pill-highlighted role below, just inline within a sentence.
+//
+// `bio` is one short sentence shown under the role line — keep it brief,
+// the HUD textbox has a fixed height budget so it can't grow into the
+// character sprite. `status` is a small availability pill (e.g. what
+// you're open to right now).
 export const INTRO = {
   name: 'Owen Lee',
-  bio: "I'm a Systems Design Engineer currently studying at the University of Waterloo. I love building things, learning new skills, and solving problems.",
+  roleTitle: 'Systems Design Engineering',
+  roleOrg: 'University of Waterloo',
+  bio: "I like building things end-to-end — from computer vision to full-stack apps to game logic on a breadboard.",
+  status: 'Open to new-grad SWE roles',
+  highlights: [
+    'Builds **full-stack apps**, **games**, and **computer vision tools**',
+    'Shipped **FoodFindr**, live at foodfindr.tech',
+    'Always learning something new and **shipping side projects**',
+  ],
 };
 
 export const PROJECTS = [
@@ -23,34 +55,29 @@ export const PROJECTS = [
     name: 'Personal Karaoke',
     date: 'Jul 2026',
     color: '#26a8b1',
-    image: null,
+    video: karaokeDemo,
     link: 'https://github.com/owenchlee/Personal-Karaoke',
+    tech: ['Python', 'PyTorch', 'Demucs'],
     desc: 'A self-hosted, Rock Band-style karaoke game. Point it at any song and it separates vocals from instrumentals with Demucs, extracts a reference melody and lyrics, then scores your live mic pitch against a scrolling note highway.',
   },
   {
     name: 'FoodFindr',
     date: 'Jul 2026',
     color: '#e8877a',
-    image: foodfindrDemo,
+    video: foodfindrDemo,
     link: 'https://github.com/owenchlee/FoodFindr',
     live: 'https://foodfindr.tech',
+    tech: ['React', 'Node.js', 'PostgreSQL', 'Claude API'],
     desc: "A map-based restaurant recommender that has Claude read real Google reviews to pick one specific spot and dish for your budget, cuisine, and group size — with visit logging, streaks, and a friends leaderboard. Live at foodfindr.tech.",
   },
   {
-    name: 'Beat the Bulk',
-    date: 'Apr 2026',
+    name: 'Ladder Game',
+    date: 'Jun 2026',
     color: '#f0a94e',
-    image: blobbyFitDemo,
-    link: 'https://github.com/owenchlee/Beat-the-Bulk',
-    desc: '"Blobby Fit" — a playful browser workout tracker with a mascot blob that reacts to your progress, built to make logging workouts feel less like a chore.',
-  },
-  {
-    name: 'Gesture Breakout',
-    date: 'Apr 2026',
-    color: '#4da338',
-    image: gestureBreakoutDemo,
-    link: 'https://github.com/owenchlee/ThumbGame',
-    desc: 'A browser Breakout clone controlled entirely by hand movement in front of a webcam — no mouse or keyboard, just gestures.',
+    video: ladderGameDemo,
+    link: null, // Physical breadboard build, no code repo — intentionally unlinked.
+    tech: ['Digital Logic', 'Breadboard', 'Electronics'],
+    desc: 'A physical ladder-logic game built on a breadboard — real circuitry and components driving the gameplay instead of a screen.',
   },
   {
     name: 'Thumb Detector',
@@ -58,38 +85,43 @@ export const PROJECTS = [
     color: '#8ea9c9',
     image: null,
     link: 'https://github.com/owenchlee/Thumb-Detector',
+    tech: ['Python', 'OpenCV', 'MediaPipe'],
     desc: 'Real-time hand-tracking with OpenCV and MediaPipe that maps thumb and finger gestures to keyboard and mouse input, letting you drive your computer with just your hand.',
   },
   {
     name: 'ClashMate',
     date: 'Jan 2026',
     color: '#6f5fa3',
-    image: null,
-    link: null,
+    video: clashmateDemo,
+    link: 'https://github.com/SaifulShaik/Clashmate',
+    tech: ['Java', 'Greenfoot'],
     desc: 'A Greenfoot group project mashing up chess with Clash Royale — turn-based piece battles on a grid board, powered by an elixir bar and ability system.',
   },
   {
     name: 'Supermarket Simulation',
     date: 'Nov 2025',
     color: '#d4b23c',
-    image: null,
-    link: null,
+    video: supermarketDemo,
+    link: 'https://github.com/SaifulShaik/Supermarket-Simulation',
+    tech: ['Java', 'Greenfoot'],
     desc: 'A Greenfoot group project simulating a full supermarket — shelves, checkout lines, restocking trucks, and shopper AI ranging from bargain hunters to impulse buyers.',
   },
   {
     name: 'Vehicle Simulation',
     date: 'Oct 2025',
     color: '#a67a54',
-    image: null,
+    video: vehicleSimDemo,
     link: 'https://github.com/owenchlee/Vehicle-Simulation',
+    tech: ['Java', 'Greenfoot'],
     desc: 'A Java/Greenfoot firetruck simulation built over a month of iteration: spreading fire physics, lane-based traffic, collisions, sound effects, and explosion animations.',
   },
   {
     name: 'Just Die',
     date: 'Sep 2025',
     color: '#b5495b',
-    image: null,
+    video: justDieDemo,
     link: 'https://abdullah-aloda.itch.io/just-die',
+    tech: ['Game Design', 'Level Design'],
     desc: 'A puzzle-platformer made with a friend where you sacrifice yourself to shape the level — each corpse becomes a permanent block that unlocks new routes and solves puzzles.',
   },
 ];
@@ -103,6 +135,12 @@ export const PROJECTS = [
 export const HOBBIES = [
   { label: 'Basketball', color: '#f0a94e', image: null, desc: "Pickup ball whenever I can get a run going — nothing like a fast break and a clean jump shot to clear my head." },
   { label: 'Gaming', color: '#5b7a94', image: null, desc: "Everything from competitive shooters to cozy indie titles. It's my go-to way to unwind and hang out with friends online." },
+  { label: 'Badminton', color: '#4da338', image: null, desc: "Fast rallies and faster reflexes — one of my favorite ways to get a good sweat in with friends." },
+  { label: 'Cooking', color: '#e8877a', image: null, desc: "Always experimenting in the kitchen, from weeknight staples to trying to recreate dishes I loved somewhere." },
+  { label: 'Board Games', color: '#6f5fa3', image: null, desc: "Strategy games, party games, anything with a table full of friends and a bit of friendly competition." },
+  { label: 'Running', color: '#26a8b1', image: null, desc: "A steady way to clear my head and stay in shape — chasing a few personal bests along the way." },
+  { label: 'Working Out', color: '#8ea9c9', image: null, desc: "Regular gym sessions to build strength and stay consistent — it's become one of my favorite daily habits." },
+  { label: 'Singing', color: '#b5495b', image: null, desc: "Karaoke, car singalongs, whatever excuse I can find — also part of why I built Personal Karaoke." },
 ];
 
 export const CONTACT = {

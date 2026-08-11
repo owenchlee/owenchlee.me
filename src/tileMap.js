@@ -4,13 +4,16 @@ export const ROWS = 116;
 export const WORLD_W = COLS * TILE_SIZE;
 export const WORLD_H = ROWS * TILE_SIZE;
 
-// Path shape: start -> down-right -> Intro -> up-right (backtracks north) ->
-// Projects -> down-left -> Hobbies -> down-right -> Contact -> a short
-// continuation in the same direction so the path doesn't dead-end abruptly
-// right at the last house.
+// Path shape: start -> up-right -> Projects -> down-left -> Hobbies ->
+// down-right -> Contact -> a short continuation in the same direction so the
+// path doesn't dead-end abruptly right at the last house.
+//
+// Used to detour down-right to an "Intro" waypoint before backtracking
+// north to Projects — that stop was cut along with the intro house, but the
+// detour itself stayed, making the walk to Projects (the first real
+// checkpoint) needlessly long. Going straight there instead.
 const WAYPOINTS_TILE = [
   { col: 40, row: 30 }, // start
-  { col: 50, row: 50 }, // down-right -> Intro
   { col: 60, row: 37 }, // up-right -> Projects
   { col: 46, row: 65 }, // down-left -> Hobbies
   { col: 58, row: 85 }, // down-right -> Contact
@@ -28,8 +31,8 @@ const PATH_TAIL_TILE = { col: 64, row: 93 };
 // waypointIndex ties each house to the WAYPOINTS_TILE entry it sits next to,
 // so scroll progress (not screen position) can drive which house is "active"
 // — screen position breaks down once the path folds back on itself (the
-// up-right leg puts Projects at a *smaller* row than Intro even though it
-// comes later on the path).
+// down-left leg puts Hobbies at a *smaller* col than Contact even though it
+// comes earlier on the path).
 //
 // Each checkpoint gets its own distinct sourced sprite (see house-XX credit
 // in ASSET_CREDITS.md) rather than one recolored building. The sourced pack
@@ -48,15 +51,13 @@ const PATH_TAIL_TILE = { col: 64, row: 93 };
 // the section panel could already be half-visible while the building was
 // still ~200-300px away — not "arrived" in any visual sense. Pixel
 // positions (col*32, row*32), for reference:
-//   intro:    tile (46, 48) -> px (1472, 1536); waypoint (50, 50) -> px (1600, 1600)
 //   projects: tile (64, 35) -> px (2048, 1120); waypoint (60, 37) -> px (1920, 1184)
 //   hobbies:  tile (42, 63) -> px (1344, 2016); waypoint (46, 65) -> px (1472, 2080)
 //   contact:  tile (62, 83) -> px (1984, 2656); waypoint (58, 85) -> px (1856, 2720)
 export const HOUSES = [
-  { id: 'intro', label: 'Intro', col: 46, row: 48, side: 'left', color: '#e0714f', waypointIndex: 1, kind: 'house', sprite: 'house-07' },
-  { id: 'projects', label: 'Projects', col: 64, row: 35, side: 'right', color: '#5b7a94', waypointIndex: 2, kind: 'lab', sprite: 'house-13' },
-  { id: 'hobbies', label: 'Hobbies', col: 42, row: 63, side: 'left', color: '#4da338', waypointIndex: 3, kind: 'shop', sprite: 'house-08' },
-  { id: 'contact', label: 'Contact', col: 62, row: 83, side: 'right', color: '#c9463e', waypointIndex: 4, kind: 'house', sprite: 'house-04' },
+  { id: 'projects', label: 'Projects', col: 64, row: 35, side: 'right', color: '#5b7a94', waypointIndex: 1, kind: 'lab', sprite: 'house-13' },
+  { id: 'hobbies', label: 'Hobbies', col: 42, row: 63, side: 'left', color: '#4da338', waypointIndex: 2, kind: 'shop', sprite: 'house-08' },
+  { id: 'contact', label: 'Contact', col: 62, row: 83, side: 'right', color: '#c9463e', waypointIndex: 3, kind: 'house', sprite: 'house-04' },
 ];
 
 // Purely decorative townsfolk that patrol a short back-and-forth walk near
@@ -64,12 +65,12 @@ export const HOUSES = [
 // + `range` (px) describe the patrol; `duration` (s) staggers their pace so
 // they don't all move in lockstep.
 export const NPCS = [
-  { id: 'npc-1', col: 24, row: 22, sprite: 'a', axis: 'x', range: 56, duration: 6 },
+  { id: 'npc-1', col: 24, row: 36, sprite: 'a', axis: 'x', range: 56, duration: 6 },
   { id: 'npc-2', col: 30, row: 57, sprite: 'b', axis: 'y', range: 44, duration: 5 },
   { id: 'npc-3', col: 77, row: 27, sprite: 'c', axis: 'x', range: 64, duration: 7.5 },
   { id: 'npc-4', col: 19, row: 67, sprite: 'a', axis: 'y', range: 48, duration: 5.5 },
   { id: 'npc-5', col: 75, row: 92, sprite: 'b', axis: 'x', range: 52, duration: 6.5 },
-  { id: 'npc-6', col: 52, row: 22, sprite: 'c', axis: 'y', range: 40, duration: 4.5 },
+  { id: 'npc-6', col: 52, row: 40, sprite: 'c', axis: 'y', range: 40, duration: 4.5 },
   { id: 'npc-7', col: 70, row: 44, sprite: 'a', axis: 'x', range: 48, duration: 5.8 },
   { id: 'npc-8', col: 34, row: 46, sprite: 'b', axis: 'y', range: 36, duration: 4.8 },
 ];
@@ -128,18 +129,41 @@ function nearestWaypoint(col, row) {
 // since critters should read as idle/twitchy rather than deliberately
 // patrolling the way villager NPCs do.
 export const CRITTERS = [
-  { id: 'critter-1', col: 34, row: 24, sprite: 'rat', axis: 'x', range: 20, duration: 3.5 },
+  { id: 'critter-1', col: 34, row: 38, sprite: 'rat', axis: 'x', range: 20, duration: 3.5 },
   { id: 'critter-2', col: 70, row: 58, sprite: 'bird', axis: 'y', range: 16, duration: 2.8 },
   { id: 'critter-3', col: 15, row: 80, sprite: 'rat', axis: 'x', range: 18, duration: 4 },
   { id: 'critter-4', col: 58, row: 40, sprite: 'bird', axis: 'x', range: 18, duration: 3.2 },
   { id: 'critter-5', col: 72, row: 74, sprite: 'rat', axis: 'y', range: 16, duration: 3.8 },
 ];
 
+// A dog sprite riding along inside the same patrol wrapper as its "owner"
+// npc (see the .pet-dog CSS comment in App.css) — reuses the same
+// npc--x/npc--y patrol animation, just with a second sprite tagging along,
+// so "someone walking a pet" doesn't need its own animation system.
+// Placed close to the real WAYPOINTS_TILE path (within a few tiles, like
+// the existing NPCS) rather than off in open field — the camera only ever
+// follows the path column, so anything more than ~20 tiles off it never
+// scrolls into view at a normal viewport width.
+export const PET_WALKERS = [
+  { id: 'pet-1', col: 46, row: 55, npcSprite: 'a', dogSprite: 'a', axis: 'x', range: 56, duration: 6.4 },
+  { id: 'pet-2', col: 56, row: 78, npcSprite: 'c', dogSprite: 'b', axis: 'y', range: 40, duration: 5.6 },
+];
+
+// Two npcs playing catch — static (no patrol), just a ball sprite tossed
+// back and forth between their fixed positions via CSS animation (see
+// .sports-ball). `gap` is in tiles.
+export const SPORTS = [{ id: 'sports-1', col: 36, row: 56, gap: 3, npc1Sprite: 'b', npc2Sprite: 'c' }];
+
+// A checkered blanket + basket with two seated figures on it — entirely
+// static, reads as "having a picnic" through composition rather than
+// motion.
+export const PICNICS = [{ id: 'picnic-1', col: 55, row: 34, sitterA: 'a', sitterB: 'b' }];
+
 // Three ponds — a big one off to the side near the start, a smaller one near
-// the Hobbies clearing, and a third along the Intro-to-Projects stretch —
-// all with corners nicked off so they read as rounded ponds rather than
-// plain rectangles. Rows must stay outside the 10-29 spawn-clearing band
-// (see buildTileGrid) or that pass would wipe the pond back to grass.
+// the Hobbies clearing, and a third scattered along the way — all with
+// corners nicked off so they read as rounded ponds rather than plain
+// rectangles. Rows must stay outside the 10-29 spawn-clearing band (see
+// buildTileGrid) or that pass would wipe the pond back to grass.
 const WATER_PATCHES = [
   { col: 10, row: 42, w: 6, h: 6 },
   { col: 26, row: 70, w: 4, h: 4 },
@@ -276,7 +300,10 @@ function buildTileGrid() {
         if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return;
         if (grid[r][c] !== 'grass') return;
         if (nearAnyHouse(c, r)) return;
-        if (hash(c, r) < 0.5) addTree(c, r);
+        // Rows 10-29 sit behind the HUD nameplate text (see spawn clearing
+        // above) — trees there would occlude it, so this band always falls
+        // back to flowers instead.
+        if (r > 29 && hash(c, r) < 0.5) addTree(c, r);
         else grid[r][c] = 'flower';
       });
     }
@@ -360,7 +387,7 @@ function buildTileGrid() {
         continue;
       }
 
-      if (roll < 0.14 && !nearPath(c, r)) {
+      if (roll < 0.14 && !nearPath(c, r) && r > 29) {
         addTree(c, r);
       } else if (roll < 0.26) {
         grid[r][c] = 'flower';
@@ -412,6 +439,75 @@ export const FENCES = HOUSES.filter((h) => h.kind !== 'landmark').flatMap((h) =>
     orientation: post.orientation,
   })),
 );
+
+// Lamp posts strung along the real path — same perpendicular-offset framing
+// as the tree/flower lining in buildTileGrid, just sparser (every ~14 tiles,
+// alternating sides so they don't line up in two straight rows). Purely
+// decorative by day; App.jsx wires their glow opacity to --night (see
+// getNightAmount below), so the dusk/night wash gets actual light sources
+// instead of just a flat darkening tint over the whole scene.
+function buildLamps() {
+  const lamps = [];
+  for (let i = 0; i < WAYPOINTS_TILE.length - 1; i++) {
+    const a = WAYPOINTS_TILE[i];
+    const b = WAYPOINTS_TILE[i + 1];
+    const dx = b.col - a.col;
+    const dy = b.row - a.row;
+    const len = Math.hypot(dx, dy) || 1;
+    const perpX = -dy / len;
+    const perpY = dx / len;
+    const steps = Math.round(len);
+    for (let s = 7; s < steps; s += 14) {
+      const t = s / steps;
+      const cx = a.col + dx * t;
+      const cy = a.row + dy * t;
+      const side = Math.round(s / 14) % 2 === 0 ? 1 : -1;
+      const col = Math.round(cx + perpX * 4 * side);
+      const row = Math.round(cy + perpY * 4 * side);
+      lamps.push({ id: `lamp-${i}-${s}`, col, row });
+    }
+  }
+  return lamps;
+}
+
+export const LAMPS = buildLamps();
+
+// Intrinsic pixel dimensions of every sourced house sprite (see
+// ASSET_CREDITS.md) — the pack's buildings range from a narrow 56x89
+// cottage to a sprawling 146x109 manor, but every building in the scene was
+// rendered at the same fixed CSS height with a fixed-width shadow/
+// foundation underneath it, so a narrow building floated inside an
+// oversized plot while a wide one spilled off the edges of its own shadow.
+// getHouseFootprintWidth below turns "rendered at height H" into the actual
+// on-screen width for that specific sprite, so the shadow/foundation drawn
+// under it (see --footprint-w in App.jsx) can be sized to match.
+const HOUSE_SPRITE_SIZE = {
+  'house-01': [58, 73],
+  'house-02': [56, 56],
+  'house-03': [62, 69],
+  'house-04': [94, 67],
+  'house-05': [73, 80],
+  'house-06': [86, 73],
+  'house-07': [94, 79],
+  'house-08': [56, 55],
+  'house-09': [146, 109],
+  'house-10': [66, 82],
+  'house-12': [98, 70],
+  'house-13': [86, 65],
+  'house-14': [74, 66],
+  'house-15': [56, 89],
+  'house-16': [94, 58],
+  'house-17': [80, 56],
+  'house-18': [72, 66],
+  'house-19': [78, 69],
+};
+
+export function getHouseFootprintWidth(spriteKey, renderedHeight) {
+  const size = HOUSE_SPRITE_SIZE[spriteKey];
+  if (!size) return renderedHeight;
+  const [w, h] = size;
+  return Math.round(renderedHeight * (w / h));
+}
 
 export function tileToPx(col, row) {
   return { x: col * TILE_SIZE, y: row * TILE_SIZE };
