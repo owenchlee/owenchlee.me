@@ -68,7 +68,7 @@ export const PROJECTS = [
     link: 'https://github.com/owenchlee/FoodFindr',
     live: 'https://foodfindr.tech',
     tech: ['React', 'Node.js', 'PostgreSQL', 'Claude API'],
-    desc: "A map-based restaurant recommender that has Claude read real Google reviews to pick one specific spot and dish for your budget, cuisine, and group size — with visit logging, streaks, and a friends leaderboard. Live at foodfindr.tech.",
+    desc: "A map-based restaurant recommender that has Claude read real Google reviews to pick one specific spot and dish for your budget, cuisine, and group size, with visit logging, streaks, and a friends leaderboard. Live at foodfindr.tech.",
   },
   {
     name: 'Ladder Game',
@@ -77,7 +77,7 @@ export const PROJECTS = [
     video: ladderGameDemo,
     link: null, // Physical breadboard build, no code repo — intentionally unlinked.
     tech: ['Digital Logic', 'Breadboard', 'Electronics'],
-    desc: 'A physical ladder-logic game built on a breadboard — real circuitry and components driving the gameplay instead of a screen.',
+    desc: 'A physical ladder-logic game built on a breadboard, with real circuitry and components driving the gameplay instead of a screen.',
   },
   {
     name: 'Thumb Detector',
@@ -95,7 +95,7 @@ export const PROJECTS = [
     video: clashmateDemo,
     link: 'https://github.com/SaifulShaik/Clashmate',
     tech: ['Java', 'Greenfoot'],
-    desc: 'A Greenfoot group project mashing up chess with Clash Royale — turn-based piece battles on a grid board, powered by an elixir bar and ability system.',
+    desc: 'A Greenfoot group project mashing up chess with Clash Royale: turn-based piece battles on a grid board, powered by an elixir bar and ability system.',
   },
   {
     name: 'Supermarket Simulation',
@@ -104,7 +104,7 @@ export const PROJECTS = [
     video: supermarketDemo,
     link: 'https://github.com/SaifulShaik/Supermarket-Simulation',
     tech: ['Java', 'Greenfoot'],
-    desc: 'A Greenfoot group project simulating a full supermarket — shelves, checkout lines, restocking trucks, and shopper AI ranging from bargain hunters to impulse buyers.',
+    desc: 'A Greenfoot group project simulating a full supermarket, with shelves, checkout lines, restocking trucks, and shopper AI ranging from bargain hunters to impulse buyers.',
   },
   {
     name: 'Vehicle Simulation',
@@ -122,7 +122,7 @@ export const PROJECTS = [
     video: justDieDemo,
     link: 'https://abdullah-aloda.itch.io/just-die',
     tech: ['Game Design', 'Level Design'],
-    desc: 'A puzzle-platformer made with a friend where you sacrifice yourself to shape the level — each corpse becomes a permanent block that unlocks new routes and solves puzzles.',
+    desc: 'A puzzle-platformer made with a friend where you sacrifice yourself to shape the level: each corpse becomes a permanent block that unlocks new routes and solves puzzles.',
   },
 ];
 

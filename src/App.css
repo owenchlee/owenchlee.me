@@ -1374,6 +1374,41 @@
   object-fit: contain;
 }
 
+/* Poster state for demo clips — a plain <button> wrapping the muted video
+   frame, so it looks like a still photo until clicked (see CardThumb). */
+.project-thumb--video-poster {
+  position: relative;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+}
+
+.project-thumb-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 20px;
+  /* nudge the ▶ glyph so it looks centered rather than left-heavy */
+  padding-left: 4px;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.project-thumb--video-poster:hover .project-thumb-play,
+.project-thumb--video-poster:focus-visible .project-thumb-play {
+  background: rgba(0, 0, 0, 0.75);
+  transform: translate(-50%, -50%) scale(1.08);
+}
+
 .project-meta {
   display: flex;
   align-items: baseline;
