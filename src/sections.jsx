@@ -5,18 +5,42 @@ import { PROJECTS, HOBBIES, CONTACT } from './content';
 // neither `video` nor `image` is set yet (see content.js), so a section can
 // be filled in one entry at a time without any card looking broken.
 function CardThumb({ video, image, color, alt }) {
+  // Demo clips start as a still poster frame (like a photo) with a play
+  // button overlay — clicking swaps in the real <video> with controls
+  // instead of autoplaying a silent background loop.
+  const [playing, setPlaying] = useState(false);
+
   if (video) {
+    if (playing) {
+      return (
+        <div className="project-thumb project-thumb--image">
+          <video
+            src={video}
+            className="project-thumb-img"
+            controls
+            autoPlay
+            playsInline
+            onEnded={() => setPlaying(false)}
+          />
+        </div>
+      );
+    }
     return (
-      <div className="project-thumb project-thumb--image">
+      <button
+        type="button"
+        className="project-thumb project-thumb--image project-thumb--video-poster"
+        onClick={() => setPlaying(true)}
+        aria-label={`Play demo video for ${alt}`}
+      >
         <video
           src={video}
           className="project-thumb-img"
-          autoPlay
-          loop
           muted
           playsInline
+          preload="metadata"
         />
-      </div>
+        <span className="project-thumb-play" aria-hidden="true">▶</span>
+      </button>
     );
   }
   if (image) {
