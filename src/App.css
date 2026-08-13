@@ -28,7 +28,7 @@
   background: rgba(28, 23, 18, 0.68);
   border: 3px solid var(--pal-cream);
   box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.35);
-  padding: clamp(16px, 3vh, 28px) clamp(24px, 4vw, 48px) clamp(14px, 2.6vh, 24px);
+  padding: clamp(20px, 3.6vh, 34px) clamp(30px, 4.8vw, 58px) clamp(18px, 3.2vh, 30px);
   max-width: calc(100vw - 32px);
   /* Hard backstop, not just a tuned value: on a short/wide window the min()
      terms below already shrink the type, but this guarantees the box can
@@ -555,7 +555,7 @@
 
 /* A warm window-glow on every building (real checkpoints and decor houses
    alike) — driven straight from var(--night), same inherited-from-:root
-   value the lamp posts and sky-clock read (see App.jsx). Gives the dusk/
+   value the lamp posts read (see App.jsx). Gives the dusk/
    night wash actual light sources instead of just a flat darkening tint
    over the whole scene. mix-blend-mode: screen so it brightens the sprite
    in place rather than sitting on top as a flat colored disc. */
@@ -607,8 +607,8 @@
    Plain CSS shapes (pole + bulb + glow), not a sourced sprite — strung
    along the path at regular intervals (see buildLamps in tileMap.js).
    The pole is always visible; the bulb and its glow brighten with
-   var(--night, 0), the same value the sky-clock and building windows read,
-   so the dusk/night wash gets actual light sources instead of just a flat
+   var(--night, 0), the same value the building windows read, so the
+   dusk/night wash gets actual light sources instead of just a flat
    darkening tint. */
 .lamp-post {
   position: absolute;
@@ -857,8 +857,8 @@
    "having a picnic" reads through composition alone with no motion needed. */
 .picnic-scene {
   position: absolute;
-  width: 40px;
-  height: 24px;
+  width: 64px;
+  height: 38px;
 }
 
 .picnic-blanket {
@@ -872,7 +872,7 @@
 
 .picnic-sitter {
   position: absolute;
-  width: 22px;
+  width: 34px;
   height: auto;
   image-rendering: pixelated;
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3));
@@ -940,16 +940,13 @@
   }
 }
 
-/* Stacked directly under .sky-clock (top-right, 52px tall) rather than a
-   fifth fixed corner of its own — the other three corners are already taken
-   by .section-nav, .minimap, and .music-player, and top-center would sit
-   right on top of the large centered hero name. Opens QuickView.jsx, a
-   plain accessible layout of the same content for anyone who wants the
-   facts without the scroll/game mechanic. */
+/* Top-right fixed HUD, the one corner left free by .section-nav/.minimap/
+   .music-player. Opens QuickView.jsx, a plain accessible layout of the same
+   content for anyone who wants the facts without the scroll/game mechanic. */
 .quick-view-toggle {
   position: fixed;
   right: 14px;
-  top: 74px;
+  top: 14px;
   z-index: 31;
   background: var(--pal-ink);
   color: var(--pal-cream);
@@ -964,70 +961,6 @@
 .quick-view-toggle:hover,
 .quick-view-toggle:focus-visible {
   color: var(--pal-grass-light);
-}
-
-/* --- Sky clock HUD ---
-   Top-right fixed HUD, same "survives every section takeover" role as the
-   minimap/section nav. Sun and moon are two plain CSS shapes stacked in the
-   same spot, cross-fading via opacity from --night (written every scroll
-   tick in App.jsx) — no CSS transition, same reasoning as every other
-   reveal/tint value driven straight from scroll progress elsewhere in this
-   file: a timer competing with a value already updated every frame is what
-   used to make things feel disconnected from actual scroll speed. */
-
-.sky-clock {
-  --night: 0;
-  position: fixed;
-  right: 14px;
-  top: 14px;
-  z-index: 30;
-  width: 52px;
-  height: 52px;
-  background: var(--pal-ink);
-  border: 3px solid var(--pal-cream);
-  box-shadow: 3px 3px 0 #000;
-  overflow: hidden;
-}
-
-.sky-clock-sun,
-.sky-clock-moon {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 28px;
-  height: 28px;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-}
-
-.sky-clock-sun {
-  background: #ffd35c;
-  box-shadow: 0 0 0 4px rgba(255, 211, 92, 0.3), 0 0 10px 2px rgba(255, 211, 92, 0.55);
-  opacity: calc(1 - var(--night));
-}
-
-.sky-clock-moon {
-  background: #d7dee8;
-  box-shadow: 0 0 8px 1px rgba(215, 222, 232, 0.4);
-  opacity: var(--night);
-}
-
-.sky-clock-crater {
-  position: absolute;
-  border-radius: 50%;
-  background: rgba(140, 150, 170, 0.55);
-}
-.sky-clock-crater--a {
-  width: 6px;
-  height: 6px;
-  top: 6px;
-  left: 7px;
-}
-.sky-clock-crater--b {
-  width: 4px;
-  height: 4px;
-  top: 15px;
-  left: 15px;
 }
 
 /* --- Minimap HUD ---
@@ -1059,6 +992,30 @@
   fill: var(--pal-grass);
 }
 
+/* Tiled inside the `minimap-grass` pattern (see Minimap.jsx) to stand in
+   for the ~2300 individual trees that make up the real treeline — too many
+   to plot as one shape each at this size, but a flat fill alone read as
+   empty rather than "grass". */
+.minimap-fleck {
+  fill: var(--pal-grass-light);
+  opacity: 0.4;
+}
+
+.minimap-water {
+  fill: #3f7ea6;
+  opacity: 0.85;
+}
+
+/* Darker casing drawn under the path fill so it reads as a road with an
+   edge, not just a flat colored line. */
+.minimap-path-casing {
+  fill: none;
+  stroke: rgba(0, 0, 0, 0.28);
+  stroke-width: 54;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .minimap-path {
   fill: none;
   stroke: var(--pal-path);
@@ -1067,9 +1024,21 @@
   stroke-linejoin: round;
 }
 
+/* Small, unlabeled squares for the purely decorative scenery buildings —
+   deliberately quieter than the real checkpoint markers below so the two
+   never compete for attention. */
+.minimap-decor-house {
+  fill: var(--pal-cream);
+  opacity: 0.5;
+}
+
 .minimap-marker {
   stroke: var(--pal-cream);
   stroke-width: 10;
+}
+
+.minimap-marker-core {
+  fill: var(--pal-ink);
 }
 
 .minimap-player {
@@ -1097,8 +1066,8 @@
 
 /* --- Music player HUD ---
    Bottom-left — the one corner left free by section-nav (top-left)/
-   sky-clock (top-right)/minimap (bottom-right). Same fixed-panel language
-   as those three (ink bg, cream border, hard drop shadow, pixel font) so it
+   quick-view-toggle (top-right)/minimap (bottom-right). Same fixed-panel
+   language as those three (ink bg, cream border, hard drop shadow, pixel font) so it
    reads as another piece of the same HUD set rather than a bolted-on
    widget. Playback is procedural (see music.js) — nothing here ever
    autoplays; sound only starts from the visitor's own click on
@@ -1141,24 +1110,48 @@
   filter: brightness(1.1);
 }
 
-/* Drawn as plain CSS shapes (not an emoji/icon font glyph) so it stays
-   pixel-crisp at this size and matches the hand-drawn look of every other
-   HUD element. */
-.music-icon-play {
-  width: 0;
-  height: 0;
-  border-top: 6px solid transparent;
-  border-bottom: 6px solid transparent;
-  border-left: 9px solid var(--pal-ink);
-  margin-left: 2px;
+/* A little vinyl record — plain CSS shapes (not an emoji/icon font glyph)
+   so it stays pixel-crisp at this size and matches the hand-drawn look of
+   every other HUD element. Spins continuously while playing and freezes in
+   place (not resets) when paused, like a real turntable. */
+.music-disc {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: repeating-radial-gradient(
+    circle,
+    var(--pal-ink) 0,
+    var(--pal-ink) 1px,
+    #4a4a4a 1px,
+    #4a4a4a 3px
+  );
+  border: 2px solid var(--pal-ink);
+  position: relative;
+  animation: music-disc-spin 2.4s linear infinite;
+  animation-play-state: paused;
 }
 
-.music-icon-pause {
-  width: 8px;
-  height: 12px;
-  border-left: 3px solid var(--pal-ink);
-  border-right: 3px solid var(--pal-ink);
-  box-sizing: border-box;
+.music-disc::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pal-grass-light);
+  border: 1px solid var(--pal-ink);
+  transform: translate(-50%, -50%);
+}
+
+.music-toggle.playing .music-disc {
+  animation-play-state: running;
+}
+
+@keyframes music-disc-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .music-expand {
@@ -1246,6 +1239,12 @@
   pointer-events: none;
   clip-path: circle(calc(var(--reveal) * 120%) at 50% 50%);
   overflow: auto;
+  /* Without this, scrolling a tall panel (e.g. the project grid) to its
+     top/bottom edge chains the rest of the wheel gesture to the document,
+     which drives the world-scroll camera/character — so browsing the last
+     few pixels of a project list could suddenly walk you out of the house.
+     Containing overscroll here stops that handoff at the panel boundary. */
+  overscroll-behavior: contain;
 }
 
 /* Sizes to content, not just the viewport — .section-floor lives in here as
@@ -1374,41 +1373,6 @@
   object-fit: contain;
 }
 
-/* Poster state for demo clips — a plain <button> wrapping the muted video
-   frame, so it looks like a still photo until clicked (see CardThumb). */
-.project-thumb--video-poster {
-  position: relative;
-  padding: 0;
-  border: none;
-  cursor: pointer;
-  font: inherit;
-}
-
-.project-thumb-play {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.55);
-  color: #fff;
-  font-size: 20px;
-  /* nudge the ▶ glyph so it looks centered rather than left-heavy */
-  padding-left: 4px;
-  transition: background 0.15s ease, transform 0.15s ease;
-}
-
-.project-thumb--video-poster:hover .project-thumb-play,
-.project-thumb--video-poster:focus-visible .project-thumb-play {
-  background: rgba(0, 0, 0, 0.75);
-  transform: translate(-50%, -50%) scale(1.08);
-}
-
 .project-meta {
   display: flex;
   align-items: baseline;
@@ -1482,11 +1446,13 @@
 }
 
 /* Hobbies: a shelf that fills the whole room, not a card grid. Each hobby is
-   an item sitting on a shelf slot (see HOBBIES in content.js, chunked into a
-   fixed HOBBY_COLS x HOBBY_ROWS grid in sections.jsx) — unfilled slots stay
-   empty shelf space rather than shrinking the grid, so there's always room
-   to fill in more later. hobbies-content is deliberately position:absolute
-   inset:0 (like .section-floor) instead of a normal in-flow child: that's
+   a photo sitting on the shelf (see HOBBIES in content.js), laid out as a
+   flex-wrap row rather than a fixed grid so each item's own width (driven by
+   its photo's aspect ratio at a fixed display height — see
+   .hobby-item-thumb) decides how many fit per row; items just wrap to
+   however many rows the shelf's actual width calls for. hobbies-content is
+   deliberately position:absolute inset:0 (like .section-floor) instead of a
+   normal in-flow child: that's
    what makes it size to exactly one screen rather than to whatever height
    its own content asks for, which is what "fills the whole page" needs here
    — the opposite of the projects-content growth .section-panel-inner exists
@@ -1509,18 +1475,27 @@
   padding: 28px 40px 160px;
   box-sizing: border-box;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .bookshelf-stage {
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
+  /* Content-sized rather than stretched: with a natural-width flex-wrap
+     shelf (see .shelf), a handful of items no longer needs the full panel
+     height to hold them, so the wood box sizes to what it's actually
+     holding and sits centered instead of leaving a tall empty gap below a
+     single top-pinned row. max-height on .bookshelf still caps it at the
+     available space if enough hobbies get added to need it. */
+  align-items: center;
   width: 100%;
   overflow: hidden;
 }
 
 .bookshelf {
   flex: 1 1 auto;
+  max-height: 100%;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -1540,18 +1515,23 @@
 }
 
 .shelf {
-  flex: 1 1 0;
-  display: flex;
-  align-items: stretch;
+  flex: 0 1 auto;
   min-height: 0;
-  padding-bottom: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 22px 24px;
+  padding-bottom: 20px;
   border-bottom: 8px solid var(--pal-ink);
   box-shadow: 0 6px 0 rgba(0, 0, 0, 0.3);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .hobby-slot {
-  flex: 1 1 0;
-  min-width: 0;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1559,17 +1539,13 @@
   gap: 8px;
   background: none;
   border: none;
-  padding: 6px 2px;
+  padding: 4px 2px 0;
   cursor: pointer;
 }
 
-.hobby-slot--empty {
-  cursor: default;
-}
-
 .hobby-item-thumb {
-  width: min(64px, 60%);
-  aspect-ratio: 1;
+  height: 80px;
+  width: auto;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1581,9 +1557,11 @@
 }
 
 .hobby-item-thumb img {
-  width: 100%;
   height: 100%;
-  object-fit: cover;
+  width: auto;
+  display: block;
+  object-fit: contain;
+  image-rendering: pixelated;
 }
 
 .hobby-item-fallback {
@@ -1783,6 +1761,11 @@
   color: var(--pal-cream);
   transform: translate(-2px, -2px);
   box-shadow: 5px 5px 0 var(--pal-ink);
+}
+
+.dialogue-link--copy {
+  border: none;
+  cursor: pointer;
 }
 
 @media (prefers-reduced-motion: reduce) {
