@@ -32,7 +32,6 @@ import { ProjectsPanel, HobbiesPanel, ContactPanel } from './sections';
 import { INTRO } from './content';
 import Minimap from './Minimap';
 import SectionNav from './SectionNav';
-import SkyClock from './SkyClock';
 import MusicPlayer from './MusicPlayer';
 import QuickView from './QuickView';
 // Swap for Plausible/Fathom/GA4 here if preferred — this is a zero-config
@@ -201,7 +200,6 @@ function App() {
   const panelRefs = useRef({});
   const lastRevealRef = useRef({});
   const lightingRef = useRef(null);
-  const skyClockRef = useRef(null);
   const characterWrapRef = useRef(null);
   const reducedMotionRef = useRef(false);
   const [activeHouse, setActiveHouse] = useState(null);
@@ -474,17 +472,11 @@ function App() {
         lightingRef.current.style.backgroundColor = getLightingTint(progress);
       }
 
-      // Also written on :root (not just skyClockRef) so any element in the
-      // scene — lamp posts, house windows — can react to the same night
-      // amount via an inherited var(--night), not just the sun/moon HUD.
-      // skyClockRef still gets its own write too: .sky-clock declares a
-      // `--night: 0` stylesheet fallback (see App.css), and a property an
-      // element declares on itself always shadows an inherited value
-      // regardless of selector specificity, so the root write alone
-      // wouldn't reach it.
+      // Written on :root so any element in the scene — lamp posts, house
+      // windows — can react to the same night amount via an inherited
+      // var(--night).
       const nightAmount = getNightAmount(progress);
       document.documentElement.style.setProperty('--night', nightAmount);
-      skyClockRef.current?.style.setProperty('--night', nightAmount);
 
       if (minimapDotRef.current) {
         minimapDotRef.current.setAttribute('cx', x);
@@ -853,7 +845,6 @@ function App() {
       </div>
 
       <SectionNav activeId={activeHouse} onJump={jumpToProgress} />
-      <SkyClock ref={skyClockRef} />
       <Minimap ref={minimapDotRef} />
       <MusicPlayer />
       </div>

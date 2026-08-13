@@ -36,9 +36,10 @@ const PATH_TAIL_TILE = { col: 64, row: 93 };
 //
 // Each checkpoint gets its own distinct sourced sprite (see house-XX credit
 // in ASSET_CREDITS.md) rather than one recolored building. The sourced pack
-// has 18 usable houses, but about a third of them (house-05/10/12/14/15/19)
-// are stark modern/sci-fi builds that read as visually foreign next to the
-// hand-painted grass/path/fence tiles everywhere else — those are excluded
+// has 18 usable houses, but about a third of them (house-05/10/12/13/14/15/19)
+// are stark modern/sci-fi builds (cold grey-blue stone/metal, domed or boxy)
+// that read as visually foreign next to the hand-painted grass/path/fence
+// tiles and warm cream/brown cottages everywhere else — those are excluded
 // from both this list and DECOR_HOUSES below in favor of the cottage/shop
 // sprites that actually match the rest of the world.
 //
@@ -55,7 +56,7 @@ const PATH_TAIL_TILE = { col: 64, row: 93 };
 //   hobbies:  tile (42, 63) -> px (1344, 2016); waypoint (46, 65) -> px (1472, 2080)
 //   contact:  tile (62, 83) -> px (1984, 2656); waypoint (58, 85) -> px (1856, 2720)
 export const HOUSES = [
-  { id: 'projects', label: 'Projects', col: 64, row: 35, side: 'right', color: '#5b7a94', waypointIndex: 1, kind: 'lab', sprite: 'house-13' },
+  { id: 'projects', label: 'Projects', col: 64, row: 35, side: 'right', color: '#5b7a94', waypointIndex: 1, kind: 'lab', sprite: 'house-07' },
   { id: 'hobbies', label: 'Hobbies', col: 42, row: 63, side: 'left', color: '#4da338', waypointIndex: 2, kind: 'shop', sprite: 'house-08' },
   { id: 'contact', label: 'Contact', col: 62, row: 83, side: 'right', color: '#c9463e', waypointIndex: 3, kind: 'house', sprite: 'house-04' },
 ];
@@ -84,7 +85,7 @@ export const NPCS = [
 //
 // Same sourced house pack as HOUSES, restricted to the same style-matching
 // subset (see the sprite-exclusion note above HOUSES) — with 14 decor slots
-// pulling from only ~12 usable sprites, a few repeat, but every repeat pair
+// pulling from only ~11 usable sprites, a few repeat, but every repeat pair
 // sits far enough apart on the map (60+ tiles) that it doesn't read as two
 // copies of the same building.
 export const DECOR_HOUSES = [
@@ -164,7 +165,7 @@ export const PICNICS = [{ id: 'picnic-1', col: 55, row: 34, sitterA: 'a', sitter
 // corners nicked off so they read as rounded ponds rather than plain
 // rectangles. Rows must stay outside the 10-29 spawn-clearing band (see
 // buildTileGrid) or that pass would wipe the pond back to grass.
-const WATER_PATCHES = [
+export const WATER_PATCHES = [
   { col: 10, row: 42, w: 6, h: 6 },
   { col: 26, row: 70, w: 4, h: 4 },
   { col: 58, row: 58, w: 5, h: 5 },

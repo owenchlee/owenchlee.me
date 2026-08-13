@@ -21,6 +21,15 @@
 // referenced by plain path — Vite's dev-server asset-import pipeline hangs
 // on Range requests for video files of this size, so these skip it entirely
 // and are served as static files in both dev and prod.
+import basketballPixel from './assets/Hobbies/pixel/basketball.png';
+import badmintonPixel from './assets/Hobbies/pixel/badminton.png';
+import boardGamesPixel from './assets/Hobbies/pixel/board-games.png';
+import cookingPixel from './assets/Hobbies/pixel/cooking.png';
+import gamingPixel from './assets/Hobbies/pixel/gaming.png';
+import runningPixel from './assets/Hobbies/pixel/running.png';
+import workoutPixel from './assets/Hobbies/pixel/workout.png';
+import singingPixel from './assets/Hobbies/pixel/singing.png';
+
 const foodfindrDemo = '/projects/foodfindr-demo.mp4';
 const clashmateDemo = '/projects/clashmate-demo.mp4';
 const supermarketDemo = '/projects/supermarket-simulation-demo.mp4';
@@ -42,7 +51,7 @@ export const INTRO = {
   roleTitle: 'Systems Design Engineering',
   roleOrg: 'University of Waterloo',
   bio: "I like building things end-to-end — from computer vision to full-stack apps to game logic on a breadboard.",
-  status: 'Open to new-grad SWE roles',
+  status: 'Open to internships/co-op',
   highlights: [
     'Builds **full-stack apps**, **games**, and **computer vision tools**',
     'Shipped **FoodFindr**, live at foodfindr.tech',
@@ -126,27 +135,27 @@ export const PROJECTS = [
   },
 ];
 
-// Each entry renders as an item sitting on the shelf in HobbiesPanel —
+// Each entry renders as a photo sitting on the shelf in HobbiesPanel —
 // `color` is the fallback swatch shown until `image` is set, `label` is the
-// nameplate under it. They're auto-chunked into shelf rows (see
-// HOBBY_COLS/HOBBY_ROWS in sections.jsx), and the shelf always shows at
-// least HOBBY_ROWS rows — so just add more entries here to fill in the
-// empty slots over time; no layout code to touch.
+// nameplate under it. They wrap into as many shelf rows as fit (see
+// HobbiesPanel in sections.jsx), each at its own photo's natural aspect
+// ratio — so just add more entries here to add more items; no layout code
+// to touch.
 export const HOBBIES = [
-  { label: 'Basketball', color: '#f0a94e', image: null, desc: "Pickup ball whenever I can get a run going — nothing like a fast break and a clean jump shot to clear my head." },
-  { label: 'Gaming', color: '#5b7a94', image: null, desc: "Everything from competitive shooters to cozy indie titles. It's my go-to way to unwind and hang out with friends online." },
-  { label: 'Badminton', color: '#4da338', image: null, desc: "Fast rallies and faster reflexes — one of my favorite ways to get a good sweat in with friends." },
-  { label: 'Cooking', color: '#e8877a', image: null, desc: "Always experimenting in the kitchen, from weeknight staples to trying to recreate dishes I loved somewhere." },
-  { label: 'Board Games', color: '#6f5fa3', image: null, desc: "Strategy games, party games, anything with a table full of friends and a bit of friendly competition." },
-  { label: 'Running', color: '#26a8b1', image: null, desc: "A steady way to clear my head and stay in shape — chasing a few personal bests along the way." },
-  { label: 'Working Out', color: '#8ea9c9', image: null, desc: "Regular gym sessions to build strength and stay consistent — it's become one of my favorite daily habits." },
-  { label: 'Singing', color: '#b5495b', image: null, desc: "Karaoke, car singalongs, whatever excuse I can find — also part of why I built Personal Karaoke." },
+  { label: 'Basketball', color: '#f0a94e', image: basketballPixel, desc: "Pickup ball whenever I can get a run going — nothing like a fast break and a clean jump shot to clear my head." },
+  { label: 'Gaming', color: '#5b7a94', image: gamingPixel, desc: "Everything from competitive shooters to cozy indie titles. It's my go-to way to unwind and hang out with friends online." },
+  { label: 'Badminton', color: '#4da338', image: badmintonPixel, desc: "Fast rallies and faster reflexes — one of my favorite ways to get a good sweat in with friends." },
+  { label: 'Cooking', color: '#e8877a', image: cookingPixel, desc: "Always experimenting in the kitchen, from weeknight staples to trying to recreate dishes I loved somewhere." },
+  { label: 'Board Games', color: '#6f5fa3', image: boardGamesPixel, desc: "Strategy games, party games, anything with a table full of friends and a bit of friendly competition." },
+  { label: 'Running', color: '#26a8b1', image: runningPixel, desc: "A steady way to clear my head and stay in shape — chasing a few personal bests along the way." },
+  { label: 'Working Out', color: '#8ea9c9', image: workoutPixel, desc: "Regular gym sessions to build strength and stay consistent — it's become one of my favorite daily habits." },
+  { label: 'Singing', color: '#b5495b', image: singingPixel, desc: "Karaoke, car singalongs, whatever excuse I can find — also part of why I built Personal Karaoke." },
 ];
 
 export const CONTACT = {
   message: "Thanks for stopping by! Here's how to reach me:",
+  email: 'itsowenchlee@gmail.com',
   links: [
-    { label: 'Email', href: 'mailto:itsowenchlee@gmail.com' },
     { label: 'GitHub', href: 'https://github.com/owenchlee' },
     { label: 'LinkedIn', href: 'https://www.linkedin.com/in/owenchlee/' },
   ],

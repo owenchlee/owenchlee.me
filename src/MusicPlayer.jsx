@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createMusicEngine, TRACK_LIST } from './music';
 
-// Bottom-left HUD — the one corner section-nav (top-left)/sky-clock
+// Bottom-left HUD — the one corner section-nav (top-left)/quick-view-toggle
 // (top-right)/minimap (bottom-right) leave free. Music never autostarts:
 // Web Audio requires a user gesture before it'll make sound, and starting
 // on load is bad manners besides, so the engine is only ever built lazily
@@ -40,11 +40,11 @@ function MusicPlayer() {
       <div className="music-row">
         <button
           type="button"
-          className="music-toggle"
+          className={`music-toggle ${playing ? 'playing' : ''}`}
           onClick={togglePlay}
           aria-label={playing ? 'Pause music' : 'Play music'}
         >
-          {playing ? <span className="music-icon-pause" /> : <span className="music-icon-play" />}
+          <span className="music-disc" />
         </button>
         <button
           type="button"
