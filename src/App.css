@@ -32,10 +32,14 @@
   max-width: calc(100vw - 32px);
   /* Hard backstop, not just a tuned value: on a short/wide window the min()
      terms below already shrink the type, but this guarantees the box can
-     never physically reach the character (pinned at a fixed 50vh) no matter
-     what content or viewport combination produces — 140px approximates
-     .hud-nameplate's own top offset plus a clear buffer above the sprite. */
-  max-height: calc(50vh - 140px);
+     never physically reach the character (pinned at a fixed 50vh, with its
+     own top edge roughly 50vh - 64px — see .hud-cta-block's `50vh + 64px`
+     for the matching offset below it) no matter what content or viewport
+     combination produces. 100px keeps a real buffer above the sprite
+     without being so conservative it clips the highlights list below the
+     bio — it used to be 140px, which left barely any room for name+role+
+     status+bio alone, let alone highlights. */
+  max-height: calc(50vh - 100px);
   overflow: hidden;
 }
 
@@ -84,30 +88,6 @@
   margin: clamp(6px, 1.2vh, 10px) 0 0;
   text-shadow: 1px 1px 0 var(--pal-ink), -1px -1px 0 var(--pal-ink), 1px -1px 0 var(--pal-ink),
     -1px 1px 0 var(--pal-ink);
-}
-
-.hud-highlights {
-  list-style: none;
-  margin: clamp(10px, 2vh, 18px) auto 0;
-  padding: 0;
-  display: inline-flex;
-  flex-direction: column;
-  gap: clamp(5px, 1vh, 9px);
-  text-align: left;
-}
-
-.hud-highlights li {
-  font-family: var(--font-terminal);
-  font-size: clamp(14px, min(1.9vw, 2.9vh), 22px);
-  line-height: 1.4;
-  color: var(--pal-cream);
-  text-shadow: 1px 1px 0 var(--pal-ink), -1px -1px 0 var(--pal-ink), 1px -1px 0 var(--pal-ink),
-    -1px 1px 0 var(--pal-ink);
-}
-
-.hud-highlights li::before {
-  content: '▸ ';
-  color: var(--pal-grass-light);
 }
 
 /* Pill chips for `**word**` segments (see Highlighted in App.jsx) — solid
@@ -1093,8 +1073,9 @@
 }
 
 .music-toggle {
-  width: 26px;
-  height: 26px;
+  position: relative;
+  width: 30px;
+  height: 30px;
   flex: none;
   display: flex;
   align-items: center;
@@ -1113,10 +1094,15 @@
 /* A little vinyl record — plain CSS shapes (not an emoji/icon font glyph)
    so it stays pixel-crisp at this size and matches the hand-drawn look of
    every other HUD element. Spins continuously while playing and freezes in
-   place (not resets) when paused, like a real turntable. */
+   place (not resets) when paused, like a real turntable. `.music-disc` is a
+   bare <span>, which is display:inline by default — inline elements ignore
+   the `width`/`height` below entirely, which is what made this render as an
+   ~11x20px oval instead of a circle. display:inline-block makes the browser
+   actually respect the explicit square size. */
 .music-disc {
-  width: 20px;
-  height: 20px;
+  display: inline-block;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   background: repeating-radial-gradient(
     circle,
@@ -1146,6 +1132,27 @@
 
 .music-toggle.playing .music-disc {
   animation-play-state: running;
+}
+
+/* Play triangle overlaid on the disc's spindle while paused, so the button
+   reads unambiguously as "press to play" rather than just a spinning
+   record — hidden once playing, when the spin itself is the state cue. */
+.music-play-icon {
+  position: absolute;
+  top: 50%;
+  left: calc(50% + 1px);
+  width: 0;
+  height: 0;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 6px solid var(--pal-cream);
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(1px 0 0 var(--pal-ink)) drop-shadow(-1px 0 0 var(--pal-ink))
+    drop-shadow(0 1px 0 var(--pal-ink)) drop-shadow(0 -1px 0 var(--pal-ink));
+}
+
+.music-toggle.playing .music-play-icon {
+  display: none;
 }
 
 @keyframes music-disc-spin {
@@ -1239,12 +1246,15 @@
   pointer-events: none;
   clip-path: circle(calc(var(--reveal) * 120%) at 50% 50%);
   overflow: auto;
-  /* Without this, scrolling a tall panel (e.g. the project grid) to its
-     top/bottom edge chains the rest of the wheel gesture to the document,
-     which drives the world-scroll camera/character — so browsing the last
-     few pixels of a project list could suddenly walk you out of the house.
-     Containing overscroll here stops that handoff at the panel boundary. */
-  overscroll-behavior: contain;
+  /* Deliberately no overscroll-behavior: contain here — the wheel handler in
+     App.jsx already redirects every tick to this panel's own scrollTop
+     while it's short of either edge, so containment isn't what keeps
+     browsing a tall panel (e.g. the project grid) from walking the
+     character. Once the panel *is* at an edge and the wheel is still
+     pushing the same direction, that handler deliberately lets the event
+     through unswallowed so it can chain to the document and continue the
+     world-scroll/walk to the next house — containing it here would block
+     exactly that handoff and trap the visitor inside the section. */
 }
 
 /* Sizes to content, not just the viewport — .section-floor lives in here as
@@ -1499,6 +1509,12 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
+  /* Gap between rows is what makes each .shelf read as its own physical
+     board instead of the boards touching — real shelf tiers have a slot of
+     open air (and a bit of back panel) between one board and the next. */
+  gap: 40px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   /* floor-wood.png is the same tileable plank texture used for the Contact
      panel floor (.section-floor--wood) — reused here at a much smaller tile
      size so a wooden shelf reads as wood grain rather than as room flooring.
@@ -1515,19 +1531,16 @@
 }
 
 .shelf {
-  flex: 0 1 auto;
-  min-height: 0;
+  flex: 0 0 auto;
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
   justify-content: center;
   align-items: flex-end;
-  gap: 22px 24px;
+  gap: 30px 42px;
   padding-bottom: 20px;
   border-bottom: 8px solid var(--pal-ink);
   box-shadow: 0 6px 0 rgba(0, 0, 0, 0.3);
-  overflow-y: auto;
-  overscroll-behavior: contain;
 }
 
 .hobby-slot {
@@ -1544,24 +1557,35 @@
 }
 
 .hobby-item-thumb {
-  height: 80px;
+  height: 100px;
   width: auto;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
-  border: 3px solid var(--pal-ink);
-  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.35);
-  overflow: hidden;
   image-rendering: pixelated;
   transition: transform 0.15s ease;
 }
 
+/* Cutout photos (background already removed, see pixelize_hobbies.py) get a
+   hard silhouette shadow via filter instead of a box-shadow, so the shadow
+   follows the item's own alpha shape — a racket or shoe casts a
+   racket/shoe-shaped shadow on the shelf, not a rectangular photo-frame
+   one. Only the color-swatch fallback (.hobby-item-thumb--fallback, used
+   when an entry has no image yet) gets the bordered card treatment, since
+   there's no cutout silhouette to shadow there. */
 .hobby-item-thumb img {
   height: 100%;
   width: auto;
   display: block;
   object-fit: contain;
   image-rendering: pixelated;
+  filter: drop-shadow(3px 3px 0 rgba(0, 0, 0, 0.4));
+}
+
+.hobby-item-thumb--fallback {
+  border: 3px solid var(--pal-ink);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.35);
+  align-items: center;
 }
 
 .hobby-item-fallback {
@@ -1746,6 +1770,9 @@
 }
 
 .dialogue-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   background: var(--pal-grass-light);
   color: var(--pal-ink);
   text-decoration: none;
@@ -1766,6 +1793,10 @@
 .dialogue-link--copy {
   border: none;
   cursor: pointer;
+}
+
+.mail-icon {
+  flex: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

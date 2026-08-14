@@ -45,6 +45,7 @@ function MusicPlayer() {
           aria-label={playing ? 'Pause music' : 'Play music'}
         >
           <span className="music-disc" />
+          <span className="music-play-icon" aria-hidden="true" />
         </button>
         <button
           type="button"
