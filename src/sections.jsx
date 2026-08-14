@@ -162,22 +162,36 @@ export const ProjectsPanel = forwardRef(function ProjectsPanel({ active }, ref) 
   );
 });
 
-// Hobbies sit on the shelf as a flex-wrap row rather than a fixed grid —
-// each item's width comes from its own photo's aspect ratio at a fixed
-// display height (see .hobby-item-thumb in App.css: height is set, width is
-// auto), so a tall portrait photo and a wide landscape one both just sit
-// naturally at their own width instead of being cropped into a square. They
-// wrap across as many rows as fit the shelf's actual width, which is what
-// keeps the shelf from ever overflowing its own frame regardless of viewport
-// size or how many hobbies get added. Clicking an item grows the detail
-// panel's flex-basis from 0, which pushes the shelf (flex: 1, so it always
-// exactly fills whatever's left) out of the way in the same motion — driven
-// by the actual remaining space rather than a fixed translateX distance, so
-// there's no way for it to end up cutting the shelf off mid-slide.
+// Hobbies sit on a stack of separate shelf boards rather than one long
+// flex-wrap row — HOBBY_ROW_SIZE items per board, each board its own
+// bordered `.shelf` div, so the bookshelf reads as physical tiers instead of
+// a single shared lip under however many lines the items happened to wrap
+// into. Within a row, items still lay out as a flex-wrap (each item's width
+// comes from its own photo's aspect ratio at a fixed display height — see
+// .hobby-item-thumb in App.css: height is set, width is auto), so a tall
+// portrait photo and a wide landscape one both just sit naturally at their
+// own width instead of being cropped into a square; on a narrow viewport a
+// row can still wrap to two lines, and that row's board just grows to stay
+// under all of them. Clicking an item grows the detail panel's flex-basis
+// from 0, which pushes the shelf stack (flex: 1, so it always exactly fills
+// whatever's left) out of the way in the same motion — driven by the actual
+// remaining space rather than a fixed translateX distance, so there's no way
+// for it to end up cutting the shelf off mid-slide.
+const HOBBY_ROW_SIZE = 3;
+
+function chunkHobbiesIntoRows(hobbies, rowSize) {
+  const rows = [];
+  for (let i = 0; i < hobbies.length; i += rowSize) {
+    rows.push(hobbies.slice(i, i + rowSize).map((h, j) => ({ hobby: h, index: i + j })));
+  }
+  return rows;
+}
+
 export const HobbiesPanel = forwardRef(function HobbiesPanel({ active }, ref) {
   const [selected, setSelected] = useState(null);
 
   const selectedHobby = selected != null ? HOBBIES[selected] : null;
+  const hobbyRows = chunkHobbiesIntoRows(HOBBIES, HOBBY_ROW_SIZE);
 
   return (
     <div ref={ref} className={`section-panel section-panel--hobbies ${active ? 'visible' : ''}`}>
@@ -187,29 +201,34 @@ export const HobbiesPanel = forwardRef(function HobbiesPanel({ active }, ref) {
           <h2 className="projects-heading">Hobbies</h2>
           <div className="bookshelf-stage">
             <div className="bookshelf">
-              <div className="shelf">
-                {HOBBIES.map((h, index) => (
-                  <button
-                    key={h.label}
-                    type="button"
-                    className={`hobby-slot ${selected === index ? 'is-selected' : ''}`}
-                    aria-pressed={selected === index}
-                    onClick={() => setSelected(selected === index ? null : index)}
-                  >
-                    <span
-                      className="hobby-item-thumb"
-                      style={!h.image ? { width: 64, background: h.color } : undefined}
+              {hobbyRows.map((row, rowIndex) => (
+                <div className="shelf" key={rowIndex}>
+                  {row.map(({ hobby: h, index }) => (
+                    <button
+                      key={h.label}
+                      type="button"
+                      className={`hobby-slot ${selected === index ? 'is-selected' : ''}`}
+                      aria-pressed={selected === index}
+                      onClick={() => setSelected(selected === index ? null : index)}
                     >
-                      {h.image ? (
-                        <img src={h.image} alt={h.label} />
-                      ) : (
-                        <span className="hobby-item-fallback">{h.label[0]}</span>
-                      )}
-                    </span>
-                    <span className="hobby-item-label">{h.label}</span>
-                  </button>
-                ))}
-              </div>
+                      <span
+                        className={`hobby-item-thumb ${!h.image ? 'hobby-item-thumb--fallback' : ''}`}
+                        style={{
+                          ...(h.size ? { height: h.size } : null),
+                          ...(!h.image ? { width: 64, background: h.color } : null),
+                        }}
+                      >
+                        {h.image ? (
+                          <img src={h.image} alt={h.label} />
+                        ) : (
+                          <span className="hobby-item-fallback">{h.label[0]}</span>
+                        )}
+                      </span>
+                      <span className="hobby-item-label">{h.label}</span>
+                    </button>
+                  ))}
+                </div>
+              ))}
             </div>
             <div className={`hobby-detail ${selectedHobby ? 'is-open' : ''}`}>
               <div className="hobby-detail-inner">
@@ -259,10 +278,60 @@ function CopyEmailButton({ email }) {
 
   return (
     <button type="button" className="dialogue-link dialogue-link--copy" onClick={handleClick}>
+      {!copied && <MailIcon />}
       {copied ? 'Copied!' : email}
     </button>
   );
 }
+
+// Plain inline SVG (not an icon font glyph) so it stays crisp at this size
+// and needs no extra asset — a small envelope in front of the address is
+// enough to make "this is an email, click to copy" legible at a glance
+// instead of relying on visitors reading it as one from the text alone.
+function MailIcon() {
+  return (
+    <svg
+      className="mail-icon"
+      viewBox="0 0 24 24"
+      width="14"
+      height="14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="3" y="5" width="18" height="14" rx="1.5" />
+      <path d="m3.5 6.5 8.5 6.5 8.5-6.5" />
+    </svg>
+  );
+}
+
+// Standard brand marks (simple-icons paths, CC0) rendered solid in
+// currentColor rather than as MailIcon's stroke line-art — GitHub/LinkedIn
+// only read as themselves as a filled logo, the way every other place they
+// appear renders them.
+function GitHubIcon() {
+  return (
+    <svg className="mail-icon" viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
+      <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.84 1.237 1.84 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.625-5.479 5.921.43.372.823 1.102.823 2.222 0 1.606-.014 2.898-.014 3.293 0 .322.216.694.825.576C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+    </svg>
+  );
+}
+
+function LinkedInIcon() {
+  return (
+    <svg className="mail-icon" viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
+      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.225 0z" />
+    </svg>
+  );
+}
+
+const CONTACT_LINK_ICONS = {
+  GitHub: GitHubIcon,
+  LinkedIn: LinkedInIcon,
+};
 
 export const ContactPanel = forwardRef(function ContactPanel({ active }, ref) {
   return (
@@ -275,17 +344,21 @@ export const ContactPanel = forwardRef(function ContactPanel({ active }, ref) {
             <p className="dialogue-text">{CONTACT.message}</p>
             <div className="dialogue-links">
               {CONTACT.email && <CopyEmailButton email={CONTACT.email} />}
-              {CONTACT.links.map((l) => (
-                <a
-                  key={l.label}
-                  href={l.href}
-                  className="dialogue-link"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {l.label}
-                </a>
-              ))}
+              {CONTACT.links.map((l) => {
+                const Icon = CONTACT_LINK_ICONS[l.label];
+                return (
+                  <a
+                    key={l.label}
+                    href={l.href}
+                    className="dialogue-link"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {Icon && <Icon />}
+                    {l.label}
+                  </a>
+                );
+              })}
             </div>
           </div>
         </div>

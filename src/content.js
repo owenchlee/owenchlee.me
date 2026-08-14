@@ -38,30 +38,42 @@ const justDieDemo = '/projects/just-die-demo.mp4';
 const karaokeDemo = '/projects/karaoke-demo.mp4';
 const ladderGameDemo = '/projects/ladder-game-demo.mp4';
 
-// `**word**` inside a highlight string renders as a colored tag chip (see
-// Highlighted in App.jsx) instead of plain text — same "bold callout" trick
-// as the pill-highlighted role below, just inline within a sentence.
+// `**word**` inside `bio` or a `highlights` entry renders as a colored tag
+// chip (see Highlighted in App.jsx) instead of plain text — same "bold
+// callout" trick as the pill-highlighted role below, just inline within a
+// sentence.
 //
-// `bio` is one short sentence shown under the role line — keep it brief,
-// the HUD textbox has a fixed height budget so it can't grow into the
-// character sprite. `status` is a small availability pill (e.g. what
-// you're open to right now).
+// `bio` is shown under the role line in the walking HUD — keep it to one
+// or two short sentences, the HUD textbox has a fixed vh-based height
+// budget so it can't grow into the character sprite (see .hud-textbox in
+// App.css). `highlights` is the fuller list of facts, rendered only in
+// QuickView, which has no such space constraint. `status` is a small
+// availability pill (e.g. what you're open to right now).
 export const INTRO = {
   name: 'Owen Lee',
   roleTitle: 'Systems Design Engineering',
   roleOrg: 'University of Waterloo',
-  bio: "I like building things end-to-end — from computer vision to full-stack apps to game logic on a breadboard.",
+  bio: "I build things end to end, from computer vision to full-stack apps to game logic on a breadboard, and shipped **FoodFindr**, live now at foodfindr.tech.",
   status: 'Open to internships/co-op',
   highlights: [
-    'Builds **full-stack apps**, **games**, and **computer vision tools**',
+    'Builds **full-stack apps**, **games**, and **computer vision** tools',
     'Shipped **FoodFindr**, live at foodfindr.tech',
-    'Always learning something new and **shipping side projects**',
+    'Always tinkering and **shipping side projects**',
   ],
 };
 
 export const PROJECTS = [
   {
-    name: 'Personal Karaoke',
+    name: 'Fits',
+    date: 'Aug 2026',
+    color: '#4fae7a',
+    image: null,
+    link: 'https://github.com/owenchlee/Fits',
+    tech: ['Next.js', 'TypeScript', 'Capacitor', 'Supabase'],
+    desc: 'A mobile workout-tracking app built with Next.js and Capacitor, with progress charts and history that a lot of competing apps lock behind a paywall — here, all of it is free.',
+  },
+  {
+    name: 'Sing Score',
     date: 'Jul 2026',
     color: '#26a8b1',
     video: karaokeDemo,
@@ -137,19 +149,22 @@ export const PROJECTS = [
 
 // Each entry renders as a photo sitting on the shelf in HobbiesPanel —
 // `color` is the fallback swatch shown until `image` is set, `label` is the
-// nameplate under it. They wrap into as many shelf rows as fit (see
+// nameplate under it. They're laid out HOBBY_ROW_SIZE per shelf board (see
 // HobbiesPanel in sections.jsx), each at its own photo's natural aspect
 // ratio — so just add more entries here to add more items; no layout code
-// to touch.
+// to touch. `size` is an optional override (px) for the thumb's display
+// height — everything defaults to .hobby-item-thumb's 100px in App.css;
+// only set it when an item needs to read at a different scale than the rest
+// of the shelf.
 export const HOBBIES = [
-  { label: 'Basketball', color: '#f0a94e', image: basketballPixel, desc: "Pickup ball whenever I can get a run going — nothing like a fast break and a clean jump shot to clear my head." },
+  { label: 'Basketball', color: '#f0a94e', image: basketballPixel, desc: "Pickup ball whenever I can get a run going. Nothing beats a fast break and a clean jump shot to clear my head." },
   { label: 'Gaming', color: '#5b7a94', image: gamingPixel, desc: "Everything from competitive shooters to cozy indie titles. It's my go-to way to unwind and hang out with friends online." },
-  { label: 'Badminton', color: '#4da338', image: badmintonPixel, desc: "Fast rallies and faster reflexes — one of my favorite ways to get a good sweat in with friends." },
-  { label: 'Cooking', color: '#e8877a', image: cookingPixel, desc: "Always experimenting in the kitchen, from weeknight staples to trying to recreate dishes I loved somewhere." },
+  { label: 'Badminton', color: '#4da338', image: badmintonPixel, size: 70, desc: "Fast rallies and faster reflexes, one of my favorite ways to get a good sweat in with friends." },
+  { label: 'Cooking', color: '#e8877a', image: cookingPixel, size: 140, desc: "Always experimenting in the kitchen, from weeknight staples to trying to recreate dishes I loved somewhere." },
   { label: 'Board Games', color: '#6f5fa3', image: boardGamesPixel, desc: "Strategy games, party games, anything with a table full of friends and a bit of friendly competition." },
-  { label: 'Running', color: '#26a8b1', image: runningPixel, desc: "A steady way to clear my head and stay in shape — chasing a few personal bests along the way." },
-  { label: 'Working Out', color: '#8ea9c9', image: workoutPixel, desc: "Regular gym sessions to build strength and stay consistent — it's become one of my favorite daily habits." },
-  { label: 'Singing', color: '#b5495b', image: singingPixel, desc: "Karaoke, car singalongs, whatever excuse I can find — also part of why I built Personal Karaoke." },
+  { label: 'Running', color: '#26a8b1', image: runningPixel, desc: "A steady way to clear my head and stay in shape, chasing a few personal bests along the way." },
+  { label: 'Working Out', color: '#8ea9c9', image: workoutPixel, desc: "Regular gym sessions to build strength and stay consistent. It's become one of my favorite daily habits." },
+  { label: 'Singing', color: '#b5495b', image: singingPixel, desc: "Karaoke, car singalongs, whatever excuse I can find. Also part of why I built Sing Score." },
 ];
 
 export const CONTACT = {

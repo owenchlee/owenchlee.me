@@ -2,7 +2,10 @@
    genuinely different "mode" of the site (plain, static, conventional),
    not a themed variant of the game chrome. Readable measure, high contrast,
    normal document flow, real focus rings (inherited from the global
-   a:focus-visible/button:focus-visible rule in index.css). */
+   a:focus-visible/button:focus-visible rule in index.css). Every class here
+   is scoped to .quick-view so nothing bleeds in from (or out to) App.css —
+   including tech-chip styling, which used to reuse App.css's pixel-font
+   .tech-chip and read as an unstyled wireframe here as a result. */
 
 .quick-view {
   position: fixed;
@@ -15,7 +18,7 @@
 }
 
 .quick-view-panel {
-  max-width: 720px;
+  max-width: 760px;
   margin: 0 auto;
   padding: 64px 24px 96px;
 }
@@ -63,7 +66,48 @@
   font-size: 17px;
   line-height: 1.6;
   max-width: 60ch;
+  margin: 0 0 16px;
+}
+
+/* .hud-tag chips (rendered by the shared Highlighted component) are pixel-
+   font/hard-shadow by default to match the game HUD — softened here to fit
+   QuickView's plain, conventional register instead. */
+.quick-view-bio .hud-tag,
+.quick-view-highlights .hud-tag {
+  font-family: inherit;
+  font-size: 0.92em;
+  font-weight: 700;
+  color: var(--pal-ink);
+  background: var(--tag-color, var(--pal-grass-light));
+  border: none;
+  box-shadow: none;
+  border-radius: 4px;
+  padding: 1px 7px;
+  text-shadow: none;
+  vertical-align: 0;
+}
+
+.quick-view-highlights {
+  list-style: none;
   margin: 0 0 40px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.quick-view-highlights li {
+  font-size: 16px;
+  line-height: 1.5;
+  padding-left: 20px;
+  position: relative;
+}
+
+.quick-view-highlights li::before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  color: var(--pal-grass);
 }
 
 .quick-view h2 {
@@ -79,7 +123,15 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 16px;
+}
+
+.quick-view-projects li {
+  border: 1px solid rgba(28, 23, 18, 0.15);
+  border-left: 5px solid var(--accent, var(--pal-grass));
+  background: rgba(28, 23, 18, 0.03);
+  border-radius: 6px;
+  padding: 16px 20px;
 }
 
 .quick-view-projects h3 {
@@ -100,10 +152,29 @@
   margin: 8px 0 0;
 }
 
+.quick-view-tech {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 0;
+  padding: 0;
+}
+
+.quick-view-tech li {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--pal-ink-soft);
+  background: rgba(28, 23, 18, 0.06);
+  border: 1px solid rgba(28, 23, 18, 0.12);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
 .quick-view-links {
   display: flex;
   gap: 16px;
-  margin-top: 10px;
+  margin-top: 12px;
   font-size: 15px;
 }
 
@@ -118,19 +189,69 @@
   font-style: italic;
 }
 
+.quick-view-hobbies {
+  list-style: none;
+  margin: 0 0 48px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.quick-view-hobbies li {
+  border: 1px solid rgba(28, 23, 18, 0.15);
+  border-top: 4px solid var(--accent, var(--pal-grass));
+  border-radius: 6px;
+  padding: 12px 14px;
+}
+
+.quick-view-hobbies h3 {
+  font-size: 15px;
+  margin: 0 0 4px;
+}
+
+.quick-view-hobbies p {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--pal-ink-soft);
+  margin: 0;
+}
+
 .quick-view-contact {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
-  gap: 20px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
-.quick-view-contact a {
-  font-size: 16px;
+.quick-view-contact a,
+.qv-email-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font: inherit;
+  font-size: 15px;
   font-weight: 600;
   color: var(--pal-ink);
+  background: rgba(28, 23, 18, 0.06);
+  border: 1px solid rgba(28, 23, 18, 0.15);
+  border-radius: 999px;
+  padding: 9px 16px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.quick-view-contact a:hover,
+.qv-email-button:hover {
+  background: var(--pal-grass-light);
+  border-color: var(--pal-grass-light);
+}
+
+.qv-mail-icon {
+  flex: none;
 }
 
 @media (max-width: 480px) {

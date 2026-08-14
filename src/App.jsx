@@ -30,6 +30,7 @@ import {
 } from './tileMap';
 import { ProjectsPanel, HobbiesPanel, ContactPanel } from './sections';
 import { INTRO } from './content';
+import { Highlighted } from './Highlighted';
 import Minimap from './Minimap';
 import SectionNav from './SectionNav';
 import MusicPlayer from './MusicPlayer';
@@ -159,30 +160,6 @@ function zFromGroundY(groundY) {
   return Math.round(groundY);
 }
 
-// Cycled across `**tag**` matches in a Highlighted string so a multi-tag
-// sentence reads as distinct callouts rather than one repeated color —
-// pulled from the same house-color family already used in HOUSES/SectionNav.
-const TAG_COLORS = ['#5b7a94', '#4da338', '#c9463e', '#d4b23c'];
-
-// Renders `**word**` segments of `text` as .hud-tag pill chips, everything
-// else as plain text — the inline "bold callout" look from the reference
-// design, without needing a markdown dependency for one tiny pattern.
-function Highlighted({ text }) {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
-  let tagIndex = 0;
-  return parts.map((part, i) => {
-    const match = part.match(/^\*\*([^*]+)\*\*$/);
-    if (!match) return part;
-    const color = TAG_COLORS[tagIndex % TAG_COLORS.length];
-    tagIndex += 1;
-    return (
-      <span key={i} className="hud-tag" style={{ '--tag-color': color }}>
-        {match[1]}
-      </span>
-    );
-  });
-}
-
 function App() {
   const trackRef = useRef(null);
   const boxRef = useRef(null);
@@ -215,6 +192,80 @@ function App() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [quickView]);
+
+  // While a house is fully open, its .section-panel sits on top of the
+  // world (position:absolute inset:0 inside the sticky .stage-box) and is
+  // itself independently scrollable — so without this, the same wheel
+  // gesture could land on either the panel's own scrollbar or the page's
+  // native one depending on exactly where the content happened to be
+  // scrolled, and the only way to tell which was "in control" was to watch
+  // which scrollbar thumb on the right edge actually moved. Redirecting
+  // every wheel tick straight to the open panel's scrollTop instead — and
+  // blocking the page scroll that drives the world-walk — makes it
+  // unambiguous: with a section open, the wheel always browses that
+  // section first. (SectionNav is also always available as an instant
+  // jump.) Once the panel is already scrolled to the edge in the direction
+  // the wheel is still pushing, the tick is redirected to window.scrollBy
+  // instead — that's what hands control back to the page scroll so
+  // continuing to scroll down (or up) walks the character back out of the
+  // house and on toward the next one, rather than trapping the visitor
+  // inside whichever section they scrolled into. This can't just be a matter
+  // of letting the native event through unprevented: .section-panel's
+  // scrollable ancestor chain dead-ends at .stage-box (overflow:hidden, by
+  // design — it's sticky-positioned and isn't the element the page actually
+  // scrolls), so there's no DOM path for the browser's own scroll-chaining
+  // to ever reach `window`, and the tick would just be swallowed. Skipped
+  // while Quick View's own overlay is open so its independent scroll isn't
+  // hijacked.
+  useEffect(() => {
+    if (!activeHouse) return undefined;
+    function redirectDelta(deltaY) {
+      const panelEl = panelRefs.current[activeHouse];
+      if (!panelEl) return;
+      const atTop = panelEl.scrollTop <= 0;
+      const atBottom = panelEl.scrollTop + panelEl.clientHeight >= panelEl.scrollHeight - 1;
+      if ((deltaY < 0 && atTop) || (deltaY > 0 && atBottom)) {
+        window.scrollBy(0, deltaY);
+        return;
+      }
+      panelEl.scrollTop += deltaY;
+    }
+    function onWheel(e) {
+      if (e.target.closest('.quick-view')) return;
+      e.preventDefault();
+      redirectDelta(e.deltaY);
+    }
+    // Touch equivalent of onWheel above: touch devices never fire 'wheel',
+    // so without this a swipe that reaches the open panel's scroll edge has
+    // nowhere to go — native touch-scroll chaining dead-ends at
+    // .stage-box's overflow:hidden exactly like the wheel case did.
+    let lastTouchY = null;
+    function onTouchStart(e) {
+      if (e.target.closest('.quick-view')) return;
+      lastTouchY = e.touches[0].clientY;
+    }
+    function onTouchMove(e) {
+      if (e.target.closest('.quick-view') || lastTouchY == null) return;
+      const currentY = e.touches[0].clientY;
+      const deltaY = lastTouchY - currentY;
+      lastTouchY = currentY;
+      e.preventDefault();
+      redirectDelta(deltaY);
+    }
+    function onTouchEnd() {
+      lastTouchY = null;
+    }
+    window.addEventListener('wheel', onWheel, { passive: false });
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('touchend', onTouchEnd, { passive: true });
+    return () => {
+      window.removeEventListener('wheel', onWheel);
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [activeHouse]);
 
   // Which way the character should face to cover a given (dx, dy) leg —
   // side + mirrored if that leg is mostly horizontal, else up/down.
@@ -576,14 +627,11 @@ function App() {
               @ {INTRO.roleOrg}
             </div>
             {INTRO.status && <div className="hud-status">{INTRO.status}</div>}
-            {INTRO.bio && <p className="hud-bio">{INTRO.bio}</p>}
-            <ul className="hud-highlights">
-              {INTRO.highlights.map((line) => (
-                <li key={line}>
-                  <Highlighted text={line} />
-                </li>
-              ))}
-            </ul>
+            {INTRO.bio && (
+              <p className="hud-bio">
+                <Highlighted text={INTRO.bio} />
+              </p>
+            )}
           </div>
         </header>
 
