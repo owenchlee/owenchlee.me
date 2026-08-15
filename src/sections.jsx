@@ -131,19 +131,22 @@ export const ProjectsPanel = forwardRef(function ProjectsPanel({ active }, ref) 
               <article key={p.name} className="project-card">
                 <CardThumb video={p.video} image={p.image} color={p.color} alt={p.name} registerVideo={registerVideo} />
                 <div className="project-meta">
-                  <h3>
-                    {p.link ? (
-                      <a href={p.link} target="_blank" rel="noreferrer">{p.name}</a>
-                    ) : (
-                      p.name
-                    )}
-                  </h3>
+                  <h3>{p.name}</h3>
                   <span className="project-date">{p.date}</span>
                 </div>
-                {p.live && (
-                  <a href={p.live} target="_blank" rel="noreferrer" className="project-live-link">
-                    Live Demo →
-                  </a>
+                {(p.link || p.live) && (
+                  <div className="project-links">
+                    {p.link && (
+                      <a href={p.link} target="_blank" rel="noreferrer" className="project-live-link">
+                        <GitHubIcon /> GitHub
+                      </a>
+                    )}
+                    {p.live && (
+                      <a href={p.live} target="_blank" rel="noreferrer" className="project-live-link">
+                        Live Demo →
+                      </a>
+                    )}
+                  </div>
                 )}
                 <p>{p.desc}</p>
                 {p.tech?.length > 0 && (
@@ -196,9 +199,11 @@ export const HobbiesPanel = forwardRef(function HobbiesPanel({ active }, ref) {
   return (
     <div ref={ref} className={`section-panel section-panel--hobbies ${active ? 'visible' : ''}`}>
       <div className="section-panel-inner">
-        <div className="section-floor section-floor--grass" />
+        <div className="section-floor section-floor--house" />
         <div className="section-content hobbies-content">
           <h2 className="projects-heading">Hobbies</h2>
+          <div className="house-frame house-frame--a" aria-hidden="true" />
+          <div className="house-frame house-frame--b" aria-hidden="true" />
           <div className="bookshelf-stage">
             <div className="bookshelf">
               {hobbyRows.map((row, rowIndex) => (

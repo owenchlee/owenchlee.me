@@ -1361,6 +1361,27 @@
   background-image: url('./assets/grass.png');
 }
 
+/* Hobbies used to sit on a tiled grass texture even though it's reached by
+   walking into a house on the overworld (see `activeHouse` in App.jsx) —
+   a shelf floating on outdoor grass read as a continuity error. This is a
+   plain wallpaper band over the same tiled floor-wood.png the Contact room
+   uses, with a dark baseboard line where they meet, so Hobbies reads as an
+   interior room like every other house on the site instead of an outdoor
+   clearing. */
+.section-floor--house {
+  background-image: linear-gradient(
+      to bottom,
+      var(--pal-path-dark) 0%,
+      var(--pal-path-dark) 56%,
+      var(--pal-ink) 56%,
+      var(--pal-ink) 59%,
+      transparent 59%
+    ),
+    url('./assets/floor-wood.png');
+  background-size: 100% 100%, 48px 48px;
+  background-repeat: no-repeat, repeat;
+}
+
 .section-content {
   position: relative;
   z-index: 1;
@@ -1474,15 +1495,6 @@
   font-size: 18px;
 }
 
-.project-meta h3 a {
-  color: inherit;
-  text-decoration: none;
-}
-
-.project-meta h3 a:hover {
-  text-decoration: underline;
-}
-
 .project-date {
   font-family: var(--font-terminal);
   color: var(--pal-ink-soft);
@@ -1518,9 +1530,17 @@
   padding: 2px 8px;
 }
 
-.project-live-link {
-  display: inline-block;
+.project-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
   margin-top: 10px;
+}
+
+.project-live-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-family: var(--font-terminal);
   font-size: 14px;
   font-weight: bold;
@@ -1565,6 +1585,46 @@
   overscroll-behavior: contain;
 }
 
+/* Small wall-hung picture frames on the wallpaper band above the shelf —
+   plain CSS boxes in the same hard-pixel-border language as .tech-chip and
+   .project-card, rather than a new image asset, so the room reads as lived
+   in without adding art dependencies. Hidden on narrow viewports where the
+   wall band itself is too short to hold them without crowding the shelf. */
+.house-frame {
+  position: absolute;
+  top: 78px;
+  width: 46px;
+  height: 60px;
+  background: var(--pal-cream);
+  border: 4px solid var(--pal-ink);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
+}
+
+.house-frame::after {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  background: var(--frame-tint);
+}
+
+.house-frame--a {
+  left: 8%;
+  --frame-tint: var(--pal-water);
+  transform: rotate(-2deg);
+}
+
+.house-frame--b {
+  right: 8%;
+  --frame-tint: var(--pal-path);
+  transform: rotate(2deg);
+}
+
+@media (max-width: 900px) {
+  .house-frame {
+    display: none;
+  }
+}
+
 .bookshelf-stage {
   flex: 1 1 auto;
   min-height: 0;
@@ -1581,7 +1641,14 @@
 }
 
 .bookshelf {
-  flex: 1 1 auto;
+  /* flex-grow: 0, not 1 — the old full-width-fill behavior stretched a
+     3-items-per-row shelf edge to edge on wide screens, leaving huge empty
+     gaps that made it read as a floating plank rather than furniture.
+     Shrink-to-fit plus auto margins centers it at its own content width
+     instead; max-width is only a safety cap for ultra-wide screens. */
+  flex: 0 1 auto;
+  max-width: 900px;
+  margin: 0 auto;
   max-height: 100%;
   min-width: 0;
   display: flex;

@@ -53,11 +53,11 @@ export const INTRO = {
   name: 'Owen Lee',
   roleTitle: 'Systems Design Engineering',
   roleOrg: 'University of Waterloo',
-  bio: "I build things end to end, from computer vision to full-stack apps to game logic on a breadboard, and shipped **FoodFindr**, live now at foodfindr.tech.",
+  bio: "I build things end to end, from computer vision to full-stack apps to game logic on a breadboard, and I'm always shipping something new.",
   status: 'Open to internships/co-op',
   highlights: [
     'Builds **full-stack apps**, **games**, and **computer vision** tools',
-    'Shipped **FoodFindr**, live at foodfindr.tech',
+    'Ships projects across **software and hardware**, from apps to breadboard circuits',
     'Always tinkering and **shipping side projects**',
   ],
 };
@@ -70,7 +70,7 @@ export const PROJECTS = [
     image: null,
     link: 'https://github.com/owenchlee/Fits',
     tech: ['Next.js', 'TypeScript', 'Capacitor', 'Supabase'],
-    desc: 'A mobile workout-tracking app built with Next.js and Capacitor, with progress charts and history that a lot of competing apps lock behind a paywall — here, all of it is free.',
+    desc: 'A mobile workout-tracking app built with Next.js and Capacitor, with progress charts and history that a lot of competing apps lock behind a paywall. Here, all of it is free.',
   },
   {
     name: 'Sing Score',
