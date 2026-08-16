@@ -1280,6 +1280,37 @@
     width: 74px;
     height: 94px;
   }
+
+  /* .hud-nameplate has no width-based sizing anywhere else — on a short,
+     narrow phone its clamp(32px, 7vh, 88px) top offset lands well inside
+     the vertical band .section-nav and .quick-view-toggle occupy at their
+     own top:8px, and its left:16px/right:16px span reaches under both
+     corner widgets horizontally too. Since the corner widgets sit at
+     z-index 30/31 versus this box's z-index 6, the result is the name/bio
+     plaque rendering underneath the nav and Quick View chrome instead of
+     starting below it. Pushing the top down past both corner widgets and
+     narrowing the max-height by the same amount (so the box still stops the
+     same distance above the fixed-50vh character) fixes the collision
+     without touching the vh-based scaling that already handles short
+     viewports. */
+  .hud-nameplate {
+    top: 100px;
+    left: 12px;
+    right: 12px;
+  }
+
+  .hud-textbox {
+    max-height: calc(50vh - 120px);
+  }
+
+  /* The dual GitHub/Live-demo buttons (see .project-links) read as busy on
+     a phone-width card even though neither literally overlaps anything —
+     stacking them removes the wrapped-pill row without shrinking either
+     link's tap target. */
+  .project-links {
+    flex-direction: column;
+    gap: 8px;
+  }
 }
 
 /* --- Section showcase panels ---
@@ -1585,38 +1616,48 @@
   overscroll-behavior: contain;
 }
 
-/* Small wall-hung picture frames on the wallpaper band above the shelf —
-   plain CSS boxes in the same hard-pixel-border language as .tech-chip and
+/* Wall-hung picture frames on the wallpaper band above the shelf — plain
+   CSS boxes in the same hard-pixel-border language as .tech-chip and
    .project-card, rather than a new image asset, so the room reads as lived
-   in without adding art dependencies. Hidden on narrow viewports where the
+   in without adding art dependencies. Anchored with calc() off center
+   (rather than a flat left/right %) so they stay grouped above the actual
+   900px-capped shelf on wide screens instead of drifting out toward the
+   room's edges as the viewport grows. Hidden on narrow viewports where the
    wall band itself is too short to hold them without crowding the shelf. */
 .house-frame {
   position: absolute;
-  top: 78px;
-  width: 46px;
-  height: 60px;
+  top: 64px;
+  width: 72px;
+  height: 92px;
   background: var(--pal-cream);
   border: 4px solid var(--pal-ink);
-  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
+  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.3);
 }
 
 .house-frame::after {
   content: '';
   position: absolute;
-  inset: 7px;
+  inset: 8px;
   background: var(--frame-tint);
 }
 
 .house-frame--a {
-  left: 8%;
+  left: calc(50% - 380px);
   --frame-tint: var(--pal-water);
-  transform: rotate(-2deg);
+  transform: rotate(-3deg);
 }
 
 .house-frame--b {
-  right: 8%;
+  right: calc(50% - 380px);
   --frame-tint: var(--pal-path);
-  transform: rotate(2deg);
+  transform: rotate(3deg);
+}
+
+.house-frame--c {
+  left: calc(50% - 40px);
+  top: 48px;
+  --frame-tint: var(--pal-grass-light);
+  transform: rotate(-1deg);
 }
 
 @media (max-width: 900px) {
@@ -1625,7 +1666,138 @@
   }
 }
 
+/* Floor-level furniture grouped around the shelf: a rug it and the chair/
+   lamp/dog all sit on, so the empty flanks either side of the shelf read as
+   the rest of a furnished room instead of bare wallpaper. Same treatment as
+   .house-frame — bottom-anchored plain CSS shapes, hidden below 900px so
+   they never compete with the shelf on the viewports where it's already
+   tight on width. */
+.room-rug {
+  position: absolute;
+  left: 50%;
+  bottom: 148px;
+  transform: translateX(-50%);
+  width: min(78%, 760px);
+  height: 150px;
+  border-radius: 50% / 22%;
+  background: var(--pal-water);
+  border: 4px solid var(--pal-ink);
+  box-shadow: inset 0 0 0 8px rgba(248, 240, 220, 0.18);
+  z-index: 0;
+}
+
+.room-lamp {
+  position: absolute;
+  left: 6%;
+  bottom: 150px;
+  width: 60px;
+  height: 190px;
+  z-index: 0;
+}
+
+.room-lamp-shade {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 56px;
+  height: 40px;
+  clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%);
+  background: var(--pal-path);
+  border: 3px solid var(--pal-ink);
+  box-shadow: 0 0 24px 6px rgba(230, 190, 110, 0.45);
+}
+
+.room-lamp-pole {
+  position: absolute;
+  top: 38px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 128px;
+  background: var(--pal-ink);
+}
+
+.room-lamp-base {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 34px;
+  height: 8px;
+  background: var(--pal-ink);
+}
+
+.room-chair {
+  position: absolute;
+  right: 7%;
+  bottom: 150px;
+  width: 74px;
+  height: 96px;
+  z-index: 0;
+}
+
+.room-chair-back {
+  position: absolute;
+  top: 0;
+  left: 8px;
+  width: 58px;
+  height: 52px;
+  background: var(--pal-path-dark);
+  border: 4px solid var(--pal-ink);
+}
+
+.room-chair-seat {
+  position: absolute;
+  top: 44px;
+  left: 0;
+  width: 74px;
+  height: 22px;
+  background: var(--pal-path);
+  border: 4px solid var(--pal-ink);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.3);
+}
+
+.room-chair-leg {
+  position: absolute;
+  top: 64px;
+  width: 8px;
+  height: 30px;
+  background: var(--pal-ink);
+}
+
+.room-chair-leg--l {
+  left: 8px;
+}
+
+.room-chair-leg--r {
+  right: 8px;
+}
+
+.room-pet {
+  position: absolute;
+  left: 38%;
+  bottom: 156px;
+  height: 52px;
+  width: auto;
+  image-rendering: pixelated;
+  transform: scaleX(-1);
+  filter: drop-shadow(3px 3px 0 rgba(0, 0, 0, 0.35));
+  z-index: 0;
+}
+
+@media (max-width: 900px) {
+  .room-rug,
+  .room-lamp,
+  .room-chair,
+  .room-pet {
+    display: none;
+  }
+}
+
 .bookshelf-stage {
+  position: relative;
+  z-index: 1;
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
@@ -1701,7 +1873,7 @@
 }
 
 .hobby-item-thumb {
-  height: 100px;
+  height: 80px;
   width: auto;
   display: flex;
   align-items: flex-end;
