@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useRef, useState } from 'react';
 import { PROJECTS, HOBBIES, CONTACT } from './content';
+import petDogA from './assets/pet-dog-a.png';
 
 // Shared across every CardThumb in a panel so playback tracks by row, not by
 // individual card — a single IntersectionObserver tracks each video's
@@ -204,6 +205,20 @@ export const HobbiesPanel = forwardRef(function HobbiesPanel({ active }, ref) {
           <h2 className="projects-heading">Hobbies</h2>
           <div className="house-frame house-frame--a" aria-hidden="true" />
           <div className="house-frame house-frame--b" aria-hidden="true" />
+          <div className="house-frame house-frame--c" aria-hidden="true" />
+          <div className="room-rug" aria-hidden="true" />
+          <div className="room-lamp" aria-hidden="true">
+            <span className="room-lamp-shade" />
+            <span className="room-lamp-pole" />
+            <span className="room-lamp-base" />
+          </div>
+          <div className="room-chair" aria-hidden="true">
+            <span className="room-chair-back" />
+            <span className="room-chair-seat" />
+            <span className="room-chair-leg room-chair-leg--l" />
+            <span className="room-chair-leg room-chair-leg--r" />
+          </div>
+          <img src={petDogA} className="room-pet" alt="" aria-hidden="true" />
           <div className="bookshelf-stage">
             <div className="bookshelf">
               {hobbyRows.map((row, rowIndex) => (

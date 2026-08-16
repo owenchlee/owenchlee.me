@@ -153,14 +153,14 @@ export const PROJECTS = [
 // HobbiesPanel in sections.jsx), each at its own photo's natural aspect
 // ratio — so just add more entries here to add more items; no layout code
 // to touch. `size` is an optional override (px) for the thumb's display
-// height — everything defaults to .hobby-item-thumb's 100px in App.css;
+// height — everything defaults to .hobby-item-thumb's 80px in App.css;
 // only set it when an item needs to read at a different scale than the rest
 // of the shelf.
 export const HOBBIES = [
   { label: 'Basketball', color: '#f0a94e', image: basketballPixel, desc: "Pickup ball whenever I can get a run going. Nothing beats a fast break and a clean jump shot to clear my head." },
   { label: 'Gaming', color: '#5b7a94', image: gamingPixel, desc: "Everything from competitive shooters to cozy indie titles. It's my go-to way to unwind and hang out with friends online." },
-  { label: 'Badminton', color: '#4da338', image: badmintonPixel, size: 70, desc: "Fast rallies and faster reflexes, one of my favorite ways to get a good sweat in with friends." },
-  { label: 'Cooking', color: '#e8877a', image: cookingPixel, size: 140, desc: "Always experimenting in the kitchen, from weeknight staples to trying to recreate dishes I loved somewhere." },
+  { label: 'Badminton', color: '#4da338', image: badmintonPixel, size: 56, desc: "Fast rallies and faster reflexes, one of my favorite ways to get a good sweat in with friends." },
+  { label: 'Cooking', color: '#e8877a', image: cookingPixel, size: 108, desc: "Always experimenting in the kitchen, from weeknight staples to trying to recreate dishes I loved somewhere." },
   { label: 'Board Games', color: '#6f5fa3', image: boardGamesPixel, desc: "Strategy games, party games, anything with a table full of friends and a bit of friendly competition." },
   { label: 'Running', color: '#26a8b1', image: runningPixel, desc: "A steady way to clear my head and stay in shape, chasing a few personal bests along the way." },
   { label: 'Working Out', color: '#8ea9c9', image: workoutPixel, desc: "Regular gym sessions to build strength and stay consistent. It's become one of my favorite daily habits." },
