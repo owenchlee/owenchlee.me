@@ -969,6 +969,63 @@
   color: var(--pal-grass-light);
 }
 
+/* One-time small-screen nudge toward Quick View — see the mount check in
+   App.jsx. A bottom-center toast rather than a top bar deliberately: the
+   top corners are already claimed by .section-nav/.quick-view-toggle (see
+   their z-index 30/31 and the hud-nameplate comment above about how tight
+   that band already is on a phone-width screen), so a full-width bar up
+   there would either cover them or need to push them down and re-tune all
+   that existing spacing. Bottom-center sits between .minimap and
+   .music-player's corners, clear of both, and above everything (z-index
+   210) including the Quick View overlay itself (z-index 200 in
+   QuickView.css) since the button below can open Quick View without
+   necessarily dismissing this toast first. */
+.mobile-notice {
+  position: fixed;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  z-index: 210;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(90vw, 420px);
+  background: var(--pal-ink);
+  color: var(--pal-cream);
+  border: 3px solid var(--pal-cream);
+  box-shadow: 3px 3px 0 #000;
+  padding: 10px 12px;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.mobile-notice p {
+  margin: 0;
+  flex: 1;
+}
+
+.mobile-notice-link {
+  font: inherit;
+  color: var(--pal-grass-light);
+  background: none;
+  border: none;
+  padding: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.mobile-notice-close {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  background: none;
+  border: 2px solid var(--pal-cream);
+  color: var(--pal-cream);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
 /* --- Minimap HUD ---
    Fixed in the corner and rendered at the app root (not inside the stage),
    so it stays visible through every section takeover — the one element
