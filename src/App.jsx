@@ -181,6 +181,24 @@ function App() {
   const reducedMotionRef = useRef(false);
   const [activeHouse, setActiveHouse] = useState(null);
   const [quickView, setQuickView] = useState(false);
+  const [mobileNotice, setMobileNotice] = useState(false);
+
+  // One-time nudge for small screens: the scrolling world is tuned for a
+  // desktop-sized stage-box and gets tight/overlapping on phones, so point
+  // first-time mobile visitors at Quick View (a plain layout of the same
+  // content, see the toggle below) instead of letting them fight the game
+  // camera. Checked once on mount, not on resize — this is about the
+  // device the page loaded on, not a live viewport-width reaction. Skipped
+  // entirely once dismissed, on this device, via localStorage.
+  useEffect(() => {
+    if (localStorage.getItem('mobileNoticeDismissed')) return;
+    if (window.matchMedia('(max-width: 900px)').matches) setMobileNotice(true);
+  }, []);
+
+  function dismissMobileNotice() {
+    setMobileNotice(false);
+    localStorage.setItem('mobileNoticeDismissed', '1');
+  }
 
   // Escape closes Quick View, matching its own visible "Back to site"
   // button — only listens while the overlay is actually open.
@@ -615,6 +633,34 @@ function App() {
 
   return (
     <>
+      {mobileNotice && (
+        <div className="mobile-notice" role="status">
+          <p>
+            This site's a little scrolling world, built for a bigger screen — for the best experience, check
+            it out on desktop. Or{' '}
+            <button
+              type="button"
+              className="mobile-notice-link"
+              onClick={() => {
+                setQuickView(true);
+                dismissMobileNotice();
+              }}
+            >
+              try Quick View
+            </button>{' '}
+            for a simpler layout.
+          </p>
+          <button
+            type="button"
+            className="mobile-notice-close"
+            onClick={dismissMobileNotice}
+            aria-label="Dismiss"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       <div aria-hidden={quickView || undefined} inert={quickView || undefined}>
       <div className="stage-track" ref={trackRef} style={{ height: TRACK_HEIGHT }}>
         <header className="hud-nameplate">
