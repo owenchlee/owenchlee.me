@@ -167,6 +167,19 @@
     -1px 1px 0 var(--pal-ink);
 }
 
+/* Inherits .hud-scroll-hint's own text-shadow/size via normal cascade —
+   only the things that make it read as a link differ. */
+.hud-resume-link {
+  color: inherit;
+  text-decoration: underline;
+  opacity: 1;
+}
+
+.hud-resume-link:hover,
+.hud-resume-link:focus-visible {
+  color: var(--pal-grass-light);
+}
+
 /* --- Stage --- */
 
 .stage-track {
@@ -1640,6 +1653,99 @@
   color: var(--pal-ink-soft);
 }
 
+/* Experience: résumé-style groups (Education / Work & Leadership / Skills)
+   sitting in .projects-content alongside .projects-heading, reusing
+   .project-card/.project-tech/.tech-chip from the Projects styling above —
+   a résumé entry is a project card with a bullet list instead of a single
+   prose paragraph, not a different visual language. */
+.experience-group {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto 40px;
+}
+
+.experience-group-heading {
+  font-family: var(--font-pixel);
+  color: var(--pal-cream);
+  font-size: 14px;
+  margin: 0 0 20px;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.4);
+}
+
+.experience-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr));
+  gap: 24px;
+}
+
+.experience-org {
+  margin: 4px 0 0;
+  color: var(--pal-ink-soft);
+  font-family: var(--font-terminal);
+  font-size: 14px;
+}
+
+.experience-bullets {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: var(--pal-ink-soft);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.experience-bullets li + li {
+  margin-top: 4px;
+}
+
+.skills-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.skills-category-label {
+  display: block;
+  font-family: var(--font-terminal);
+  font-weight: bold;
+  color: var(--pal-cream);
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.experience-resume-link {
+  display: inline-block;
+  margin: 8px auto 0;
+  background: var(--pal-grass-light);
+  color: var(--pal-ink);
+  border: 3px solid var(--pal-ink);
+  font-family: var(--font-pixel);
+  font-size: 13px;
+  padding: 12px 20px;
+  text-decoration: none;
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.experience-resume-link:hover,
+.experience-resume-link:focus-visible {
+  background: var(--pal-grass);
+  color: var(--pal-cream);
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 var(--pal-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .experience-resume-link {
+    transition: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .experience-cards {
+    gap: 16px;
+  }
+}
+
 /* Hobbies: a shelf that fills the whole room, not a card grid. Each hobby is
    a photo sitting on the shelf (see HOBBIES in content.js), laid out as a
    flex-wrap row rather than a fixed grid so each item's own width (driven by
@@ -1698,23 +1804,44 @@
   background: var(--frame-tint);
 }
 
+.house-frame--sm {
+  width: 56px;
+  height: 72px;
+}
+
 .house-frame--a {
-  left: calc(50% - 380px);
+  left: calc(50% - 480px);
+  top: 76px;
   --frame-tint: var(--pal-water);
-  transform: rotate(-3deg);
+  transform: rotate(-4deg);
 }
 
 .house-frame--b {
-  right: calc(50% - 380px);
+  right: calc(50% - 470px);
+  top: 58px;
   --frame-tint: var(--pal-path);
   transform: rotate(3deg);
 }
 
 .house-frame--c {
-  left: calc(50% - 40px);
-  top: 48px;
+  left: calc(50% - 260px);
+  top: 40px;
   --frame-tint: var(--pal-grass-light);
   transform: rotate(-1deg);
+}
+
+.house-frame--d {
+  right: calc(50% - 260px);
+  top: 98px;
+  --frame-tint: var(--pal-path-dark);
+  transform: rotate(4deg);
+}
+
+.house-frame--e {
+  left: calc(50% - 30px);
+  top: 106px;
+  --frame-tint: var(--pal-grass);
+  transform: rotate(-6deg);
 }
 
 @media (max-width: 900px) {
@@ -1876,7 +2003,7 @@
      Shrink-to-fit plus auto margins centers it at its own content width
      instead; max-width is only a safety cap for ultra-wide screens. */
   flex: 0 1 auto;
-  max-width: 900px;
+  max-width: 1100px;
   margin: 0 auto;
   max-height: 100%;
   min-width: 0;
@@ -1885,7 +2012,7 @@
   /* Gap between rows is what makes each .shelf read as its own physical
      board instead of the boards touching — real shelf tiers have a slot of
      open air (and a bit of back panel) between one board and the next. */
-  gap: 40px;
+  gap: 48px;
   overflow-y: auto;
   overscroll-behavior: contain;
   /* floor-wood.png is the same tileable plank texture used for the Contact
@@ -1900,7 +2027,7 @@
   image-rendering: pixelated;
   border: 4px solid var(--pal-ink);
   box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.35);
-  padding: 20px 16px 0;
+  padding: 28px 24px 0;
 }
 
 .shelf {
@@ -1910,10 +2037,10 @@
   align-content: flex-start;
   justify-content: center;
   align-items: flex-end;
-  gap: 30px 42px;
-  padding-bottom: 20px;
-  border-bottom: 8px solid var(--pal-ink);
-  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.3);
+  gap: 36px 56px;
+  padding-bottom: 24px;
+  border-bottom: 10px solid var(--pal-ink);
+  box-shadow: 0 7px 0 rgba(0, 0, 0, 0.3);
 }
 
 .hobby-slot {
@@ -1922,7 +2049,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 10px;
   background: none;
   border: none;
   padding: 4px 2px 0;
@@ -1930,7 +2057,7 @@
 }
 
 .hobby-item-thumb {
-  height: 80px;
+  height: 104px;
   width: auto;
   display: flex;
   align-items: flex-end;
@@ -1970,7 +2097,7 @@
 
 .hobby-item-label {
   font-family: var(--font-pixel);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--pal-cream);
   text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.4);
   text-align: center;

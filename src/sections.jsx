@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useRef, useState } from 'react';
-import { PROJECTS, HOBBIES, CONTACT } from './content';
+import { PROJECTS, HOBBIES, CONTACT, EDUCATION, EXPERIENCE, SKILLS, RESUME_URL } from './content';
 import petDogA from './assets/pet-dog-a.png';
 
 // Shared across every CardThumb in a panel so playback tracks by row, not by
@@ -166,6 +166,94 @@ export const ProjectsPanel = forwardRef(function ProjectsPanel({ active }, ref) 
   );
 });
 
+// Résumé-style panel: Education, Work & Leadership, and Skills, sourced from
+// the same content.js data QuickView renders (see EDUCATION/EXPERIENCE/
+// SKILLS there) so the game world and the plain-view fallback never drift
+// out of sync. Reuses .project-card/.project-tech/.tech-chip from
+// ProjectsPanel above rather than inventing a parallel card language, since
+// a résumé entry is really just a project card with bullets instead of a
+// single prose paragraph.
+export const ExperiencePanel = forwardRef(function ExperiencePanel({ active }, ref) {
+  return (
+    <div ref={ref} className={`section-panel section-panel--experience ${active ? 'visible' : ''}`}>
+      <div className="section-panel-inner">
+        <div className="section-floor section-floor--stone" />
+        <div className="section-content projects-content">
+          <h2 className="projects-heading">Experience</h2>
+
+          <div className="experience-group">
+            <h3 className="experience-group-heading">Education</h3>
+            <div className="experience-cards">
+              {EDUCATION.map((e) => (
+                <article key={e.program} className="project-card">
+                  <div className="project-meta">
+                    <h3>{e.program}</h3>
+                    <span className="project-date">{e.dates}</span>
+                  </div>
+                  <p className="experience-org">
+                    {e.school}
+                    {e.location ? ` — ${e.location}` : ''}
+                  </p>
+                  {e.notes?.length > 0 && (
+                    <ul className="experience-bullets">
+                      {e.notes.map((n) => (
+                        <li key={n}>{n}</li>
+                      ))}
+                    </ul>
+                  )}
+                </article>
+              ))}
+            </div>
+          </div>
+
+          <div className="experience-group">
+            <h3 className="experience-group-heading">Work &amp; Leadership</h3>
+            <div className="experience-cards">
+              {EXPERIENCE.map((e) => (
+                <article key={`${e.role}-${e.org}`} className="project-card">
+                  <div className="project-meta">
+                    <h3>{e.role}</h3>
+                    <span className="project-date">{e.dates}</span>
+                  </div>
+                  <p className="experience-org">
+                    {e.org}
+                    {e.location ? ` — ${e.location}` : ''}
+                  </p>
+                  <ul className="experience-bullets">
+                    {e.bullets.map((b) => (
+                      <li key={b}>{b}</li>
+                    ))}
+                  </ul>
+                </article>
+              ))}
+            </div>
+          </div>
+
+          <div className="experience-group">
+            <h3 className="experience-group-heading">Skills</h3>
+            <div className="skills-list">
+              {SKILLS.map((s) => (
+                <div key={s.category} className="skills-category">
+                  <span className="skills-category-label">{s.category}</span>
+                  <ul className="project-tech">
+                    {s.items.map((it) => (
+                      <li key={it} className="tech-chip">{it}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <a href={RESUME_URL} target="_blank" rel="noreferrer" className="experience-resume-link">
+            View Full Résumé (PDF) ↗
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+});
+
 // Hobbies sit on a stack of separate shelf boards rather than one long
 // flex-wrap row — HOBBY_ROW_SIZE items per board, each board its own
 // bordered `.shelf` div, so the bookshelf reads as physical tiers instead of
@@ -206,6 +294,8 @@ export const HobbiesPanel = forwardRef(function HobbiesPanel({ active }, ref) {
           <div className="house-frame house-frame--a" aria-hidden="true" />
           <div className="house-frame house-frame--b" aria-hidden="true" />
           <div className="house-frame house-frame--c" aria-hidden="true" />
+          <div className="house-frame house-frame--sm house-frame--d" aria-hidden="true" />
+          <div className="house-frame house-frame--sm house-frame--e" aria-hidden="true" />
           <div className="room-rug" aria-hidden="true" />
           <div className="room-lamp" aria-hidden="true">
             <span className="room-lamp-shade" />
@@ -235,7 +325,7 @@ export const HobbiesPanel = forwardRef(function HobbiesPanel({ active }, ref) {
                         className={`hobby-item-thumb ${!h.image ? 'hobby-item-thumb--fallback' : ''}`}
                         style={{
                           ...(h.size ? { height: h.size } : null),
-                          ...(!h.image ? { width: 64, background: h.color } : null),
+                          ...(!h.image ? { width: 84, background: h.color } : null),
                         }}
                       >
                         {h.image ? (
@@ -328,6 +418,30 @@ function MailIcon() {
   );
 }
 
+// Plain document/page glyph — matches MailIcon's stroke line-art style
+// rather than GitHubIcon/LinkedInIcon's filled brand marks, since there's no
+// brand mark for "résumé", just a generic file.
+function ResumeIcon() {
+  return (
+    <svg
+      className="mail-icon"
+      viewBox="0 0 24 24"
+      width="14"
+      height="14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M6 2h9l5 5v15H6z" />
+      <path d="M15 2v5h5" />
+      <path d="M9 13h6M9 17h6" />
+    </svg>
+  );
+}
+
 // Standard brand marks (simple-icons paths, CC0) rendered solid in
 // currentColor rather than as MailIcon's stroke line-art — GitHub/LinkedIn
 // only read as themselves as a filled logo, the way every other place they
@@ -364,6 +478,9 @@ export const ContactPanel = forwardRef(function ContactPanel({ active }, ref) {
             <p className="dialogue-text">{CONTACT.message}</p>
             <div className="dialogue-links">
               {CONTACT.email && <CopyEmailButton email={CONTACT.email} />}
+              <a href={RESUME_URL} className="dialogue-link" target="_blank" rel="noopener noreferrer">
+                <ResumeIcon /> Résumé
+              </a>
               {CONTACT.links.map((l) => {
                 const Icon = CONTACT_LINK_ICONS[l.label];
                 return (

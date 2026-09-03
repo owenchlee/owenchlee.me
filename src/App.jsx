@@ -28,8 +28,8 @@ import {
   getLightingTint,
   getNightAmount,
 } from './tileMap';
-import { ProjectsPanel, HobbiesPanel, ContactPanel } from './sections';
-import { INTRO } from './content';
+import { ProjectsPanel, ExperiencePanel, HobbiesPanel, ContactPanel } from './sections';
+import { INTRO, RESUME_URL } from './content';
 import { Highlighted } from './Highlighted';
 import Minimap from './Minimap';
 import SectionNav from './SectionNav';
@@ -692,7 +692,12 @@ function App() {
           >
             See My Projects →
           </button>
-          <p className="hud-scroll-hint">or scroll for the adventure ↓</p>
+          <p className="hud-scroll-hint">
+            or scroll for the adventure ↓ ·{' '}
+            <a href={RESUME_URL} target="_blank" rel="noopener noreferrer" className="hud-resume-link">
+              résumé (PDF)
+            </a>
+          </p>
         </div>
 
         <div className="stage-box" ref={boxRef}>
@@ -922,6 +927,12 @@ function App() {
               panelRefs.current.projects = el;
             }}
             active={activeHouse === 'projects'}
+          />
+          <ExperiencePanel
+            ref={(el) => {
+              panelRefs.current.experience = el;
+            }}
+            active={activeHouse === 'experience'}
           />
           <HobbiesPanel
             ref={(el) => {

@@ -4,9 +4,10 @@ export const ROWS = 116;
 export const WORLD_W = COLS * TILE_SIZE;
 export const WORLD_H = ROWS * TILE_SIZE;
 
-// Path shape: start -> up-right -> Projects -> down-left -> Hobbies ->
-// down-right -> Contact -> a short continuation in the same direction so the
-// path doesn't dead-end abruptly right at the last house.
+// Path shape: start -> up-right -> Projects -> down-left -> Experience ->
+// down-left -> Hobbies -> down-right -> Contact -> a short continuation in
+// the same direction so the path doesn't dead-end abruptly right at the
+// last house.
 //
 // Used to detour down-right to an "Intro" waypoint before backtracking
 // north to Projects — that stop was cut along with the intro house, but the
@@ -15,6 +16,7 @@ export const WORLD_H = ROWS * TILE_SIZE;
 const WAYPOINTS_TILE = [
   { col: 40, row: 30 }, // start
   { col: 60, row: 37 }, // up-right -> Projects
+  { col: 52, row: 52 }, // down-left -> Experience
   { col: 46, row: 65 }, // down-left -> Hobbies
   { col: 58, row: 85 }, // down-right -> Contact
 ];
@@ -52,13 +54,15 @@ const PATH_TAIL_TILE = { col: 64, row: 93 };
 // the section panel could already be half-visible while the building was
 // still ~200-300px away — not "arrived" in any visual sense. Pixel
 // positions (col*32, row*32), for reference:
-//   projects: tile (64, 35) -> px (2048, 1120); waypoint (60, 37) -> px (1920, 1184)
-//   hobbies:  tile (42, 63) -> px (1344, 2016); waypoint (46, 65) -> px (1472, 2080)
-//   contact:  tile (62, 83) -> px (1984, 2656); waypoint (58, 85) -> px (1856, 2720)
+//   projects:   tile (64, 35) -> px (2048, 1120); waypoint (60, 37) -> px (1920, 1184)
+//   experience: tile (56, 50) -> px (1792, 1600); waypoint (52, 52) -> px (1664, 1664)
+//   hobbies:    tile (42, 63) -> px (1344, 2016); waypoint (46, 65) -> px (1472, 2080)
+//   contact:    tile (62, 83) -> px (1984, 2656); waypoint (58, 85) -> px (1856, 2720)
 export const HOUSES = [
   { id: 'projects', label: 'Projects', col: 64, row: 35, side: 'right', color: '#5b7a94', waypointIndex: 1, kind: 'lab', sprite: 'house-07' },
-  { id: 'hobbies', label: 'Hobbies', col: 42, row: 63, side: 'left', color: '#4da338', waypointIndex: 2, kind: 'shop', sprite: 'house-08' },
-  { id: 'contact', label: 'Contact', col: 62, row: 83, side: 'right', color: '#c9463e', waypointIndex: 3, kind: 'house', sprite: 'house-04' },
+  { id: 'experience', label: 'Experience', col: 56, row: 50, side: 'left', color: '#e0b23c', waypointIndex: 2, kind: 'office', sprite: 'house-06' },
+  { id: 'hobbies', label: 'Hobbies', col: 42, row: 63, side: 'left', color: '#4da338', waypointIndex: 3, kind: 'shop', sprite: 'house-08' },
+  { id: 'contact', label: 'Contact', col: 62, row: 83, side: 'right', color: '#c9463e', waypointIndex: 4, kind: 'house', sprite: 'house-04' },
 ];
 
 // Purely decorative townsfolk that patrol a short back-and-forth walk near
