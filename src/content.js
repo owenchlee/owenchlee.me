@@ -54,13 +54,89 @@ export const INTRO = {
   roleTitle: 'Systems Design Engineering',
   roleOrg: 'University of Waterloo',
   bio: "I build things end to end, from computer vision to full-stack apps to game logic on a breadboard, and I'm always shipping something new.",
-  status: 'Open to internships/co-op',
+  status: 'Open to Spring 2027 co-op',
   highlights: [
     'Builds **full-stack apps**, **games**, and **computer vision** tools',
     'Ships projects across **software and hardware**, from apps to breadboard circuits',
     'Always tinkering and **shipping side projects**',
   ],
 };
+
+// Rendered by ExperiencePanel (see sections.jsx) and mirrored in QuickView —
+// same data-driven pattern as PROJECTS/HOBBIES below, sourced from Owen's
+// résumé (public/resume.pdf) so the site and the PDF never drift out of
+// sync on the underlying facts, just the presentation.
+export const EDUCATION = [
+  {
+    program: 'Systems Design Engineering',
+    school: 'University of Waterloo',
+    location: 'Waterloo, ON',
+    dates: 'Sept 2026 – May 2031 (Incoming)',
+    notes: [],
+  },
+  {
+    program: 'High School Diploma',
+    school: 'Pierre Elliott Trudeau High School',
+    location: 'Markham, ON',
+    dates: 'Sept 2022 – June 2026',
+    notes: [
+      'Schulich Leader Nominee (1 of 455 students)',
+      'UWaterloo Contest Distinctions: CCC, Cayley, CIMC, Fermat',
+      'DECA Provincials Top 20 Overall · Science Certificate of Excellence (Physics, Chemistry, Biology)',
+    ],
+  },
+];
+
+export const EXPERIENCE = [
+  {
+    role: "Founder & Web Developer",
+    org: "Catch 'Em Crate",
+    location: 'Markham, ON',
+    dates: 'Jun 2025 – Sep 2025',
+    bullets: [
+      'Built a trading card subscription box business that generated $1,000 in revenue, earning the Markham Youth Startups award',
+      'Developed the e-commerce site with HTML, CSS, JavaScript, and Shopify integrations, acquiring 200+ visitors',
+    ],
+  },
+  {
+    role: 'President',
+    org: 'Trudeau Athletic Council',
+    location: 'Markham, ON',
+    dates: 'Sept 2024 – Present',
+    bullets: [
+      'Lead a team of 24 members creating events for ~1,800 attendees, including a fundraiser that earned $5,700 for charity',
+      'Designed and launched new initiatives, including an internal mentorship program and inclusivity efforts across events',
+    ],
+  },
+  {
+    role: 'Tutor',
+    org: 'Trudeau Tutoring & Co.',
+    location: 'Markham, ON',
+    dates: 'Sept 2024 – Feb 2025',
+    bullets: [
+      'Tutored 10+ high school students in math and science, building their skills and confidence in challenging topics',
+      "Designed individualized learning plans adapted to each student's feedback and learning style",
+    ],
+  },
+  {
+    role: 'Treasurer & Grade Representative',
+    org: 'Trudeau Student Activity Council',
+    location: 'Markham, ON',
+    dates: 'Sept 2022 – Present',
+    bullets: [
+      "Managed the council's $8,000+ budget, tracking expenses and optimizing fund allocation",
+      'Organized 25+ events for ~1,800 attendees while advocating for 400+ students',
+    ],
+  },
+];
+
+export const SKILLS = [
+  { category: 'Languages', items: ['Python', 'Java', 'C++', 'JavaScript', 'HTML/CSS'] },
+  { category: 'Tools & Platforms', items: ['Git', 'GitHub', 'OpenCV', 'GameMaker', 'Shopify', 'MS Office'] },
+  { category: 'Soft Skills', items: ['Communication', 'Adaptability', 'Teamwork', 'Pitching'] },
+];
+
+export const RESUME_URL = '/resume.pdf';
 
 export const PROJECTS = [
   {
@@ -159,8 +235,8 @@ export const PROJECTS = [
 export const HOBBIES = [
   { label: 'Basketball', color: '#f0a94e', image: basketballPixel, desc: "Pickup ball whenever I can get a run going. Nothing beats a fast break and a clean jump shot to clear my head." },
   { label: 'Gaming', color: '#5b7a94', image: gamingPixel, desc: "Everything from competitive shooters to cozy indie titles. It's my go-to way to unwind and hang out with friends online." },
-  { label: 'Badminton', color: '#4da338', image: badmintonPixel, size: 56, desc: "Fast rallies and faster reflexes, one of my favorite ways to get a good sweat in with friends." },
-  { label: 'Cooking', color: '#e8877a', image: cookingPixel, size: 108, desc: "Always experimenting in the kitchen, from weeknight staples to trying to recreate dishes I loved somewhere." },
+  { label: 'Badminton', color: '#4da338', image: badmintonPixel, size: 73, desc: "Fast rallies and faster reflexes, one of my favorite ways to get a good sweat in with friends." },
+  { label: 'Cooking', color: '#e8877a', image: cookingPixel, size: 140, desc: "Always experimenting in the kitchen, from weeknight staples to trying to recreate dishes I loved somewhere." },
   { label: 'Board Games', color: '#6f5fa3', image: boardGamesPixel, desc: "Strategy games, party games, anything with a table full of friends and a bit of friendly competition." },
   { label: 'Running', color: '#26a8b1', image: runningPixel, desc: "A steady way to clear my head and stay in shape, chasing a few personal bests along the way." },
   { label: 'Working Out', color: '#8ea9c9', image: workoutPixel, desc: "Regular gym sessions to build strength and stay consistent. It's become one of my favorite daily habits." },

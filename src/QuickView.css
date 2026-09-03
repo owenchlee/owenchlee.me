@@ -69,6 +69,16 @@
   margin: 0 0 16px;
 }
 
+.quick-view-resume {
+  margin: 0 0 16px;
+}
+
+.quick-view-resume a {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--pal-ink);
+}
+
 /* .hud-tag chips (rendered by the shared Highlighted component) are pixel-
    font/hard-shadow by default to match the game HUD — softened here to fit
    QuickView's plain, conventional register instead. */
@@ -150,6 +160,63 @@
   font-size: 16px;
   line-height: 1.6;
   margin: 8px 0 0;
+}
+
+.quick-view-resume-list {
+  list-style: none;
+  margin: 0 0 48px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.quick-view-resume-list li {
+  border: 1px solid rgba(28, 23, 18, 0.15);
+  border-left: 5px solid var(--pal-grass);
+  background: rgba(28, 23, 18, 0.03);
+  border-radius: 6px;
+  padding: 16px 20px;
+}
+
+.quick-view-resume-list h3 {
+  font-size: 19px;
+  margin: 0;
+  display: inline;
+}
+
+.quick-view-org {
+  font-size: 15px;
+  color: var(--pal-ink-soft);
+  margin: 4px 0 0;
+}
+
+.quick-view-bullets {
+  margin: 8px 0 0;
+  padding-left: 20px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.quick-view-bullets li {
+  border: none;
+  background: none;
+  padding: 0;
+  border-radius: 0;
+}
+
+.quick-view-skills {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0 0 48px;
+}
+
+.quick-view-skills-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 6px;
 }
 
 .quick-view-tech {

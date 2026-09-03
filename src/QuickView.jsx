@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { INTRO, PROJECTS, HOBBIES, CONTACT } from './content';
+import { INTRO, PROJECTS, HOBBIES, CONTACT, EDUCATION, EXPERIENCE, SKILLS, RESUME_URL } from './content';
 import { Highlighted } from './Highlighted';
 import './QuickView.css';
 
@@ -82,6 +82,11 @@ function QuickView({ onClose }) {
           {INTRO.roleTitle} @ {INTRO.roleOrg}
         </p>
         {INTRO.status && <p className="quick-view-status">{INTRO.status}</p>}
+        <p className="quick-view-resume">
+          <a href={RESUME_URL} target="_blank" rel="noreferrer">
+            View Résumé (PDF) ↗
+          </a>
+        </p>
         {INTRO.bio && (
           <p className="quick-view-bio">
             <Highlighted text={INTRO.bio} />
@@ -96,6 +101,66 @@ function QuickView({ onClose }) {
             ))}
           </ul>
         )}
+
+        <section aria-labelledby="qv-education-heading">
+          <h2 id="qv-education-heading">Education</h2>
+          <ul className="quick-view-resume-list">
+            {EDUCATION.map((e) => (
+              <li key={e.program}>
+                <h3>{e.program}</h3>
+                <span className="quick-view-date">{e.dates}</span>
+                <p className="quick-view-org">
+                  {e.school}
+                  {e.location ? ` — ${e.location}` : ''}
+                </p>
+                {e.notes?.length > 0 && (
+                  <ul className="quick-view-bullets">
+                    {e.notes.map((n) => (
+                      <li key={n}>{n}</li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section aria-labelledby="qv-experience-heading">
+          <h2 id="qv-experience-heading">Experience & Leadership</h2>
+          <ul className="quick-view-resume-list">
+            {EXPERIENCE.map((e) => (
+              <li key={`${e.role}-${e.org}`}>
+                <h3>{e.role}</h3>
+                <span className="quick-view-date">{e.dates}</span>
+                <p className="quick-view-org">
+                  {e.org}
+                  {e.location ? ` — ${e.location}` : ''}
+                </p>
+                <ul className="quick-view-bullets">
+                  {e.bullets.map((b) => (
+                    <li key={b}>{b}</li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section aria-labelledby="qv-skills-heading">
+          <h2 id="qv-skills-heading">Skills</h2>
+          <div className="quick-view-skills">
+            {SKILLS.map((s) => (
+              <div key={s.category} className="quick-view-skills-category">
+                <span className="quick-view-skills-label">{s.category}</span>
+                <ul className="quick-view-tech">
+                  {s.items.map((it) => (
+                    <li key={it}>{it}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </section>
 
         <section aria-labelledby="qv-projects-heading">
           <h2 id="qv-projects-heading">Projects</h2>
