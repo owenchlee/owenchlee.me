@@ -239,6 +239,7 @@ export const HOBBIES = [
   { label: 'Running', color: '#26a8b1', image: runningPixel, desc: "A steady way to clear my head and stay in shape, chasing a few personal bests along the way." },
   { label: 'Working Out', color: '#8ea9c9', image: workoutPixel, desc: "Regular gym sessions to build strength and stay consistent. It's become one of my favorite daily habits." },
   { label: 'Singing', color: '#b5495b', image: singingPixel, desc: "Karaoke, car singalongs, whatever excuse I can find. Also part of why I built Sing Score." },
+  { label: 'Pokemon Cards', color: '#e8c547', image: null, desc: "Collecting and trading, always chasing down a set or a specific card. Still get a kick out of a good pull." },
 ];
 
 export const CONTACT = {
