@@ -25,7 +25,6 @@ import basketballPixel from './assets/Hobbies/pixel/basketball.png';
 import badmintonPixel from './assets/Hobbies/pixel/badminton.png';
 import boardGamesPixel from './assets/Hobbies/pixel/board-games.png';
 import cookingPixel from './assets/Hobbies/pixel/cooking.png';
-import gamingPixel from './assets/Hobbies/pixel/gaming.png';
 import runningPixel from './assets/Hobbies/pixel/running.png';
 import workoutPixel from './assets/Hobbies/pixel/workout.png';
 import singingPixel from './assets/Hobbies/pixel/singing.png';
@@ -234,7 +233,6 @@ export const PROJECTS = [
 // of the shelf.
 export const HOBBIES = [
   { label: 'Basketball', color: '#f0a94e', image: basketballPixel, desc: "Pickup ball whenever I can get a run going. Nothing beats a fast break and a clean jump shot to clear my head." },
-  { label: 'Gaming', color: '#5b7a94', image: gamingPixel, desc: "Everything from competitive shooters to cozy indie titles. It's my go-to way to unwind and hang out with friends online." },
   { label: 'Badminton', color: '#4da338', image: badmintonPixel, size: 73, desc: "Fast rallies and faster reflexes, one of my favorite ways to get a good sweat in with friends." },
   { label: 'Cooking', color: '#e8877a', image: cookingPixel, size: 140, desc: "Always experimenting in the kitchen, from weeknight staples to trying to recreate dishes I loved somewhere." },
   { label: 'Board Games', color: '#6f5fa3', image: boardGamesPixel, desc: "Strategy games, party games, anything with a table full of friends and a bit of friendly competition." },
