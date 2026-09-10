@@ -233,13 +233,13 @@ export const PROJECTS = [
 // only set it when an item needs to read at a different scale than the rest
 // of the shelf.
 export const HOBBIES = [
-  { label: 'Basketball', color: '#f0a94e', image: basketballPixel, desc: "Pickup ball whenever I can get a run going. Nothing beats a fast break and a clean jump shot to clear my head." },
-  { label: 'Badminton', color: '#4da338', image: badmintonPixel, size: 73, desc: "Fast rallies and faster reflexes, one of my favorite ways to get a good sweat in with friends." },
-  { label: 'Cooking', color: '#e8877a', image: cookingPixel, size: 140, desc: "Always experimenting in the kitchen, from weeknight staples to trying to recreate dishes I loved somewhere." },
-  { label: 'Board Games', color: '#6f5fa3', image: boardGamesPixel, desc: "Strategy games, party games, anything with a table full of friends and a bit of friendly competition." },
-  { label: 'Running', color: '#26a8b1', image: runningPixel, desc: "A steady way to clear my head and stay in shape, chasing a few personal bests along the way." },
+  { label: 'Basketball', color: '#f0a94e', image: basketballPixel, desc: "Pickup ball with friends whenever I can get a run going. I play small forward, and my black Wilson Evolution is my go-to ball on indoor courts." },
+  { label: 'Badminton', color: '#4da338', image: badmintonPixel, size: 73, desc: "Watching the birdie fly at supersonic speeds is weirdly relaxing. Fast rallies and faster reflexes, one of my favorite ways to spend time with friends." },
+  { label: 'Cooking', color: '#e8877a', image: cookingPixel, size: 140, desc: "Always experimenting in the kitchen, from steak to noodles. Watching people actually enjoy what I cook is one of my favorite feelings." },
+  { label: 'Board Games', color: '#6f5fa3', image: boardGamesPixel, desc: "Strategy games, party games, anything with a table full of friends and a bit of friendly competition. Seven Wonders is my current favorite." },
+  { label: 'Running', color: '#26a8b1', image: runningPixel, desc: "Taking in the scenery, losing myself in music, and chasing new personal bests — what keeps pulling me back out for another run." },
   { label: 'Working Out', color: '#8ea9c9', image: workoutPixel, desc: "Regular gym sessions to build strength and stay consistent. It's become one of my favorite daily habits." },
-  { label: 'Singing', color: '#b5495b', image: singingPixel, desc: "Karaoke, car singalongs, whatever excuse I can find. Also part of why I built Sing Score." },
+  { label: 'Singing', color: '#b5495b', image: singingPixel, desc: "Karaoke and car singalongs, some of the times I feel most free — I'll take any excuse. Also part of why I built Sing Score, to let anyone sing karaoke anywhere." },
   { label: 'Pokemon Cards', color: '#e8c547', image: pokemonCardsPixel, size: 60, desc: "Collecting and trading, always chasing down a set or a specific card. Still get a kick out of a good pull." },
 ];
 
