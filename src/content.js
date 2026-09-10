@@ -240,7 +240,7 @@ export const HOBBIES = [
   { label: 'Running', color: '#26a8b1', image: runningPixel, desc: "Taking in the scenery, losing myself in music, and chasing new personal bests — what keeps pulling me back out for another run." },
   { label: 'Working Out', color: '#8ea9c9', image: workoutPixel, desc: "Regular gym sessions to build strength and stay consistent. It's become one of my favorite daily habits." },
   { label: 'Singing', color: '#b5495b', image: singingPixel, desc: "Karaoke and car singalongs, some of the times I feel most free — I'll take any excuse. Also part of why I built Sing Score, to let anyone sing karaoke anywhere." },
-  { label: 'Pokemon Cards', color: '#e8c547', image: pokemonCardsPixel, size: 60, desc: "Collecting and trading, always chasing down a set or a specific card. Still get a kick out of a good pull." },
+  { label: 'Pokemon Cards', color: '#e8c547', image: pokemonCardsPixel, size: 60, desc: "A huge Pokemon card fan and collector since I was a kid. Still ripping packs, hitting card shows, and admiring pulls whenever I can." },
 ];
 
 export const CONTACT = {
