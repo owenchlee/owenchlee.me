@@ -35,6 +35,8 @@ import Minimap from './Minimap';
 import SectionNav from './SectionNav';
 import MusicPlayer from './MusicPlayer';
 import QuickView from './QuickView';
+import { BadgeCase, BadgeToast } from './Badges';
+import { earnBadge, installLinkTracking } from './achievements';
 // Swap for Plausible/Fathom/GA4 here if preferred — this is a zero-config
 // default, not a hard architectural commitment.
 import { Analytics } from '@vercel/analytics/react';
@@ -207,6 +209,19 @@ function App() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [quickView]);
+
+  // A house's badge is earned by actually stopping inside it, not by
+  // scrolling straight through — activeHouse flips on for any frame the
+  // reveal hits 1, so a brisk flick past a house would otherwise count as a
+  // visit. A short dwell also lets a SectionNav jump count, since that
+  // lands and stays.
+  useEffect(() => {
+    if (!activeHouse) return undefined;
+    const id = setTimeout(() => earnBadge(activeHouse), 900);
+    return () => clearTimeout(id);
+  }, [activeHouse]);
+
+  useEffect(() => installLinkTracking(), []);
 
   // While a house is fully open, its .section-panel sits on top of the
   // world (position:absolute inset:0 inside the sticky .stage-box) and is
@@ -463,6 +478,7 @@ function App() {
       });
 
       setActiveHouse((current) => (current === fullyOpenId ? current : fullyOpenId));
+      if (progress >= 0.99) earnBadge('pathfinder');
 
       // Character walk-to-the-door pose: a pure function of maxWalkT (itself
       // a pure function of scroll progress — see getCharacterWalkT), two legs
@@ -921,6 +937,7 @@ function App() {
       <SectionNav activeId={activeHouse} onJump={jumpToProgress} />
       <Minimap ref={minimapDotRef} />
       <MusicPlayer />
+      <BadgeCase />
       </div>
 
       <button
@@ -933,6 +950,8 @@ function App() {
       </button>
 
       {quickView && <QuickView onClose={() => setQuickView(false)} isMobileLanding={isMobileLanding} />}
+
+      <BadgeToast />
 
       <Analytics />
     </>

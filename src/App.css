@@ -2557,3 +2557,409 @@
   }
 }
 
+/* --- Badges (see achievements.js / Badges.jsx) ---
+   Pokémon-style gym badges. Three pieces: the HUD toggle under Quick View
+   (count + opens the Trainer Card), the Trainer Card itself (the badge
+   case, with silhouettes for empty slots), and the bottom-of-screen "You
+   received the X BADGE!" dialogue box that plays when one is earned. All
+   in the same cream/ink dialogue-box language as the Contact scene. */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.badge-icon {
+  display: block;
+  image-rendering: pixelated;
+  flex: none;
+}
+
+.badge-case-toggle {
+  position: fixed;
+  right: 14px;
+  top: 64px;
+  z-index: 31;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--pal-ink);
+  color: var(--pal-cream);
+  border: 3px solid var(--pal-cream);
+  box-shadow: 3px 3px 0 #000;
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  padding: 7px 10px;
+  cursor: pointer;
+}
+
+.badge-case-toggle:hover,
+.badge-case-toggle:focus-visible {
+  color: var(--pal-grass-light);
+}
+
+.badge-case-toggle.is-champion {
+  border-color: #ffe066;
+  color: #ffe066;
+}
+
+.trainer-card-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 240;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(28, 23, 18, 0.72);
+}
+
+.trainer-card {
+  width: min(620px, 100%);
+  max-height: calc(100svh - 32px);
+  overflow-y: auto;
+  background: var(--pal-cream);
+  color: var(--pal-ink);
+  border: 4px solid var(--pal-ink);
+  outline: 4px solid var(--pal-cream);
+  box-shadow: 8px 8px 0 #000;
+  padding: 22px 24px 26px;
+  animation: trainerCardIn 0.24s steps(4) both;
+}
+
+/* Opens as a stepped horizontal-blind wipe from the middle, not a fade. */
+@keyframes trainerCardIn {
+  from {
+    clip-path: inset(50% 0 50% 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.trainer-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 3px dashed var(--pal-ink-soft);
+  padding-bottom: 12px;
+}
+
+.trainer-card-header h2 {
+  margin: 0;
+  font-family: var(--font-pixel);
+  font-size: 16px;
+}
+
+.trainer-card-close {
+  background: var(--pal-ink);
+  color: var(--pal-cream);
+  border: none;
+  box-shadow: 2px 2px 0 #000;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  padding: 8px 10px;
+}
+
+.trainer-card-status {
+  font-family: var(--font-terminal);
+  font-size: 20px;
+  margin: 12px 0 16px;
+}
+
+.trainer-card-grid {
+  list-style: none;
+  margin: 0;
+  padding: 14px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px 10px;
+  background: var(--pal-ink-soft);
+  border: 3px solid var(--pal-ink);
+  box-shadow: inset 3px 3px 0 rgba(0, 0, 0, 0.35);
+}
+
+.trainer-card-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  color: var(--pal-cream);
+}
+
+.trainer-card-slot .badge-icon {
+  padding: 6px;
+  background: rgba(0, 0, 0, 0.25);
+  box-sizing: content-box;
+}
+
+.trainer-card-slot.is-earned .badge-icon {
+  filter: drop-shadow(0 0 4px rgba(255, 224, 102, 0.55));
+}
+
+.trainer-card-name {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+.trainer-card-slot:not(.is-earned) .trainer-card-name {
+  opacity: 0.55;
+}
+
+.trainer-card-hint {
+  font-family: var(--font-terminal);
+  font-size: 16px;
+  line-height: 1.1;
+  opacity: 0.8;
+}
+
+/* The "badge get" dialogue box: bottom-center, above every other HUD
+   piece and Quick View, like the games' own textbox. Enters with a
+   stepped (not eased) slide so it moves in whole-pixel jumps. */
+.badge-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  z-index: 250;
+  width: min(560px, calc(100vw - 32px));
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--pal-cream);
+  color: var(--pal-ink);
+  border: 4px solid var(--pal-ink);
+  outline: 4px solid var(--pal-cream);
+  box-shadow: 6px 6px 0 #000;
+  padding: 14px 44px 14px 14px;
+  cursor: pointer;
+  animation: badgeToastIn 0.3s steps(5) both;
+}
+
+@keyframes badgeToastIn {
+  from {
+    transform: translate(-50%, calc(100% + 40px));
+  }
+  to {
+    transform: translate(-50%, 0);
+  }
+}
+
+.badge-toast--champion {
+  outline-color: #ffe066;
+}
+
+.badge-toast-frame {
+  position: relative;
+  flex: none;
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--pal-ink-soft);
+  border: 3px solid var(--pal-ink);
+  overflow: hidden;
+}
+
+.badge-toast-frame .badge-icon {
+  animation: badgePop 0.5s steps(4) both 0.15s;
+}
+
+@keyframes badgePop {
+  0% {
+    transform: scale(0);
+  }
+  60% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* A single hard-edged white bar sweeping across the badge, the "shine"
+   the games give a freshly polished badge. */
+.badge-toast-glint {
+  position: absolute;
+  top: -20%;
+  left: -40%;
+  width: 14px;
+  height: 140%;
+  background: rgba(255, 255, 255, 0.75);
+  transform: rotate(25deg);
+  animation: badgeGlint 1.8s steps(12) infinite 0.6s;
+}
+
+@keyframes badgeGlint {
+  0% {
+    left: -40%;
+  }
+  50%,
+  100% {
+    left: 140%;
+  }
+}
+
+.badge-toast-champion-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 20px);
+  gap: 2px;
+}
+
+.badge-toast-text {
+  min-width: 0;
+}
+
+.badge-toast-line {
+  margin: 0;
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  line-height: 1.6;
+  min-height: 1.6em;
+}
+
+.badge-toast-sub {
+  margin: 6px 0 0;
+  font-family: var(--font-terminal);
+  font-size: 20px;
+  line-height: 1.1;
+  visibility: hidden;
+}
+
+.badge-toast-sub.is-shown {
+  visibility: visible;
+}
+
+.badge-toast-next {
+  position: absolute;
+  right: 12px;
+  bottom: 8px;
+  background: none;
+  border: none;
+  color: var(--pal-ink);
+  font-size: 14px;
+  padding: 4px;
+  animation: badgeNextBlink 0.8s steps(2) infinite;
+}
+
+@keyframes badgeNextBlink {
+  50% {
+    transform: translateY(3px);
+  }
+}
+
+/* Champion confetti: square pixels flung from screen-center, moving in
+   stepped frames so they read as sprites rather than smooth CSS motion. */
+.badge-burst {
+  position: fixed;
+  left: 50%;
+  top: 45%;
+  z-index: 249;
+  pointer-events: none;
+}
+
+.badge-burst-particle {
+  position: absolute;
+  width: var(--size);
+  height: var(--size);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.4);
+  animation: badgeBurst 1.6s steps(16) both;
+}
+
+@keyframes badgeBurst {
+  0% {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--dx), calc(var(--dy) + 180px));
+    opacity: 0;
+  }
+}
+
+.npc-portrait--champion {
+  background: #ffe066;
+  animation: badgeNextBlink 1.2s steps(2) infinite;
+}
+
+.secret-note {
+  position: relative;
+  width: min(460px, 90vw);
+  background: #fff7c2;
+  color: var(--pal-ink);
+  border: 3px solid var(--pal-ink);
+  box-shadow: 5px 5px 0 #000;
+  padding: 20px 22px 18px;
+  transform: rotate(-1.5deg);
+}
+
+.secret-note-pin {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  background: #c9463e;
+  border: 2px solid var(--pal-ink);
+}
+
+.secret-note-title {
+  margin: 0 0 8px;
+  font-family: var(--font-pixel);
+  font-size: 12px;
+}
+
+.secret-note-body {
+  margin: 0;
+  font-family: var(--font-terminal);
+  font-size: 20px;
+  line-height: 1.3;
+}
+
+@media (max-width: 640px) {
+  .badge-case-toggle {
+    right: 8px;
+    top: 44px;
+    font-size: 8px;
+    padding: 5px 7px;
+  }
+  .trainer-card-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .badge-toast {
+    gap: 10px;
+    padding-right: 34px;
+  }
+  .badge-toast-frame {
+    width: 56px;
+    height: 56px;
+  }
+  .badge-toast-line {
+    font-size: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trainer-card,
+  .badge-toast,
+  .badge-toast-frame .badge-icon,
+  .badge-toast-next,
+  .npc-portrait--champion {
+    animation: none;
+  }
+  .badge-toast-glint {
+    display: none;
+  }
+}

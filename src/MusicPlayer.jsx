@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createMusicEngine, TRACK_LIST } from './music';
+import { setJingleEnabled } from './achievements';
 
 // Bottom-left HUD — the one corner section-nav (top-left)/quick-view-toggle
 // (top-right)/minimap (bottom-right) leave free. Music never autostarts:
@@ -24,9 +25,11 @@ function MusicPlayer() {
     if (playing) {
       engine.pause();
       setPlaying(false);
+      setJingleEnabled(false);
     } else {
       engine.play(trackId);
       setPlaying(true);
+      setJingleEnabled(true);
     }
   }
 

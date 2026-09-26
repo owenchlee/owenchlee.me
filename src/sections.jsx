@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useRef, useState } from 'react';
-import { PROJECTS, HOBBIES, CONTACT, EDUCATION, EXPERIENCE, SKILLS, RESUME_URL } from './content';
+import { PROJECTS, HOBBIES, CONTACT, EDUCATION, EXPERIENCE, SKILLS, RESUME_URL, SECRET_NOTE } from './content';
+import { markHobbySeen, useAchievements } from './achievements';
 import petDogA from './assets/pet-dog-a.png';
 
 // Shared across every CardThumb in a panel so playback tracks by row, not by
@@ -328,7 +329,10 @@ export const HobbiesPanel = forwardRef(function HobbiesPanel({ active }, ref) {
                       type="button"
                       className={`shelf-cubby hobby-slot ${selected === index ? 'is-selected' : ''}`}
                       aria-pressed={selected === index}
-                      onClick={() => setSelected(selected === index ? null : index)}
+                      onClick={() => {
+                        if (selected !== index) markHobbySeen(index);
+                        setSelected(selected === index ? null : index);
+                      }}
                     >
                       <span
                         className={`hobby-item-thumb ${!h.image ? 'hobby-item-thumb--fallback' : ''}`}
@@ -480,12 +484,18 @@ const CONTACT_LINK_ICONS = {
 };
 
 export const ContactPanel = forwardRef(function ContactPanel({ active }, ref) {
+  const { championAt } = useAchievements();
   return (
     <div ref={ref} className={`section-panel section-panel--contact ${active ? 'visible' : ''}`}>
       <div className="section-panel-inner">
         <div className="section-floor section-floor--wood" />
         <div className="section-content contact-content">
-          <div className="npc-portrait">?</div>
+          {/* The NPC reacts once the visitor is Champion (all 8 badges, see
+              achievements.js): "?" becomes a star, and the secret note
+              below unlocks. */}
+          <div className={`npc-portrait ${championAt ? 'npc-portrait--champion' : ''}`}>
+            {championAt ? '★' : '?'}
+          </div>
           <div className="dialogue-box">
             <p className="dialogue-text">{CONTACT.message}</p>
             <div className="dialogue-links">
@@ -510,6 +520,13 @@ export const ContactPanel = forwardRef(function ContactPanel({ active }, ref) {
               })}
             </div>
           </div>
+          {championAt && (
+            <aside className="secret-note" aria-label="Secret note">
+              <span className="secret-note-pin" aria-hidden="true" />
+              <h3 className="secret-note-title">{SECRET_NOTE.title}</h3>
+              <p className="secret-note-body">{SECRET_NOTE.body}</p>
+            </aside>
+          )}
         </div>
       </div>
     </div>
