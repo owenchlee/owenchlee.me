@@ -13,7 +13,7 @@ import petDogA from './assets/pet-dog-a.png';
 const MIN_RATIO = 0.5;
 const ROW_TOLERANCE_PX = 4;
 
-function useRowVideoPlayback() {
+export function useRowVideoPlayback() {
   const ratiosRef = useRef(new Map());
   const activeRowRef = useRef([]);
   const observerRef = useRef(null);
@@ -78,10 +78,10 @@ function useRowVideoPlayback() {
   };
 }
 
-// Shared by ProjectsPanel — falls back to a colored placeholder box when
+// Shared by ProjectsPanel and QuickView — falls back to a colored placeholder box when
 // neither `video` nor `image` is set yet (see content.js), so a section can
 // be filled in one entry at a time without any card looking broken.
-function CardThumb({ video, image, color, alt, registerVideo }) {
+export function CardThumb({ video, image, color, alt, registerVideo }) {
   const videoRef = useRef(null);
 
   useEffect(() => {
@@ -254,82 +254,91 @@ export const ExperiencePanel = forwardRef(function ExperiencePanel({ active }, r
   );
 });
 
-// Hobbies sit on a stack of separate shelf boards rather than one long
-// flex-wrap row — HOBBY_ROW_SIZE items per board, each board its own
-// bordered `.shelf` div, so the bookshelf reads as physical tiers instead of
-// a single shared lip under however many lines the items happened to wrap
-// into. Within a row, items still lay out as a flex-wrap (each item's width
-// comes from its own photo's aspect ratio at a fixed display height — see
-// .hobby-item-thumb in App.css: height is set, width is auto), so a tall
-// portrait photo and a wide landscape one both just sit naturally at their
-// own width instead of being cropped into a square; on a narrow viewport a
-// row can still wrap to two lines, and that row's board just grows to stay
-// under all of them. Clicking an item grows the detail panel's flex-basis
-// from 0, which pushes the shelf stack (flex: 1, so it always exactly fills
-// whatever's left) out of the way in the same motion — driven by the actual
-// remaining space rather than a fixed translateX distance, so there's no way
-// for it to end up cutting the shelf off mid-slide.
-const HOBBY_ROW_SIZE = 3;
+// Hobbies is a 3/4 top-down interior in the Pokémon/Stardew mold: a back
+// wall (crown trim, wallpaper, wainscot, baseboard) over a plank floor,
+// with the bookcase standing against the wall so its base sits on the floor
+// line instead of floating mid-room. Everything else — window, hung art,
+// rug, lamp, armchair, plant, dog — is grouped against the wall or on the
+// floor band and casts a hard drop shadow, which is what grounds furniture
+// in that style. The bookcase is one CSS grid of equal-width cubbies
+// (every cubby as wide as the widest item), and the last row is padded out
+// with book-stack filler cubbies so the case never ends in a gap.
+const HOBBY_COLS = 3;
 
-function chunkHobbiesIntoRows(hobbies, rowSize) {
-  const rows = [];
-  for (let i = 0; i < hobbies.length; i += rowSize) {
-    rows.push(hobbies.slice(i, i + rowSize).map((h, j) => ({ hobby: h, index: i + j })));
-  }
-  return rows;
+function BookStack({ variant }) {
+  return (
+    <div className={`shelf-cubby shelf-cubby--books shelf-cubby--books-${variant}`} aria-hidden="true">
+      <span className="shelf-book" />
+      <span className="shelf-book" />
+      <span className="shelf-book" />
+      <span className="shelf-book" />
+      <span className="shelf-book shelf-book--lean" />
+    </div>
+  );
 }
 
 export const HobbiesPanel = forwardRef(function HobbiesPanel({ active }, ref) {
   const [selected, setSelected] = useState(null);
 
   const selectedHobby = selected != null ? HOBBIES[selected] : null;
-  const hobbyRows = chunkHobbiesIntoRows(HOBBIES, HOBBY_ROW_SIZE);
+  const fillerCount = (HOBBY_COLS - (HOBBIES.length % HOBBY_COLS)) % HOBBY_COLS;
 
   return (
     <div ref={ref} className={`section-panel section-panel--hobbies ${active ? 'visible' : ''}`}>
       <div className="section-panel-inner">
-        <div className="section-floor section-floor--house" />
         <div className="section-content hobbies-content">
-          <h2 className="projects-heading">Hobbies</h2>
-          <div className="house-frame house-frame--a" aria-hidden="true" />
-          <div className="house-frame house-frame--b" aria-hidden="true" />
-          <div className="house-frame house-frame--c" aria-hidden="true" />
-          <div className="house-frame house-frame--sm house-frame--d" aria-hidden="true" />
-          <div className="house-frame house-frame--sm house-frame--e" aria-hidden="true" />
-          <div className="room-rug" aria-hidden="true" />
-          <div className="room-lamp" aria-hidden="true">
-            <span className="room-lamp-shade" />
-            <span className="room-lamp-pole" />
-            <span className="room-lamp-base" />
-          </div>
-          <div className="room-chair" aria-hidden="true">
-            <span className="room-chair-back" />
-            <span className="room-chair-seat" />
-            <span className="room-chair-leg room-chair-leg--l" />
-            <span className="room-chair-leg room-chair-leg--r" />
-          </div>
-          <img src={petDogA} className="room-pet" alt="" aria-hidden="true" />
-          <div className="bookshelf-stage">
-            <div className="bookshelf">
-              {hobbyRows.map((row, rowIndex) => (
-                <div className="shelf" key={rowIndex}>
-                  {row.map(({ hobby: h, index }) => (
+          <div className="room">
+            <div className="room-wall" aria-hidden="true">
+              <div className="room-window">
+                <span className="room-window-curtain room-window-curtain--l" />
+                <span className="room-window-curtain room-window-curtain--r" />
+              </div>
+              <div className="room-art room-art--a" />
+              <div className="room-art room-art--b" />
+              <div className="room-clock" />
+            </div>
+            <div className="room-floor" aria-hidden="true">
+              <div className="room-window-light" />
+              <div className="room-rug" />
+              <div className="room-lamp">
+                <span className="room-lamp-shade" />
+                <span className="room-lamp-pole" />
+                <span className="room-lamp-base" />
+              </div>
+              <div className="room-plant">
+                <span className="room-plant-leaves" />
+                <span className="room-plant-pot" />
+              </div>
+              <div className="room-chair">
+                <span className="room-chair-back" />
+                <span className="room-chair-arm room-chair-arm--l" />
+                <span className="room-chair-arm room-chair-arm--r" />
+                <span className="room-chair-seat" />
+              </div>
+              <img src={petDogA} className="room-pet" alt="" />
+            </div>
+
+            <div className="bookshelf-stage">
+              <div className="bookshelf">
+                <h2 className="bookshelf-sign">Hobbies</h2>
+                <div className="bookshelf-grid">
+                  {HOBBIES.map((h, index) => (
                     <button
                       key={h.label}
                       type="button"
-                      className={`hobby-slot ${selected === index ? 'is-selected' : ''}`}
+                      className={`shelf-cubby hobby-slot ${selected === index ? 'is-selected' : ''}`}
                       aria-pressed={selected === index}
                       onClick={() => setSelected(selected === index ? null : index)}
                     >
                       <span
                         className={`hobby-item-thumb ${!h.image ? 'hobby-item-thumb--fallback' : ''}`}
                         style={{
-                          ...(h.size ? { height: h.size } : null),
-                          ...(!h.image ? { width: 84, background: h.color } : null),
+                          ...(h.scale ? { '--item-scale': h.scale } : null),
+                          ...(!h.image ? { background: h.color } : null),
                         }}
                       >
                         {h.image ? (
-                          <img src={h.image} alt={h.label} />
+                          <img src={h.image} alt="" />
                         ) : (
                           <span className="hobby-item-fallback">{h.label[0]}</span>
                         )}
@@ -337,25 +346,28 @@ export const HobbiesPanel = forwardRef(function HobbiesPanel({ active }, ref) {
                       <span className="hobby-item-label">{h.label}</span>
                     </button>
                   ))}
+                  {Array.from({ length: fillerCount }, (_, i) => (
+                    <BookStack key={i} variant={i % 2 === 0 ? 'a' : 'b'} />
+                  ))}
                 </div>
-              ))}
-            </div>
-            <div className={`hobby-detail ${selectedHobby ? 'is-open' : ''}`}>
-              <div className="hobby-detail-inner">
-                {selectedHobby && (
-                  <>
-                    <button
-                      type="button"
-                      className="hobby-detail-close"
-                      onClick={() => setSelected(null)}
-                      aria-label="Close"
-                    >
-                      ×
-                    </button>
-                    <h3 style={{ color: selectedHobby.color }}>{selectedHobby.label}</h3>
-                    <p>{selectedHobby.desc}</p>
-                  </>
-                )}
+              </div>
+              <div className={`hobby-detail ${selectedHobby ? 'is-open' : ''}`}>
+                <div className="hobby-detail-inner">
+                  {selectedHobby && (
+                    <>
+                      <button
+                        type="button"
+                        className="hobby-detail-close"
+                        onClick={() => setSelected(null)}
+                        aria-label="Close"
+                      >
+                        ×
+                      </button>
+                      <h3 style={{ color: selectedHobby.color }}>{selectedHobby.label}</h3>
+                      <p>{selectedHobby.desc}</p>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>

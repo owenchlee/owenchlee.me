@@ -1,105 +1,127 @@
-/* Deliberate visual break from App.css's pixel-art HUD styling — this is a
-   genuinely different "mode" of the site (plain, static, conventional),
-   not a themed variant of the game chrome. Readable measure, high contrast,
-   normal document flow, real focus rings (inherited from the global
-   a:focus-visible/button:focus-visible rule in index.css). Every class here
-   is scoped to .quick-view so nothing bleeds in from (or out to) App.css —
-   including tech-chip styling, which used to reuse App.css's pixel-font
-   .tech-chip and read as an unstyled wireframe here as a result. */
+/* Quick View is a plain, static, normal-document-flow layout of the same
+   content as the world, but dressed in the world's own pixel language: the
+   overworld grass tile as the backdrop, a HUD-style dark textbox for the
+   intro, pixel-font wooden signs for section headings, and cream/ink cards
+   with hard offset shadows (the same card look as the in-house panels).
+   Body copy stays in the system font at a readable size — only headings,
+   labels and chips use the pixel/terminal faces. Focus rings come from the
+   global a:focus-visible/button:focus-visible rule in index.css. Every class
+   is scoped to .quick-view so nothing bleeds in from (or out to) App.css. */
 
 .quick-view {
+  --qv-wood: #7a4b2c;
+  --qv-wood-light: #a0693f;
   position: fixed;
   inset: 0;
   z-index: 200;
-  background: var(--pal-cream);
   color: var(--pal-ink);
   overflow-y: auto;
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--pal-grass);
+  background-image: linear-gradient(rgba(10, 30, 20, 0.35), rgba(10, 30, 20, 0.35)), url('./assets/grass.png');
+  background-size: auto, 48px 48px;
+  image-rendering: pixelated;
 }
 
 .quick-view-panel {
-  max-width: 760px;
+  max-width: 920px;
   margin: 0 auto;
-  padding: 64px 24px 96px;
+  padding: 24px 24px 96px;
+  image-rendering: auto;
 }
 
 .quick-view-close {
   display: inline-block;
-  background: none;
-  border: 2px solid var(--pal-ink);
-  color: var(--pal-ink);
-  font: inherit;
-  font-size: 14px;
-  padding: 8px 14px;
+  background: var(--pal-ink);
+  color: var(--pal-cream);
+  border: 3px solid var(--pal-cream);
+  box-shadow: 3px 3px 0 #000;
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  line-height: 1.4;
+  padding: 10px 12px;
   cursor: pointer;
 }
 
 .quick-view-close:hover {
-  background: var(--pal-ink);
+  color: var(--pal-grass-light);
+}
+
+/* --- Intro: same dark HUD textbox as the world's nameplate --- */
+
+.quick-view-hero {
+  margin: 24px 0 48px;
+  background: rgba(28, 23, 18, 0.82);
+  border: 3px solid var(--pal-cream);
+  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.4);
+  padding: 32px clamp(20px, 5vw, 44px) 28px;
   color: var(--pal-cream);
 }
 
 .quick-view h1 {
-  font-size: clamp(32px, 6vw, 48px);
-  margin: 32px 0 4px;
+  font-family: var(--font-pixel);
+  font-size: clamp(30px, 7vw, 56px);
+  line-height: 1.2;
+  margin: 0 0 14px;
+  color: var(--pal-cream);
+  text-shadow: 4px 4px 0 var(--pal-ink);
+}
+
+.quick-view h1:focus {
+  outline: none;
 }
 
 .quick-view-role {
-  font-size: 18px;
-  color: var(--pal-ink-soft);
-  margin: 0 0 8px;
+  font-family: var(--font-terminal);
+  font-size: 24px;
+  line-height: 1.3;
+  margin: 0 0 12px;
+}
+
+.quick-view-role-tag {
+  display: inline-block;
+  font-family: var(--font-pixel);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--pal-ink);
+  background: #e0b23c;
+  border: 2px solid var(--pal-ink);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
+  padding: 4px 10px;
+  vertical-align: 3px;
 }
 
 .quick-view-status {
   display: inline-block;
-  font-size: 13px;
-  font-weight: 600;
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  line-height: 1.4;
   color: var(--pal-ink);
   background: var(--pal-grass-light);
-  border: 1px solid var(--pal-ink);
-  padding: 3px 10px;
-  border-radius: 999px;
-  margin: 0 0 16px;
+  border: 2px solid var(--pal-ink);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
+  padding: 4px 10px;
+  margin: 0 0 18px;
 }
 
 .quick-view-bio {
   font-size: 17px;
   line-height: 1.6;
-  max-width: 60ch;
-  margin: 0 0 16px;
+  max-width: 62ch;
+  margin: 0 0 14px;
 }
 
-.quick-view-resume {
-  margin: 0 0 16px;
-}
-
-.quick-view-resume a {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--pal-ink);
-}
-
-/* .hud-tag chips (rendered by the shared Highlighted component) are pixel-
-   font/hard-shadow by default to match the game HUD — softened here to fit
-   QuickView's plain, conventional register instead. */
+/* .hud-tag chips (rendered by the shared Highlighted component) keep their
+   pixel look here, just sized to sit inside body-copy lines. */
 .quick-view-bio .hud-tag,
 .quick-view-highlights .hud-tag {
-  font-family: inherit;
-  font-size: 0.92em;
-  font-weight: 700;
-  color: var(--pal-ink);
-  background: var(--tag-color, var(--pal-grass-light));
-  border: none;
-  box-shadow: none;
-  border-radius: 4px;
-  padding: 1px 7px;
-  text-shadow: none;
-  vertical-align: 0;
+  font-size: 10px;
+  vertical-align: 2px;
 }
 
 .quick-view-highlights {
   list-style: none;
-  margin: 0 0 40px;
+  margin: 0 0 24px;
   padding: 0;
   display: flex;
   flex-direction: column;
@@ -108,87 +130,148 @@
 
 .quick-view-highlights li {
   font-size: 16px;
-  line-height: 1.5;
-  padding-left: 20px;
+  line-height: 1.6;
+  padding-left: 22px;
   position: relative;
 }
 
 .quick-view-highlights li::before {
-  content: '▸';
+  content: '▶';
   position: absolute;
   left: 0;
-  color: var(--pal-grass);
+  top: 1px;
+  font-size: 11px;
+  color: var(--pal-grass-light);
+}
+
+.quick-view-resume {
+  display: inline-block;
+  background: var(--pal-grass-light);
+  color: var(--pal-ink);
+  border: 3px solid var(--pal-ink);
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 12px 18px;
+  text-decoration: none;
+  box-shadow: 3px 3px 0 #000;
+}
+
+.quick-view-resume:hover {
+  background: var(--pal-cream);
+}
+
+/* --- Section headings: wooden signs, like the Hobbies room plaque --- */
+
+.quick-view section {
+  margin: 0 0 48px;
 }
 
 .quick-view h2 {
-  font-size: 24px;
-  border-bottom: 2px solid var(--pal-ink);
-  padding-bottom: 8px;
+  display: inline-block;
+  font-family: var(--font-pixel);
+  font-size: 16px;
+  line-height: 1.4;
+  color: var(--pal-cream);
+  text-shadow: 2px 2px 0 var(--pal-ink);
+  background: var(--qv-wood);
+  border: 3px solid var(--pal-ink);
+  box-shadow: inset 0 3px 0 var(--qv-wood-light), 4px 4px 0 rgba(0, 0, 0, 0.35);
+  padding: 10px 16px 9px;
   margin: 0 0 20px;
 }
 
+.quick-view section > p {
+  color: var(--pal-cream);
+  font-size: 17px;
+  line-height: 1.6;
+  text-shadow: 1px 1px 0 var(--pal-ink);
+  margin: 0 0 16px;
+}
+
+/* --- Cards: cream/ink with a hard offset shadow, same as .project-card --- */
+
+.quick-view-resume-list,
 .quick-view-projects {
   list-style: none;
-  margin: 0 0 48px;
+  margin: 0;
   padding: 0;
+  display: grid;
+  gap: 20px;
+}
+
+.quick-view-projects {
+  grid-template-columns: repeat(auto-fill, minmax(min(380px, 100%), 1fr));
+}
+
+.quick-view-resume-list > li,
+.quick-view-projects > li,
+.quick-view-hobbies > li,
+.quick-view-skills {
+  background: var(--pal-cream);
+  border: 3px solid var(--pal-ink);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.4);
+  padding: 16px 18px 18px;
+}
+
+.quick-view-projects > li {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  border-top: 8px solid var(--accent, var(--pal-grass));
 }
 
-.quick-view-projects li {
-  border: 1px solid rgba(28, 23, 18, 0.15);
-  border-left: 5px solid var(--accent, var(--pal-grass));
-  background: rgba(28, 23, 18, 0.03);
-  border-radius: 6px;
-  padding: 16px 20px;
+.quick-view-resume-list > li {
+  border-left: 8px solid var(--pal-grass-light);
 }
 
-.quick-view-projects h3 {
-  font-size: 19px;
+/* Video/image thumb from CardThumb (shared with ProjectsPanel). */
+.quick-view-projects .project-thumb {
+  aspect-ratio: 16 / 10;
+  margin: -4px -6px 14px;
+  background: var(--pal-ink);
+  border: 3px solid var(--pal-ink);
+}
+
+.quick-view-projects .project-thumb-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: var(--pal-ink);
+}
+
+.quick-view-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+.quick-view-card-head h3 {
+  font-size: 18px;
   margin: 0;
-  display: inline;
 }
 
 .quick-view-date {
-  font-size: 14px;
+  font-family: var(--font-terminal);
+  font-size: 18px;
   color: var(--pal-ink-soft);
-  margin-left: 10px;
+  white-space: nowrap;
 }
 
 .quick-view-projects p {
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1.6;
+  color: var(--pal-ink-soft);
   margin: 8px 0 0;
 }
 
-.quick-view-resume-list {
-  list-style: none;
-  margin: 0 0 48px;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.quick-view-resume-list li {
-  border: 1px solid rgba(28, 23, 18, 0.15);
-  border-left: 5px solid var(--pal-grass);
-  background: rgba(28, 23, 18, 0.03);
-  border-radius: 6px;
-  padding: 16px 20px;
-}
-
-.quick-view-resume-list h3 {
-  font-size: 19px;
-  margin: 0;
-  display: inline;
-}
-
 .quick-view-org {
-  font-size: 15px;
+  font-family: var(--font-terminal);
+  font-size: 18px;
   color: var(--pal-ink-soft);
-  margin: 4px 0 0;
+  margin: 2px 0 0;
 }
 
 .quick-view-bullets {
@@ -196,93 +279,124 @@
   padding-left: 20px;
   font-size: 15px;
   line-height: 1.6;
+  color: var(--pal-ink-soft);
 }
 
-.quick-view-bullets li {
-  border: none;
-  background: none;
-  padding: 0;
-  border-radius: 0;
+.quick-view-bullets li + li {
+  margin-top: 4px;
 }
 
 .quick-view-skills {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  margin: 0 0 48px;
+  gap: 16px;
 }
 
 .quick-view-skills-label {
   display: block;
-  font-size: 14px;
-  font-weight: 700;
-  margin-bottom: 6px;
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  line-height: 1.4;
+  margin-bottom: 8px;
 }
 
+/* Tech/skill chips: VT323 in a hard ink border, same as .tech-chip. */
 .quick-view-tech {
   list-style: none;
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin: 10px 0 0;
+  margin: 0;
   padding: 0;
 }
 
+.quick-view-projects .quick-view-tech {
+  margin-top: 12px;
+}
+
 .quick-view-tech li {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--pal-ink-soft);
-  background: rgba(28, 23, 18, 0.06);
-  border: 1px solid rgba(28, 23, 18, 0.12);
-  border-radius: 999px;
-  padding: 3px 10px;
+  font-family: var(--font-terminal);
+  font-size: 17px;
+  line-height: 1.1;
+  color: var(--pal-ink);
+  background: #fffaf0;
+  border: 2px solid var(--pal-ink);
+  padding: 2px 8px;
 }
 
 .quick-view-links {
   display: flex;
-  gap: 16px;
-  margin-top: 12px;
-  font-size: 15px;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 14px;
 }
 
 .quick-view-links a {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  line-height: 1.4;
   color: var(--pal-ink);
-  font-weight: 600;
+  background: var(--pal-cream);
+  border: 2px solid var(--pal-ink);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
+  padding: 7px 10px;
+  text-decoration: none;
+}
+
+.quick-view-links a:hover {
+  background: var(--pal-grass-light);
 }
 
 .quick-view-nolink {
-  font-size: 14px;
+  font-family: var(--font-terminal);
+  font-size: 17px;
   color: var(--pal-ink-soft);
-  font-style: italic;
 }
+
+/* --- Hobbies: little cards with the same pixel item art as the shelf --- */
 
 .quick-view-hobbies {
   list-style: none;
-  margin: 0 0 48px;
+  margin: 0;
   padding: 0;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 12px;
+  gap: 14px;
 }
 
-.quick-view-hobbies li {
-  border: 1px solid rgba(28, 23, 18, 0.15);
-  border-top: 4px solid var(--accent, var(--pal-grass));
-  border-radius: 6px;
-  padding: 12px 14px;
+.quick-view-hobbies > li {
+  border-top: 6px solid var(--accent, var(--pal-grass));
+  padding: 14px;
+}
+
+.quick-view-hobby-img {
+  display: block;
+  height: 64px;
+  max-width: 100%;
+  width: auto;
+  object-fit: contain;
+  object-position: left bottom;
+  image-rendering: pixelated;
+  margin-bottom: 10px;
+  filter: drop-shadow(3px 3px 0 rgba(0, 0, 0, 0.3));
 }
 
 .quick-view-hobbies h3 {
-  font-size: 15px;
-  margin: 0 0 4px;
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  line-height: 1.4;
+  margin: 0 0 6px;
 }
 
 .quick-view-hobbies p {
-  font-size: 13.5px;
+  font-size: 14px;
   line-height: 1.5;
   color: var(--pal-ink-soft);
   margin: 0;
 }
+
+/* --- Contact --- */
 
 .quick-view-contact {
   list-style: none;
@@ -297,24 +411,22 @@
 .qv-email-button {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  font: inherit;
-  font-size: 15px;
-  font-weight: 600;
+  gap: 8px;
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  line-height: 1.4;
   color: var(--pal-ink);
-  background: rgba(28, 23, 18, 0.06);
-  border: 1px solid rgba(28, 23, 18, 0.15);
-  border-radius: 999px;
-  padding: 9px 16px;
+  background: var(--pal-cream);
+  border: 3px solid var(--pal-ink);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.4);
+  padding: 11px 14px;
   cursor: pointer;
   text-decoration: none;
-  transition: background 0.15s ease;
 }
 
 .quick-view-contact a:hover,
 .qv-email-button:hover {
   background: var(--pal-grass-light);
-  border-color: var(--pal-grass-light);
 }
 
 .qv-mail-icon {
@@ -323,6 +435,19 @@
 
 @media (max-width: 480px) {
   .quick-view-panel {
-    padding: 48px 16px 72px;
+    padding: 16px 16px 72px;
+  }
+
+  .quick-view-hero {
+    padding: 24px 18px 22px;
+  }
+
+  .quick-view-role {
+    font-size: 21px;
+  }
+
+  .quick-view-role-tag,
+  .quick-view-status {
+    font-size: 9px;
   }
 }
