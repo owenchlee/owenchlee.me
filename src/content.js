@@ -252,3 +252,12 @@ export const CONTACT = {
     { label: 'LinkedIn', href: 'https://www.linkedin.com/in/owenchlee/' },
   ],
 };
+
+// Unlocked in the Contact house once a visitor earns all 8 badges (see
+// achievements.js). PLACEHOLDER: swap in something personal — a thank-you,
+// a fun fact, a hidden project, whatever you'd want the rare visitor who
+// explored everything to find.
+export const SECRET_NOTE = {
+  title: 'You found everything!',
+  body: '[Placeholder: Owen writes a personal note here for visitors who earned all 8 badges.]',
+};
