@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { INTRO, PROJECTS, HOBBIES, CONTACT, EDUCATION, EXPERIENCE, SKILLS, RESUME_URL } from './content';
 import { Highlighted } from './Highlighted';
+import { CardThumb, useRowVideoPlayback } from './sections';
 import './QuickView.css';
 
 function MailIcon() {
@@ -24,9 +25,9 @@ function MailIcon() {
 }
 
 // Same copy-to-clipboard behavior as sections.jsx's CopyEmailButton, kept
-// as its own small copy here rather than shared — QuickView is a
-// deliberately separate visual mode (see QuickView.css) with its own
-// class names, and the two buttons never render at the same time anyway.
+// as its own small copy here rather than shared — QuickView has its own
+// class names (see QuickView.css), and the two buttons never render at the
+// same time anyway.
 function CopyEmailButton({ email }) {
   const [copied, setCopied] = useState(false);
   const timeoutRef = useRef(null);
@@ -57,9 +58,13 @@ function CopyEmailButton({ email }) {
 // anyone) who wants the facts fast, and for keyboard-only visitors, since
 // the scroll/walk experience itself isn't keyboard-operable. Reuses
 // INTRO/PROJECTS/HOBBIES/CONTACT directly rather than having App.jsx pass
-// them down, same pattern sections.jsx already uses.
-function QuickView({ onClose }) {
+// them down, same pattern sections.jsx already uses. Styled in the same
+// pixel language as the world (tile backdrop, cream/ink cards, pixel-font
+// signs) so it reads as another view of the same place, and project cards
+// reuse CardThumb so the demo clips play here too.
+function QuickView({ onClose, isMobileLanding }) {
   const headingRef = useRef(null);
+  const registerVideo = useRowVideoPlayback();
 
   // Move focus into the overlay on open so keyboard users land somewhere
   // sensible instead of on whatever was focused underneath (which is now
@@ -72,43 +77,45 @@ function QuickView({ onClose }) {
     <div className="quick-view">
       <main className="quick-view-panel">
         <button type="button" className="quick-view-close" onClick={onClose}>
-          ← Back to site
+          {isMobileLanding ? 'Explore the interactive world →' : '← Back to site'}
         </button>
 
-        <h1 ref={headingRef} tabIndex={-1}>
-          {INTRO.name}
-        </h1>
-        <p className="quick-view-role">
-          {INTRO.roleTitle} @ {INTRO.roleOrg}
-        </p>
-        {INTRO.status && <p className="quick-view-status">{INTRO.status}</p>}
-        <p className="quick-view-resume">
-          <a href={RESUME_URL} target="_blank" rel="noreferrer">
+        <header className="quick-view-hero">
+          <h1 ref={headingRef} tabIndex={-1}>
+            {INTRO.name}
+          </h1>
+          <p className="quick-view-role">
+            <span className="quick-view-role-tag">{INTRO.roleTitle}</span> @ {INTRO.roleOrg}
+          </p>
+          {INTRO.status && <p className="quick-view-status">{INTRO.status}</p>}
+          {INTRO.bio && (
+            <p className="quick-view-bio">
+              <Highlighted text={INTRO.bio} />
+            </p>
+          )}
+          {INTRO.highlights?.length > 0 && (
+            <ul className="quick-view-highlights">
+              {INTRO.highlights.map((line) => (
+                <li key={line}>
+                  <Highlighted text={line} />
+                </li>
+              ))}
+            </ul>
+          )}
+          <a className="quick-view-resume" href={RESUME_URL} target="_blank" rel="noreferrer">
             View Résumé (PDF) ↗
           </a>
-        </p>
-        {INTRO.bio && (
-          <p className="quick-view-bio">
-            <Highlighted text={INTRO.bio} />
-          </p>
-        )}
-        {INTRO.highlights?.length > 0 && (
-          <ul className="quick-view-highlights">
-            {INTRO.highlights.map((line) => (
-              <li key={line}>
-                <Highlighted text={line} />
-              </li>
-            ))}
-          </ul>
-        )}
+        </header>
 
         <section aria-labelledby="qv-education-heading">
           <h2 id="qv-education-heading">Education</h2>
           <ul className="quick-view-resume-list">
             {EDUCATION.map((e) => (
               <li key={e.program}>
-                <h3>{e.program}</h3>
-                <span className="quick-view-date">{e.dates}</span>
+                <div className="quick-view-card-head">
+                  <h3>{e.program}</h3>
+                  <span className="quick-view-date">{e.dates}</span>
+                </div>
                 <p className="quick-view-org">
                   {e.school}
                   {e.location ? ` — ${e.location}` : ''}
@@ -130,8 +137,10 @@ function QuickView({ onClose }) {
           <ul className="quick-view-resume-list">
             {EXPERIENCE.map((e) => (
               <li key={`${e.role}-${e.org}`}>
-                <h3>{e.role}</h3>
-                <span className="quick-view-date">{e.dates}</span>
+                <div className="quick-view-card-head">
+                  <h3>{e.role}</h3>
+                  <span className="quick-view-date">{e.dates}</span>
+                </div>
                 <p className="quick-view-org">
                   {e.org}
                   {e.location ? ` — ${e.location}` : ''}
@@ -167,8 +176,13 @@ function QuickView({ onClose }) {
           <ul className="quick-view-projects">
             {PROJECTS.map((p) => (
               <li key={p.name} style={{ '--accent': p.color }}>
-                <h3>{p.name}</h3>
-                <span className="quick-view-date">{p.date}</span>
+                {(p.video || p.image) && (
+                  <CardThumb video={p.video} image={p.image} color={p.color} alt={p.name} registerVideo={registerVideo} />
+                )}
+                <div className="quick-view-card-head">
+                  <h3>{p.name}</h3>
+                  <span className="quick-view-date">{p.date}</span>
+                </div>
                 <p>{p.desc}</p>
                 {p.tech?.length > 0 && (
                   <ul className="quick-view-tech">
@@ -201,6 +215,7 @@ function QuickView({ onClose }) {
             <ul className="quick-view-hobbies">
               {HOBBIES.map((h) => (
                 <li key={h.label} style={{ '--accent': h.color }}>
+                  {h.image && <img src={h.image} alt="" className="quick-view-hobby-img" />}
                   <h3>{h.label}</h3>
                   <p>{h.desc}</p>
                 </li>

@@ -225,22 +225,23 @@ export const PROJECTS = [
 
 // Each entry renders as a photo sitting on the shelf in HobbiesPanel —
 // `color` is the fallback swatch shown until `image` is set, `label` is the
-// nameplate under it. They're laid out HOBBY_ROW_SIZE per shelf board (see
-// HobbiesPanel in sections.jsx), each at its own photo's natural aspect
+// nameplate under it. They fill the bookcase HOBBY_COLS per row (see
+// HobbiesPanel in sections.jsx), each at its own image's natural aspect
 // ratio — so just add more entries here to add more items; no layout code
-// to touch. `size` is an optional override (px) for the thumb's display
-// height — everything defaults to .hobby-item-thumb's 80px in App.css;
-// only set it when an item needs to read at a different scale than the rest
-// of the shelf.
+// to touch. The pixel images are 32px tall and drawn at a whole-number
+// multiple of that (see --shelf-scale in App.css) so pixels stay square
+// instead of smearing; `scale` is an optional per-item size ratio (rounded
+// down to the nearest whole multiple) for items too wide to fit a cubby at
+// the default, e.g. the racket.
 export const HOBBIES = [
   { label: 'Basketball', color: '#f0a94e', image: basketballPixel, desc: "Pickup ball with friends whenever I can get a run going. I play small forward, and my black Wilson Evolution is my go-to ball on indoor courts." },
-  { label: 'Badminton', color: '#4da338', image: badmintonPixel, size: 73, desc: "Watching the birdie fly at supersonic speeds is weirdly relaxing. Fast rallies and faster reflexes, one of my favorite ways to spend time with friends." },
-  { label: 'Cooking', color: '#e8877a', image: cookingPixel, size: 140, desc: "Always experimenting in the kitchen, from steak to noodles. Watching people actually enjoy what I cook is one of my favorite feelings." },
+  { label: 'Badminton', color: '#4da338', image: badmintonPixel, scale: 0.7, desc: "Watching the birdie fly at supersonic speeds is weirdly relaxing. Fast rallies and faster reflexes, one of my favorite ways to spend time with friends." },
+  { label: 'Cooking', color: '#e8877a', image: cookingPixel, desc: "Always experimenting in the kitchen, from steak to noodles. Watching people actually enjoy what I cook is one of my favorite feelings." },
   { label: 'Board Games', color: '#6f5fa3', image: boardGamesPixel, desc: "Strategy games, party games, anything with a table full of friends and a bit of friendly competition. Seven Wonders is my current favorite." },
   { label: 'Running', color: '#26a8b1', image: runningPixel, desc: "Taking in the scenery, losing myself in music, and chasing new personal bests — what keeps pulling me back out for another run." },
   { label: 'Working Out', color: '#8ea9c9', image: workoutPixel, desc: "Regular gym sessions to build strength and stay consistent. It's become one of my favorite daily habits." },
   { label: 'Singing', color: '#b5495b', image: singingPixel, desc: "Karaoke and car singalongs, some of the times I feel most free — I'll take any excuse. Also part of why I built Sing Score, to let anyone sing karaoke anywhere." },
-  { label: 'Pokemon Cards', color: '#e8c547', image: pokemonCardsPixel, size: 60, desc: "A huge Pokemon card fan and collector since I was a kid. Still ripping packs, hitting card shows, and admiring pulls whenever I can." },
+  { label: 'Pokemon Cards', color: '#e8c547', image: pokemonCardsPixel, scale: 0.75, desc: "A huge Pokemon card fan and collector since I was a kid. Still ripping packs, hitting card shows, and admiring pulls whenever I can." },
 ];
 
 export const CONTACT = {

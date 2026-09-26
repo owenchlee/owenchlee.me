@@ -452,21 +452,24 @@
 .house {
   position: absolute;
   width: 56px;
-  /* Tall enough to actually contain the rendered sprite (66px wide source
-     at ~1.08 aspect ratio → ~72px tall) instead of the old fixed 48px,
-     which let the sprite silently overflow the box and paint over the
-     foundation/shadow sitting "beneath" it at the box's nominal bottom. */
+  /* The box stays at its old 74px footprint (bottom edge = where the
+     building meets the ground, which the yard fence and door walk are laid
+     out around) and the taller sprite overflows *upward* via
+     justify-content: flex-end, so enlarging the buildings never pushes them
+     down into the fence's front row. */
   height: 74px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-end;
+  transform-origin: 50% 100%;
   /* --house-reveal is written every scroll tick from getHouseReveal() in
      App.jsx (0-1, continuous with scroll progress) — no CSS transition here,
      since a timer competing with a value already being driven every frame is
      exactly what used to make the panel/house reveal feel disconnected from
      actual scroll speed. Scale grows as the character approaches, giving the
      "arrival" cue a place to live on the world itself. */
-  transform: scale(calc(1 + var(--house-reveal, 0) * 0.15));
+  transform: scale(calc(1 + var(--house-reveal, 0) * 0.12));
 }
 
 /* Each building is its own distinct sourced sprite (src/assets/houses/,
@@ -476,7 +479,8 @@
    width) so buildings with different footprints still share a roofline
    scale instead of some reading as tiny and others oversized. */
 .house-sprite {
-  height: 70px;
+  flex: none;
+  height: 104px;
   width: auto;
   image-rendering: pixelated;
   filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.35));
@@ -489,6 +493,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-end;
 }
 
 /* Decoration-only scenery buildings — same rendering as .house-sprite, but
@@ -496,7 +501,8 @@
    the entire signal that these aren't checkpoints: only the 4 real section
    houses ever show a name or light up as you approach. */
 .decor-house {
-  height: 60px;
+  flex: none;
+  height: 88px;
   width: auto;
   image-rendering: pixelated;
   filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.3));
@@ -519,7 +525,7 @@
   left: 50%;
   bottom: 4px;
   transform: translateX(-50%);
-  width: clamp(46px, calc(var(--footprint-w, 80px) * 1.08), 132px);
+  width: clamp(56px, calc(var(--footprint-w, 80px) * 1.06), 176px);
   height: 12px;
   background: #b8a888;
   border: 2px solid #8a7a5c;
@@ -531,7 +537,7 @@
   left: 50%;
   bottom: -2px;
   transform: translateX(-50%);
-  width: clamp(34px, calc(var(--footprint-w, 60px) * 0.82), 104px);
+  width: clamp(44px, calc(var(--footprint-w, 60px) * 0.84), 148px);
   height: 14px;
   background: rgba(0, 0, 0, 0.32);
   border-radius: 50%;
@@ -574,10 +580,10 @@
 .building-window-glow {
   position: absolute;
   left: 50%;
-  bottom: 22px;
+  bottom: 28px;
   transform: translateX(-50%);
-  width: 34px;
-  height: 34px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(255, 211, 92, 0.9) 0%, rgba(255, 211, 92, 0) 70%);
   opacity: var(--night, 0);
@@ -980,63 +986,6 @@
 .quick-view-toggle:hover,
 .quick-view-toggle:focus-visible {
   color: var(--pal-grass-light);
-}
-
-/* One-time small-screen nudge toward Quick View — see the mount check in
-   App.jsx. A bottom-center toast rather than a top bar deliberately: the
-   top corners are already claimed by .section-nav/.quick-view-toggle (see
-   their z-index 30/31 and the hud-nameplate comment above about how tight
-   that band already is on a phone-width screen), so a full-width bar up
-   there would either cover them or need to push them down and re-tune all
-   that existing spacing. Bottom-center sits between .minimap and
-   .music-player's corners, clear of both, and above everything (z-index
-   210) including the Quick View overlay itself (z-index 200 in
-   QuickView.css) since the button below can open Quick View without
-   necessarily dismissing this toast first. */
-.mobile-notice {
-  position: fixed;
-  left: 50%;
-  bottom: 14px;
-  transform: translateX(-50%);
-  z-index: 210;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: min(90vw, 420px);
-  background: var(--pal-ink);
-  color: var(--pal-cream);
-  border: 3px solid var(--pal-cream);
-  box-shadow: 3px 3px 0 #000;
-  padding: 10px 12px;
-  font-size: 11px;
-  line-height: 1.5;
-}
-
-.mobile-notice p {
-  margin: 0;
-  flex: 1;
-}
-
-.mobile-notice-link {
-  font: inherit;
-  color: var(--pal-grass-light);
-  background: none;
-  border: none;
-  padding: 0;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.mobile-notice-close {
-  flex-shrink: 0;
-  width: 26px;
-  height: 26px;
-  background: none;
-  border: 2px solid var(--pal-cream);
-  color: var(--pal-cream);
-  font-size: 16px;
-  line-height: 1;
-  cursor: pointer;
 }
 
 /* --- Minimap HUD ---
@@ -1462,27 +1411,6 @@
   background-image: url('./assets/grass.png');
 }
 
-/* Hobbies used to sit on a tiled grass texture even though it's reached by
-   walking into a house on the overworld (see `activeHouse` in App.jsx) —
-   a shelf floating on outdoor grass read as a continuity error. This is a
-   plain wallpaper band over the same tiled floor-wood.png the Contact room
-   uses, with a dark baseboard line where they meet, so Hobbies reads as an
-   interior room like every other house on the site instead of an outdoor
-   clearing. */
-.section-floor--house {
-  background-image: linear-gradient(
-      to bottom,
-      var(--pal-path-dark) 0%,
-      var(--pal-path-dark) 56%,
-      var(--pal-ink) 56%,
-      var(--pal-ink) 59%,
-      transparent 59%
-    ),
-    url('./assets/floor-wood.png');
-  background-size: 100% 100%, 48px 48px;
-  background-repeat: no-repeat, repeat;
-}
-
 .section-content {
   position: relative;
   z-index: 1;
@@ -1746,160 +1674,367 @@
   }
 }
 
-/* Hobbies: a shelf that fills the whole room, not a card grid. Each hobby is
-   a photo sitting on the shelf (see HOBBIES in content.js), laid out as a
-   flex-wrap row rather than a fixed grid so each item's own width (driven by
-   its photo's aspect ratio at a fixed display height — see
-   .hobby-item-thumb) decides how many fit per row; items just wrap to
-   however many rows the shelf's actual width calls for. hobbies-content is
-   deliberately position:absolute inset:0 (like .section-floor) instead of a
-   normal in-flow child: that's
-   what makes it size to exactly one screen rather than to whatever height
-   its own content asks for, which is what "fills the whole page" needs here
-   — the opposite of the projects-content growth .section-panel-inner exists
-   to support. Clicking an item grows .hobby-detail's flex-basis from 0;
-   because .bookshelf is flex:1 (not a fixed width), it reflows to fill
-   whatever's left every frame of that transition — no separate transform/
-   width to keep in sync, so the shelf can never end up sliding a mismatched
-   distance and clipping mid-shelf the way a hardcoded translateX would. */
+/* Hobbies: a 3/4 top-down interior, built the way 16-bit RPG rooms
+   (Pokémon, Stardew, EarthBound) are — a tall back wall with crown trim,
+   striped wallpaper, wood wainscot and a dark baseboard, over a plank floor
+   that darkens where it meets the wall. The bookcase stands against that
+   wall with its base overlapping the floor line, and every piece of
+   furniture casts a hard, unblurred shadow, which is what makes things
+   read as standing in the room instead of pasted on a background.
+   Colors stay inside the site palette's warm woods plus the cream/ink pair.
+   hobbies-content is position:absolute inset:0 so the room fills exactly
+   one screen and scrolls internally only if the viewport is too short. */
 
 .hobbies-content {
+  --shelf-scale: 3;
+  --floor-h: clamp(170px, 22vh, 280px);
+  /* Roughly half the bookcase's rendered width at the current
+     --shelf-scale; wall/floor decor is placed off it. */
+  --case-half: 380px;
+  /* Size multiplier for the CSS-drawn furniture, so it stays in proportion
+     with the bookcase as that steps up on big screens. */
+  --decor-scale: 1;
+  --wood-dark: #3b2616;
+  --wood: #5e3b24;
+  --wood-mid: #7a4b2c;
+  --wood-light: #a0693f;
   position: absolute;
   inset: 0;
   z-index: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  /* Bottom padding is well past the usual amount so the shelf's own
-     rectangular bottom edge clears the fixed minimap HUD (bottom:14px,
-     height:126px) instead of running underneath it in that corner. */
-  padding: 28px 40px 160px;
-  box-sizing: border-box;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
 
-/* Wall-hung picture frames on the wallpaper band above the shelf — plain
-   CSS boxes in the same hard-pixel-border language as .tech-chip and
-   .project-card, rather than a new image asset, so the room reads as lived
-   in without adding art dependencies. Anchored with calc() off center
-   (rather than a flat left/right %) so they stay grouped above the actual
-   900px-capped shelf on wide screens instead of drifting out toward the
-   room's edges as the viewport grows. Hidden on narrow viewports where the
-   wall band itself is too short to hold them without crowding the shelf. */
-.house-frame {
-  position: absolute;
-  top: 64px;
-  width: 72px;
-  height: 92px;
-  background: var(--pal-cream);
-  border: 4px solid var(--pal-ink);
-  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.3);
-}
-
-.house-frame::after {
-  content: '';
-  position: absolute;
-  inset: 8px;
-  background: var(--frame-tint);
-}
-
-.house-frame--sm {
-  width: 56px;
-  height: 72px;
-}
-
-.house-frame--a {
-  left: calc(50% - 480px);
-  top: 76px;
-  --frame-tint: var(--pal-water);
-  transform: rotate(-4deg);
-}
-
-.house-frame--b {
-  right: calc(50% - 470px);
-  top: 58px;
-  --frame-tint: var(--pal-path);
-  transform: rotate(3deg);
-}
-
-.house-frame--c {
-  left: calc(50% - 260px);
-  top: 40px;
-  --frame-tint: var(--pal-grass-light);
-  transform: rotate(-1deg);
-}
-
-.house-frame--d {
-  right: calc(50% - 260px);
-  top: 98px;
-  --frame-tint: var(--pal-path-dark);
-  transform: rotate(4deg);
-}
-
-.house-frame--e {
-  left: calc(50% - 30px);
-  top: 106px;
-  --frame-tint: var(--pal-grass);
-  transform: rotate(-6deg);
-}
-
-@media (max-width: 900px) {
-  .house-frame {
-    display: none;
+@media (min-height: 1050px) and (min-width: 1800px) {
+  .hobbies-content {
+    --shelf-scale: 4;
+    --case-half: 470px;
+    --decor-scale: 1.4;
   }
 }
 
-/* Floor-level furniture grouped around the shelf: a rug it and the chair/
-   lamp/dog all sit on, so the empty flanks either side of the shelf read as
-   the rest of a furnished room instead of bare wallpaper. Same treatment as
-   .house-frame — bottom-anchored plain CSS shapes, hidden below 900px so
-   they never compete with the shelf on the viewports where it's already
-   tight on width. */
+@media (max-height: 780px), (max-width: 1100px) {
+  .hobbies-content {
+    --shelf-scale: 2;
+    --case-half: 280px;
+  }
+}
+
+@media (max-width: 640px) {
+  .hobbies-content {
+    --shelf-scale: 1;
+    --floor-h: 120px;
+  }
+}
+
+.room {
+  position: relative;
+  min-height: 100%;
+  display: grid;
+  grid-template-rows: 1fr var(--floor-h);
+  grid-template-columns: 100%;
+  box-shadow: inset 0 0 0 4px var(--pal-ink);
+}
+
+/* Side walls: in 3/4 view the left/right walls are seen edge-on as thin
+   dark strips, which is what boxes the room in. */
+.room::before,
+.room::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 18px;
+  z-index: 3;
+  background: var(--wood-dark);
+  border: 4px solid var(--pal-ink);
+  pointer-events: none;
+}
+
+.room::before {
+  left: 0;
+  box-shadow: inset -4px 0 0 var(--wood);
+}
+
+.room::after {
+  right: 0;
+  box-shadow: inset 4px 0 0 var(--wood);
+}
+
+.room-wall {
+  grid-row: 1;
+  grid-column: 1;
+  position: relative;
+  /* Wallpaper: alternating wide stripes with a thin darker seam, the
+     classic pattern for this style of room. */
+  background-color: #e3cfa0;
+  background-image:
+    repeating-linear-gradient(90deg, transparent 0 22px, #d2ba88 22px 24px, transparent 24px 48px),
+    repeating-linear-gradient(90deg, #e3cfa0 0 24px, #dcc594 24px 48px);
+  image-rendering: pixelated;
+}
+
+/* Crown trim along the ceiling. */
+.room-wall::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 18px;
+  background: var(--wood);
+  border-bottom: 4px solid var(--pal-ink);
+  box-shadow: inset 0 -4px 0 var(--wood-mid), 0 6px 0 rgba(0, 0, 0, 0.12);
+}
+
+/* Wainscot: vertical board paneling with a chair rail on top and a dark
+   baseboard where it meets the floor. */
+.room-wall::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 104px;
+  background-color: var(--wood-light);
+  background-image:
+    linear-gradient(to top, var(--wood-dark) 0 12px, var(--pal-ink) 12px 15px, transparent 15px),
+    repeating-linear-gradient(90deg, transparent 0 30px, var(--wood-mid) 30px 32px);
+  border-top: 4px solid var(--pal-ink);
+  box-shadow: inset 0 6px 0 #c48a58, inset 0 10px 0 var(--wood);
+}
+
+.room-floor {
+  grid-row: 2;
+  grid-column: 1;
+  position: relative;
+  background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0) 36px),
+    url('./assets/floor-wood.png');
+  background-size: auto, 48px 48px;
+  image-rendering: pixelated;
+}
+
+/* --- Wall decor: window, hung art, clock ---
+   Positioned from the center of the flank either side of the bookcase
+   (--case-half is roughly half the case's width), so they stay balanced
+   around it at any width, and anchored from the wainscot up (not from the
+   ceiling down) so on tall screens they hang at eye level beside the case
+   instead of drifting up into empty wall. Hidden where the flanks are too
+   narrow. */
+
+.room-window,
+.room-art,
+.room-clock {
+  scale: var(--decor-scale);
+}
+
+.room-window {
+  position: absolute;
+  bottom: calc(104px + 120px * var(--decor-scale));
+  left: calc((50% - var(--case-half)) / 2 - 84px);
+  width: 168px;
+  height: 132px;
+  background:
+    linear-gradient(90deg, transparent calc(50% - 3px), #f4ead0 calc(50% - 3px) calc(50% + 3px), transparent calc(50% + 3px)),
+    linear-gradient(transparent calc(50% - 3px), #f4ead0 calc(50% - 3px) calc(50% + 3px), transparent calc(50% + 3px)),
+    linear-gradient(135deg, transparent 0 30%, rgba(255, 255, 255, 0.55) 30% 36%, transparent 36% 44%, rgba(255, 255, 255, 0.4) 44% 47%, transparent 47%),
+    linear-gradient(to bottom, #7cc8f0, #c9ecff);
+  border: 8px solid #f4ead0;
+  outline: 4px solid var(--pal-ink);
+  box-shadow: 6px 6px 0 8px rgba(0, 0, 0, 0.18);
+}
+
+/* Sill */
+.room-window::after {
+  content: '';
+  position: absolute;
+  left: -20px;
+  right: -20px;
+  bottom: -26px;
+  height: 10px;
+  background: #f4ead0;
+  border: 4px solid var(--pal-ink);
+}
+
+.room-window-curtain {
+  position: absolute;
+  top: -20px;
+  bottom: -14px;
+  width: 36px;
+  background: repeating-linear-gradient(90deg, #b5495b 0 8px, #93374a 8px 12px);
+  border: 4px solid var(--pal-ink);
+}
+
+.room-window-curtain--l {
+  left: -30px;
+}
+
+.room-window-curtain--r {
+  right: -30px;
+}
+
+/* Curtain rod */
+.room-window-curtain--l::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: -10px;
+  width: 244px;
+  height: 8px;
+  background: var(--wood);
+  border: 3px solid var(--pal-ink);
+}
+
+.room-art {
+  position: absolute;
+  border: 6px solid var(--wood);
+  outline: 4px solid var(--pal-ink);
+  box-shadow: 6px 6px 0 4px rgba(0, 0, 0, 0.18);
+}
+
+/* Landscape: sky, sun, two hill layers — a tiny pixel painting rather than
+   a blank tinted rectangle. */
+.room-art--a {
+  bottom: calc(104px + 150px * var(--decor-scale));
+  left: calc(50% + var(--case-half) + (50% - var(--case-half)) / 2 - 150px * var(--decor-scale));
+  width: 120px;
+  height: 84px;
+  background:
+    radial-gradient(circle at 74% 30%, #ffe27a 0 9px, transparent 10px),
+    linear-gradient(170deg, transparent 0 62%, var(--pal-grass) 62%),
+    linear-gradient(15deg, var(--pal-grass-light) 0 38%, transparent 38%),
+    linear-gradient(to bottom, #8fd0f0, #d6f1ff);
+}
+
+/* Portrait of a pixel fruit bowl: two colored blocks on a table band. */
+.room-art--b {
+  bottom: calc(104px + 124px * var(--decor-scale));
+  left: calc(50% + var(--case-half) + (50% - var(--case-half)) / 2 + 30px * var(--decor-scale));
+  width: 64px;
+  height: 80px;
+  background:
+    linear-gradient(to top, var(--wood-mid) 0 22%, transparent 22%),
+    radial-gradient(circle at 36% 62%, #c9463e 0 9px, transparent 10px),
+    radial-gradient(circle at 62% 60%, #e0b23c 0 8px, transparent 9px),
+    #2f4f66;
+}
+
+.room-clock {
+  position: absolute;
+  bottom: calc(104px + 236px * var(--decor-scale));
+  left: calc(50% + var(--case-half) + (50% - var(--case-half)) / 2 + 46px * var(--decor-scale));
+  width: 28px;
+  height: 28px;
+  background:
+    linear-gradient(var(--pal-ink), var(--pal-ink)) 12px 5px / 3px 10px no-repeat,
+    linear-gradient(var(--pal-ink), var(--pal-ink)) 12px 12px / 9px 3px no-repeat,
+    var(--pal-cream);
+  border: 4px solid var(--wood);
+  outline: 3px solid var(--pal-ink);
+  box-shadow: 4px 4px 0 3px rgba(0, 0, 0, 0.18);
+}
+
+/* --- Floor furniture --- */
+
+/* Daylight from the window falling on the floor as a skewed pale patch. */
+.room-window-light {
+  position: absolute;
+  top: 0;
+  left: calc((50% - var(--case-half)) / 2 - 70px);
+  width: calc(170px * var(--decor-scale));
+  height: 60%;
+  background: rgba(255, 244, 205, 0.16);
+  transform: skewX(-24deg);
+  transform-origin: top;
+}
+
 .room-rug {
   position: absolute;
   left: 50%;
-  bottom: 148px;
+  top: 76px;
+  bottom: 24px;
   transform: translateX(-50%);
-  width: min(78%, 760px);
-  height: 150px;
-  border-radius: 50% / 22%;
-  background: var(--pal-water);
+  width: min(calc(var(--case-half) * 1.6), 70%);
+  background-color: #2f6f73;
+  background-image:
+    repeating-linear-gradient(45deg, transparent 0 10px, rgba(248, 240, 220, 0.14) 10px 14px),
+    repeating-linear-gradient(-45deg, transparent 0 10px, rgba(248, 240, 220, 0.14) 10px 14px);
   border: 4px solid var(--pal-ink);
-  box-shadow: inset 0 0 0 8px rgba(248, 240, 220, 0.18);
-  z-index: 0;
+  box-shadow:
+    inset 0 0 0 6px #c9463e,
+    inset 0 0 0 10px var(--pal-cream),
+    inset 0 0 0 14px #c9463e,
+    5px 5px 0 rgba(0, 0, 0, 0.25);
+}
+
+/* Fringe on both short ends */
+.room-rug::before,
+.room-rug::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  width: 10px;
+  background: repeating-linear-gradient(to bottom, var(--pal-cream) 0 4px, transparent 4px 7px);
+}
+
+.room-rug::before {
+  left: -14px;
+}
+
+.room-rug::after {
+  right: -14px;
+}
+
+.room-lamp,
+.room-plant,
+.room-chair,
+.room-pet {
+  scale: var(--decor-scale);
+  transform-origin: 50% 100%;
 }
 
 .room-lamp {
   position: absolute;
-  left: 6%;
-  bottom: 150px;
-  width: 60px;
-  height: 190px;
-  z-index: 0;
+  bottom: 36px;
+  left: calc((50% - var(--case-half)) / 2 - 130px * var(--decor-scale));
+  width: 56px;
+  height: 196px;
+}
+
+.room-lamp::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  transform: translateX(-50%);
+  width: 52px;
+  height: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 50%;
 }
 
 .room-lamp-shade {
   position: absolute;
   top: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
   width: 56px;
-  height: 40px;
-  clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%);
-  background: var(--pal-path);
-  border: 3px solid var(--pal-ink);
-  box-shadow: 0 0 24px 6px rgba(230, 190, 110, 0.45);
+  height: 44px;
+  background: repeating-linear-gradient(90deg, #f0d9a0 0 8px, #e3c585 8px 10px);
+  border: 4px solid var(--pal-ink);
+  clip-path: polygon(18% 0, 82% 0, 100% 100%, 0 100%);
+  z-index: 1;
 }
 
 .room-lamp-pole {
   position: absolute;
-  top: 38px;
+  top: 40px;
   left: 50%;
   transform: translateX(-50%);
-  width: 6px;
-  height: 128px;
-  background: var(--pal-ink);
+  width: 8px;
+  height: 146px;
+  background: var(--wood);
+  border: 2px solid var(--pal-ink);
 }
 
 .room-lamp-base {
@@ -1907,210 +2042,329 @@
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 34px;
-  height: 8px;
-  background: var(--pal-ink);
+  width: 36px;
+  height: 12px;
+  background: var(--wood);
+  border: 3px solid var(--pal-ink);
+}
+
+/* Lamp glow — brighter as the day/night cycle darkens outside. */
+.room-lamp::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 20px;
+  transform: translate(-50%, -50%);
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 220, 140, 0.35), rgba(255, 220, 140, 0) 65%);
+  opacity: calc(0.35 + var(--night, 0) * 0.65);
+  pointer-events: none;
+}
+
+.room-plant {
+  position: absolute;
+  bottom: calc(var(--floor-h) - 60px);
+  left: calc(50% - var(--case-half) - 64px - 60px * var(--decor-scale));
+  width: 64px;
+  height: 104px;
+  z-index: 2;
+}
+
+.room-plant::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  transform: translateX(-50%);
+  width: 58px;
+  height: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 50%;
+  z-index: -1;
+}
+
+.room-plant-leaves {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 64px;
+  height: 70px;
+  background:
+    radial-gradient(circle at 30% 70%, var(--pal-grass-light) 0 12px, transparent 13px),
+    radial-gradient(circle at 70% 64%, var(--pal-grass-light) 0 13px, transparent 14px),
+    radial-gradient(circle at 50% 30%, var(--pal-grass-light) 0 14px, transparent 15px),
+    radial-gradient(circle at 50% 55%, var(--pal-grass) 0 26px, transparent 27px);
+  filter: drop-shadow(3px 0 0 var(--pal-ink)) drop-shadow(-3px 0 0 var(--pal-ink)) drop-shadow(0 -3px 0 var(--pal-ink));
+}
+
+.room-plant-pot {
+  position: absolute;
+  bottom: 0;
+  left: 12px;
+  width: 40px;
+  height: 38px;
+  background: linear-gradient(to bottom, #d0764f 0 8px, #b85c3a 8px);
+  border: 4px solid var(--pal-ink);
+  clip-path: polygon(0 0, 100% 0, 88% 100%, 12% 100%);
 }
 
 .room-chair {
   position: absolute;
-  right: 7%;
-  bottom: 150px;
-  width: 74px;
-  height: 96px;
-  z-index: 0;
+  bottom: 30px;
+  left: calc(50% + var(--case-half) + (50% - var(--case-half)) / 2 - 60px);
+  width: 120px;
+  height: 116px;
+}
+
+.room-chair::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -10px;
+  transform: translateX(-50%);
+  width: 124px;
+  height: 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 50%;
+  z-index: -1;
 }
 
 .room-chair-back {
   position: absolute;
   top: 0;
-  left: 8px;
-  width: 58px;
-  height: 52px;
-  background: var(--pal-path-dark);
+  left: 14px;
+  width: 92px;
+  height: 76px;
+  background: repeating-linear-gradient(90deg, #6f5fa3 0 20px, #5d4f8c 20px 23px);
   border: 4px solid var(--pal-ink);
+  border-radius: 16px 16px 0 0;
+  box-shadow: inset 0 6px 0 #8a7bbd;
+}
+
+.room-chair-arm {
+  position: absolute;
+  top: 44px;
+  width: 26px;
+  height: 64px;
+  background: #5d4f8c;
+  border: 4px solid var(--pal-ink);
+  border-radius: 10px 10px 2px 2px;
+  box-shadow: inset 0 5px 0 #8a7bbd;
+  z-index: 1;
+}
+
+.room-chair-arm--l {
+  left: 0;
+}
+
+.room-chair-arm--r {
+  right: 0;
 }
 
 .room-chair-seat {
   position: absolute;
-  top: 44px;
-  left: 0;
-  width: 74px;
-  height: 22px;
-  background: var(--pal-path);
-  border: 4px solid var(--pal-ink);
-  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.3);
-}
-
-.room-chair-leg {
-  position: absolute;
   top: 64px;
-  width: 8px;
-  height: 30px;
-  background: var(--pal-ink);
-}
-
-.room-chair-leg--l {
-  left: 8px;
-}
-
-.room-chair-leg--r {
-  right: 8px;
+  left: 20px;
+  width: 80px;
+  height: 44px;
+  background: linear-gradient(to bottom, #8a7bbd 0 6px, #6f5fa3 6px 26px, #4b3f73 26px);
+  border: 4px solid var(--pal-ink);
 }
 
 .room-pet {
   position: absolute;
-  left: 38%;
-  bottom: 156px;
+  bottom: 44px;
+  left: calc(50% + var(--case-half) * 0.35);
   height: 52px;
   width: auto;
   image-rendering: pixelated;
-  transform: scaleX(-1);
   filter: drop-shadow(3px 3px 0 rgba(0, 0, 0, 0.35));
-  z-index: 0;
+}
+
+@media (max-width: 1250px) {
+  .room-window,
+  .room-window-light,
+  .room-art,
+  .room-clock,
+  .room-lamp,
+  .room-chair {
+    display: none;
+  }
 }
 
 @media (max-width: 900px) {
-  .room-rug,
-  .room-lamp,
-  .room-chair,
+  .room-plant,
   .room-pet {
     display: none;
   }
 }
 
+/* --- Bookcase ---
+   Stands in the wall row but pulled down past the floor line, so its base
+   visibly sits on the floor. One CSS grid of equal cubbies: each cubby is a
+   dark back panel with a lit shelf board under it, and the case's own wood
+   shows through the grid gaps as the uprights between cubbies. */
+
 .bookshelf-stage {
+  grid-row: 1;
+  grid-column: 1;
+  align-self: end;
+  justify-self: center;
   position: relative;
-  z-index: 1;
-  flex: 1 1 auto;
-  min-height: 0;
+  z-index: 2;
   display: flex;
-  /* Content-sized rather than stretched: with a natural-width flex-wrap
-     shelf (see .shelf), a handful of items no longer needs the full panel
-     height to hold them, so the wood box sizes to what it's actually
-     holding and sits centered instead of leaving a tall empty gap below a
-     single top-pinned row. max-height on .bookshelf still caps it at the
-     available space if enough hobbies get added to need it. */
   align-items: center;
-  width: 100%;
-  overflow: hidden;
+  max-width: calc(100% - 48px);
+  margin-bottom: -44px;
+  padding-top: 96px;
 }
 
 .bookshelf {
-  /* flex-grow: 0, not 1 — the old full-width-fill behavior stretched a
-     3-items-per-row shelf edge to edge on wide screens, leaving huge empty
-     gaps that made it read as a floating plank rather than furniture.
-     Shrink-to-fit plus auto margins centers it at its own content width
-     instead; max-width is only a safety cap for ultra-wide screens. */
-  flex: 0 1 auto;
-  max-width: 1100px;
-  margin: 0 auto;
-  max-height: 100%;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  /* Gap between rows is what makes each .shelf read as its own physical
-     board instead of the boards touching — real shelf tiers have a slot of
-     open air (and a bit of back panel) between one board and the next. */
-  gap: 48px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  /* floor-wood.png is the same tileable plank texture used for the Contact
-     panel floor (.section-floor--wood) — reused here at a much smaller tile
-     size so a wooden shelf reads as wood grain rather than as room flooring.
-     The gradient layers on top as a plain tint (no second image request) to
-     keep the existing top-lit/bottom-shaded depth cue. */
-  background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0.28) 100%),
-    url('./assets/floor-wood.png');
-  background-size: auto, 28px 28px;
-  background-repeat: repeat, repeat;
-  image-rendering: pixelated;
+  position: relative;
+  flex: 0 0 auto;
+  background: var(--wood);
   border: 4px solid var(--pal-ink);
-  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.35);
-  padding: 28px 24px 0;
+  padding: 16px 14px 0;
+  box-shadow: inset 4px 0 0 var(--wood-mid), inset -4px 0 0 var(--wood-dark);
 }
 
-.shelf {
-  flex: 0 0 auto;
-  display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  justify-content: center;
-  align-items: flex-end;
-  gap: 36px 56px;
-  padding-bottom: 24px;
-  border-bottom: 10px solid var(--pal-ink);
-  box-shadow: 0 7px 0 rgba(0, 0, 0, 0.3);
+/* Top cap overhanging the case, with a lit top edge. */
+.bookshelf::before {
+  content: '';
+  position: absolute;
+  left: -14px;
+  right: -14px;
+  top: -22px;
+  height: 18px;
+  background: var(--wood-mid);
+  border: 4px solid var(--pal-ink);
+  box-shadow: inset 0 4px 0 var(--wood-light);
 }
 
-.hobby-slot {
-  flex: 0 0 auto;
+/* Hard contact shadow on the floor. */
+.bookshelf::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  right: -14px;
+  bottom: -18px;
+  height: 14px;
+  background: rgba(0, 0, 0, 0.32);
+  z-index: -1;
+}
+
+/* Wooden sign hung on the wall above the case. */
+.bookshelf-sign {
+  position: absolute;
+  left: 50%;
+  top: -86px;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 10px 18px 9px;
+  font-family: var(--font-pixel);
+  font-size: 16px;
+  color: var(--pal-cream);
+  text-shadow: 2px 2px 0 var(--pal-ink);
+  white-space: nowrap;
+  background: var(--wood-mid);
+  border: 4px solid var(--pal-ink);
+  box-shadow: inset 0 4px 0 var(--wood-light), 5px 5px 0 rgba(0, 0, 0, 0.2);
+}
+
+.bookshelf-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px 12px;
+  width: max-content;
+  max-width: 100%;
+}
+
+.shelf-cubby {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  gap: 10px;
-  background: none;
+  gap: 8px;
+  min-width: 0;
+  min-height: calc(32px * var(--shelf-scale) + 44px);
+  padding: 18px 14px 8px;
+  background: #2a1a0e;
   border: none;
-  padding: 4px 2px 0;
+  border-bottom: 12px solid var(--wood-mid);
+  box-shadow: inset 0 10px 0 rgba(0, 0, 0, 0.35), inset 6px 0 0 rgba(0, 0, 0, 0.2);
+  font: inherit;
+}
+
+/* Lit front edge of each shelf board */
+.shelf-cubby::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -12px;
+  height: 3px;
+  background: var(--wood-light);
+}
+
+.hobby-slot {
   cursor: pointer;
 }
 
+.hobby-slot:hover,
+.hobby-slot.is-selected {
+  background: #3a2716;
+  box-shadow: inset 0 10px 0 rgba(0, 0, 0, 0.35), inset 0 0 0 3px #f0c94e;
+}
+
+/* Images are 32px tall pixel art, drawn at a whole-number multiple of
+   that (--shelf-scale) so every source pixel maps to an exact square block
+   instead of a smeared, uneven one. --item-scale (a per-item ratio from
+   content.js, e.g. for the extra-wide racket) shrinks one item relative to
+   the rest, rounded down so it still lands on a whole-number multiple. */
 .hobby-item-thumb {
-  height: 104px;
-  width: auto;
+  height: calc(32px * var(--shelf-scale));
+  height: calc(32px * max(1, round(down, var(--shelf-scale) * var(--item-scale, 1), 1)));
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  image-rendering: pixelated;
   transition: transform 0.15s ease;
 }
 
-/* Cutout photos (background already removed, see pixelize_hobbies.py) get a
-   hard silhouette shadow via filter instead of a box-shadow, so the shadow
-   follows the item's own alpha shape — a racket or shoe casts a
-   racket/shoe-shaped shadow on the shelf, not a rectangular photo-frame
-   one. Only the color-swatch fallback (.hobby-item-thumb--fallback, used
-   when an entry has no image yet) gets the bordered card treatment, since
-   there's no cutout silhouette to shadow there. */
 .hobby-item-thumb img {
   height: 100%;
   width: auto;
   display: block;
-  object-fit: contain;
   image-rendering: pixelated;
-  filter: drop-shadow(3px 3px 0 rgba(0, 0, 0, 0.4));
+  filter: drop-shadow(3px 3px 0 rgba(0, 0, 0, 0.5));
 }
 
 .hobby-item-thumb--fallback {
+  width: calc(32px * var(--shelf-scale));
   border: 3px solid var(--pal-ink);
-  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.35);
   align-items: center;
 }
 
 .hobby-item-fallback {
   font-family: var(--font-pixel);
-  font-size: 22px;
+  font-size: 20px;
   color: var(--pal-cream);
-  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.4);
 }
 
 .hobby-item-label {
   font-family: var(--font-pixel);
-  font-size: 11px;
+  font-size: 10px;
   color: var(--pal-cream);
-  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.4);
+  text-shadow: 2px 2px 0 var(--pal-ink);
   text-align: center;
   line-height: 1.3;
 }
 
 .hobby-slot:hover .hobby-item-thumb,
 .hobby-slot.is-selected .hobby-item-thumb {
-  transform: translateY(-6px);
-}
-
-.hobby-slot.is-selected .hobby-item-thumb {
-  box-shadow: 3px 9px 0 rgba(0, 0, 0, 0.25);
+  transform: translateY(-4px);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2119,58 +2373,83 @@
   }
 }
 
+/* Filler cubbies: a row of pixel book spines. */
+.shelf-cubby--books {
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.shelf-book {
+  display: block;
+  width: calc(6px * var(--shelf-scale));
+  height: calc(26px * var(--shelf-scale));
+  background: linear-gradient(to bottom, transparent 18%, rgba(248, 240, 220, 0.55) 18% 24%, transparent 24% 70%, rgba(248, 240, 220, 0.55) 70% 76%, transparent 76%),
+    var(--book, #c9463e);
+  border: 3px solid var(--pal-ink);
+}
+
+.shelf-book:nth-child(1) { --book: #c9463e; }
+.shelf-book:nth-child(2) { --book: #2f6f73; height: calc(22px * var(--shelf-scale)); }
+.shelf-book:nth-child(3) { --book: #e0b23c; height: calc(28px * var(--shelf-scale)); width: calc(8px * var(--shelf-scale)); }
+.shelf-book:nth-child(4) { --book: #6f5fa3; height: calc(24px * var(--shelf-scale)); }
+.shelf-book--lean {
+  --book: #4da338;
+  transform: rotate(-12deg);
+  transform-origin: bottom right;
+}
+
+.shelf-cubby--books-b .shelf-book:nth-child(1) { --book: #5b7a94; }
+.shelf-cubby--books-b .shelf-book:nth-child(3) { --book: #c9463e; }
+.shelf-cubby--books-b .shelf-book--lean { --book: #e0b23c; }
+
+/* --- Detail: an RPG-style text box that pops up over the floor ---
+   Absolutely positioned against the bookcase stage and anchored to the
+   room's bottom edge, so opening one never pushes the case (or the decor
+   placed around it) sideways. */
+
 .hobby-detail {
-  flex: 0 0 0;
-  width: 0;
-  margin-left: 0;
-  align-self: stretch;
-  overflow: hidden;
-  transition: flex-basis 0.45s ease, width 0.45s ease, margin-left 0.45s ease;
+  position: absolute;
+  left: 50%;
+  bottom: calc(-1 * (var(--floor-h) - 44px) + 16px);
+  z-index: 4;
+  width: min(620px, calc(100vw - 48px));
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, 12px);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s;
 }
 
 .hobby-detail.is-open {
-  flex: 0 0 360px;
-  width: 360px;
-  margin-left: 24px;
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hobby-detail {
+  .hobby-detail,
+  .hobby-detail.is-open {
     transition: none;
   }
 }
 
 .hobby-detail-inner {
   position: relative;
-  width: 360px;
-  height: 100%;
-  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 14px;
+  gap: 10px;
   background: var(--pal-cream);
   border: 4px solid var(--pal-ink);
-  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.35);
-  padding: 28px 24px;
-  opacity: 0;
-  transition: opacity 0.3s ease 0.15s;
-}
-
-.hobby-detail.is-open .hobby-detail-inner {
-  opacity: 1;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .hobby-detail-inner {
-    transition: none;
-  }
+  box-shadow: inset 0 0 0 3px var(--pal-cream), inset 0 0 0 6px var(--wood-mid), 6px 6px 0 rgba(0, 0, 0, 0.35);
+  padding: 22px 56px 22px 26px;
 }
 
 .hobby-detail h3 {
   margin: 0;
   font-family: var(--font-pixel);
-  font-size: 16px;
+  font-size: 14px;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.15);
 }
 
 .hobby-detail p {
@@ -2182,8 +2461,8 @@
 
 .hobby-detail-close {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 12px;
+  right: 12px;
   width: 28px;
   height: 28px;
   border: 3px solid var(--pal-ink);
@@ -2193,33 +2472,6 @@
   font-size: 14px;
   line-height: 1;
   cursor: pointer;
-}
-
-@media (max-width: 640px) {
-  .hobbies-content {
-    padding: 20px 16px 24px;
-  }
-
-  .bookshelf-stage {
-    flex-direction: column;
-  }
-
-  .hobby-detail {
-    width: 100%;
-    flex-basis: 0;
-    margin-left: 0;
-  }
-
-  .hobby-detail.is-open {
-    flex-basis: auto;
-    width: 100%;
-    min-height: 200px;
-    margin-top: 20px;
-  }
-
-  .hobby-detail-inner {
-    width: 100%;
-  }
 }
 
 /* Contact: the retro dialogue-box scene, in the classic cream/ink pairing
@@ -2304,3 +2556,4 @@
     transition: none;
   }
 }
+

@@ -115,6 +115,12 @@ const HOUSE_SPRITES = {
 // consistent if the path shape changes.
 const TRACK_HEIGHT = Math.round(TOTAL_PATH_LENGTH * 2.4);
 
+// Rendered sprite heights for checkpoint and decor buildings — kept in sync
+// with .house-sprite/.decor-house in App.css, and used to size each
+// building's foundation/shadow off its real on-screen width.
+const HOUSE_SPRITE_H = 104;
+const DECOR_SPRITE_H = 88;
+
 // Fraction of getCharacterWalkT's 0-1 range spent on the first leg (path to
 // the yard's fence gate) before switching to the second leg (gate to the
 // door) — see the pose math in the scroll effect below. Purely a scroll-
@@ -180,25 +186,16 @@ function App() {
   const characterWrapRef = useRef(null);
   const reducedMotionRef = useRef(false);
   const [activeHouse, setActiveHouse] = useState(null);
-  const [quickView, setQuickView] = useState(false);
-  const [mobileNotice, setMobileNotice] = useState(false);
-
-  // One-time nudge for small screens: the scrolling world is tuned for a
-  // desktop-sized stage-box and gets tight/overlapping on phones, so point
-  // first-time mobile visitors at Quick View (a plain layout of the same
-  // content, see the toggle below) instead of letting them fight the game
-  // camera. Checked once on mount, not on resize — this is about the
-  // device the page loaded on, not a live viewport-width reaction. Skipped
-  // entirely once dismissed, on this device, via localStorage.
-  useEffect(() => {
-    if (localStorage.getItem('mobileNoticeDismissed')) return;
-    if (window.matchMedia('(max-width: 900px)').matches) setMobileNotice(true);
-  }, []);
-
-  function dismissMobileNotice() {
-    setMobileNotice(false);
-    localStorage.setItem('mobileNoticeDismissed', '1');
-  }
+  // The scrolling world is tuned for a desktop-sized stage-box and gets
+  // tight/overlapping on phones, so small screens land straight on Quick
+  // View (a plain layout of the same content) instead of the game camera.
+  // Checked once on mount, not on resize — this is about the device the
+  // page loaded on, not a live viewport-width reaction. Also passed to
+  // QuickView so its close button can read correctly either way: "back to
+  // site" for someone who opened it from the world, "explore the
+  // interactive world" for someone who landed here first.
+  const [isMobileLanding] = useState(() => window.matchMedia('(max-width: 900px)').matches);
+  const [quickView, setQuickView] = useState(isMobileLanding);
 
   // Escape closes Quick View, matching its own visible "Back to site"
   // button — only listens while the overlay is actually open.
@@ -633,34 +630,6 @@ function App() {
 
   return (
     <>
-      {mobileNotice && (
-        <div className="mobile-notice" role="status">
-          <p>
-            This site's a little scrolling world, built for a bigger screen — for the best experience, check
-            it out on desktop. Or{' '}
-            <button
-              type="button"
-              className="mobile-notice-link"
-              onClick={() => {
-                setQuickView(true);
-                dismissMobileNotice();
-              }}
-            >
-              try Quick View
-            </button>{' '}
-            for a simpler layout.
-          </p>
-          <button
-            type="button"
-            className="mobile-notice-close"
-            onClick={dismissMobileNotice}
-            aria-label="Dismiss"
-          >
-            ×
-          </button>
-        </div>
-      )}
-
       <div aria-hidden={quickView || undefined} inert={quickView || undefined}>
       <div className="stage-track" ref={trackRef} style={{ height: TRACK_HEIGHT }}>
         <header className="hud-nameplate">
@@ -748,7 +717,7 @@ function App() {
 
             {DECOR_HOUSES.map((house) => {
               const { x, y } = tileToPx(house.col, house.row);
-              const footprint = getHouseFootprintWidth(house.sprite, 60);
+              const footprint = getHouseFootprintWidth(house.sprite, DECOR_SPRITE_H);
               return (
                 <div
                   key={house.id}
@@ -765,7 +734,7 @@ function App() {
 
             {HOUSES.map((house) => {
               const { x, y } = tileToPx(house.col, house.row);
-              const footprint = getHouseFootprintWidth(house.sprite, 70);
+              const footprint = getHouseFootprintWidth(house.sprite, HOUSE_SPRITE_H);
               return (
                 <div
                   key={house.id}
@@ -963,7 +932,7 @@ function App() {
         Quick View
       </button>
 
-      {quickView && <QuickView onClose={() => setQuickView(false)} />}
+      {quickView && <QuickView onClose={() => setQuickView(false)} isMobileLanding={isMobileLanding} />}
 
       <Analytics />
     </>
