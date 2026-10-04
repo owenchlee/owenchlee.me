@@ -19,6 +19,7 @@ function memoryStorage() {
 beforeEach(() => {
   vi.resetModules();
   vi.stubGlobal('localStorage', memoryStorage());
+  vi.stubGlobal('sessionStorage', memoryStorage());
 });
 
 describe('badges', () => {
@@ -97,6 +98,56 @@ describe('dialogue', () => {
     const d = await import('../dialogue');
     d.openDialogue('nobody');
     expect(d.getDialogue()).toBeNull();
+  });
+});
+
+describe('return visits', () => {
+  // A new tab is a new sessionStorage but the same localStorage.
+  async function visit({ newTab = true } = {}) {
+    if (newTab) vi.stubGlobal('sessionStorage', memoryStorage());
+    vi.resetModules();
+    return import('../visits');
+  }
+
+  it('says nothing extra on a first visit', async () => {
+    const v = await visit();
+    expect(v.getVisitNumber()).toBe(1);
+    expect(v.welcomeBackLines()).toEqual([]);
+  });
+
+  it('does not count a reload in the same tab', async () => {
+    await visit();
+    const v = await visit({ newTab: false });
+    expect(v.getVisitNumber()).toBe(1);
+  });
+
+  it('greets a returning visitor with their badge count and a hint', async () => {
+    await visit();
+    const v = await visit();
+    const a = await import('../achievements');
+    a.earnBadge(a.BADGES[0].id);
+    const lines = v.welcomeBackLines();
+    expect(lines[0]).toMatch(/visit number 2/);
+    expect(lines[1]).toContain('1 of 8');
+    expect(lines[1]).toContain(a.BADGES[1].hint);
+  });
+
+  it('salutes a returning Champion instead', async () => {
+    await visit();
+    const v = await visit();
+    const a = await import('../achievements');
+    a.BADGES.forEach((b) => a.earnBadge(b.id));
+    expect(v.welcomeBackLines()[1]).toMatch(/Champion/);
+  });
+
+  it('puts the greeting ahead of the welcome sign lines', async () => {
+    await visit();
+    await visit();
+    const d = await import('../dialogue');
+    const { DIALOGUE } = await import('../content');
+    d.openDialogue('sign-welcome');
+    expect(d.getDialogue().lines.slice(-DIALOGUE['sign-welcome'].lines.length)).toEqual(DIALOGUE['sign-welcome'].lines);
+    expect(d.getDialogue().lines[0]).toMatch(/Welcome back/);
   });
 });
 

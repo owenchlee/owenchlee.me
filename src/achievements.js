@@ -122,6 +122,11 @@ export function useAchievements() {
   return useSyncExternalStore(subscribe, () => state);
 }
 
+// Same snapshot, for plain modules outside React (see visits.js).
+export function getAchievements() {
+  return state;
+}
+
 export function earnBadge(id) {
   if (!BADGE_IDS.has(id) || state.earned[id]) return;
   const earned = { ...state.earned, [id]: Date.now() };

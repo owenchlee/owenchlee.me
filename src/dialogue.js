@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { DIALOGUE } from './content';
+import { welcomeBackLines } from './visits';
 
 // The open NPC/sign conversation, if any: who's talking and which of their
 // lines is showing. A tiny module store (same pattern as achievements.js)
@@ -29,7 +30,10 @@ export function getDialogue() {
 export function openDialogue(id) {
   const entry = DIALOGUE[id];
   if (!entry) return;
-  emit({ id, name: entry.name, lines: entry.lines, index: 0 });
+  // A returning visitor gets a welcome-back line (and a badge hint) from
+  // the spawn sign before its usual controls blurb.
+  const lines = id === 'sign-welcome' ? [...welcomeBackLines(), ...entry.lines] : entry.lines;
+  emit({ id, name: entry.name, lines, index: 0 });
 }
 
 // Next line, or close after the last one.
