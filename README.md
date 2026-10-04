@@ -11,6 +11,7 @@ npm install
 npm run dev      # local dev server
 npm run build    # production build in dist/
 npm run lint     # oxlint
+npm test         # vitest: world layout, content and badge checks
 ```
 
 ## Where things live
