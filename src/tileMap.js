@@ -185,7 +185,7 @@ export const SPORTS = [{ id: 'sports-1', col: 36, row: 56, gap: 3, npc1Sprite: '
 // sprite, see picnic_scene_sprite in gen_sprites.py), on the grass above
 // the road. Entirely static: it reads as "having a picnic" through
 // composition rather than motion.
-export const PICNICS = [{ id: 'picnic-1', col: 54, row: 32 }];
+export const PICNICS = [{ id: 'picnic-1', col: 54, row: 30 }];
 
 // Readable signposts beside the road (text is in DIALOGUE in content.js):
 // one at the spawn point with the controls, one just past the last house.
@@ -345,8 +345,11 @@ function buildTileGrid() {
     }
   }
 
+  // The picnic sprite is ~5x3 tiles from its top-left (col, row); keep its
+  // patch of grass (plus a tile of margin) clear of trees too.
   const nearAnyHouse = (c, r) =>
     [...HOUSES, WORKSHOP].some((h) => Math.abs(h.col - c) <= 3 && Math.abs(h.row - r) <= 3) ||
+    PICNICS.some((p) => c >= p.col - 1 && c <= p.col + 6 && r >= p.row - 1 && r <= p.row + 3) ||
     (Math.abs(NOTICE_BOARD.col - c) <= 1 && Math.abs(NOTICE_BOARD.row - r) <= 1);
 
   // Trees are composed multi-tile sprites (canopy + trunk, see TREES below)

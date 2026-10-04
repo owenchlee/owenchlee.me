@@ -3,7 +3,8 @@ import { WORKSHOP_PROJECTS } from './content';
 
 // Inside the hidden workshop: a walk-in room like Hobbies, but a
 // tinkerer's shed. Pegboard wall with tools hung on it, a work light on a
-// cord, and a workbench where each hands-on build sits as a prop (an
+// cord, woodworking machines on the floor (bandsaw, table saw, drill
+// press, a sawhorse), and a tall workbench where each hands-on build sits as a prop (an
 // Arduino with its LCD, the helmet with its Micro:bit, the wooden phone
 // stand). Tapping a prop opens its card above the bench. Same capture-phase
 // key handling as the Trainer Card, so Escape closes this and nothing
@@ -76,6 +77,30 @@ function Workshop({ onClose }) {
           <span className="tool-tape" />
         </div>
 
+        {/* Woodworking machines on the floor either side of the bench. */}
+        <div className="ws-machines" aria-hidden="true">
+          <span className="ws-bandsaw">
+            <span className="ws-bandsaw-wheel ws-bandsaw-wheel--top" />
+            <span className="ws-bandsaw-wheel ws-bandsaw-wheel--bottom" />
+            <span className="ws-bandsaw-table" />
+            <span className="ws-bandsaw-base" />
+          </span>
+          <span className="ws-tablesaw">
+            <span className="ws-tablesaw-blade" />
+            <span className="ws-tablesaw-top" />
+            <span className="ws-tablesaw-base" />
+          </span>
+          <span className="ws-drillpress">
+            <span className="ws-drill-column" />
+            <span className="ws-drill-head" />
+            <span className="ws-drill-table" />
+            <span className="ws-drill-base" />
+          </span>
+          <span className="ws-sawhorse">
+            <span className="ws-sawhorse-plank" />
+          </span>
+        </div>
+
         <h2 id="workshop-title" className="workshop-sign">
           The Workshop
         </h2>
@@ -122,6 +147,10 @@ function Workshop({ onClose }) {
           </div>
           <span className="workshop-bench-leg workshop-bench-leg--l" aria-hidden="true" />
           <span className="workshop-bench-leg workshop-bench-leg--r" aria-hidden="true" />
+          <span className="workshop-bench-shelf" aria-hidden="true">
+            <span className="workshop-bench-planks" />
+            <span className="workshop-bench-clamp" />
+          </span>
         </div>
       </div>
       <div className="workshop-floor" aria-hidden="true" />

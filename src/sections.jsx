@@ -140,78 +140,227 @@ const FILTER_TAGS = (() => {
     .map(([t]) => t);
 })();
 
+// Cartridge shell colors for the arcade's tech filter, cycled in order.
+const CARTRIDGE_COLORS = ['#8ec7ff', '#ffe066', '#ff9a7a', '#c8a4ff', '#7ee0c0', '#f4b860', '#e8877a', '#a8d672'];
+
+// Projects is the town arcade (laid out like the Hobbies room): every
+// project is a cabinet standing against the back wall with its demo
+// looping on the screen (same row-based playback as before). The tech
+// filter is a counter of game cartridges on the floor in front; pick one
+// and the cabinets that don't use it power down. Tapping a cabinet opens
+// it up: the clip with controls, the write-up, links and tech.
+function CabinetScreen({ project, registerVideo }) {
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    if (!project.video) return undefined;
+    return registerVideo(videoRef.current);
+  }, [project.video, registerVideo]);
+
+  if (project.video) {
+    return (
+      <video
+        ref={videoRef}
+        src={project.video}
+        poster={project.video.replace(/\.mp4$/, '-poster.webp')}
+        className="cabinet-screen-media"
+        muted
+        loop
+        playsInline
+        preload="none"
+      />
+    );
+  }
+  if (project.image) return <img src={project.image} alt="" className="cabinet-screen-media cabinet-screen-media--image" />;
+  return <span className="cabinet-screen-fallback">{project.name}</span>;
+}
+
 export const ProjectsPanel = forwardRef(function ProjectsPanel({ active }, ref) {
   const registerVideo = useRowVideoPlayback();
-  // Tap a tech chip (on a card or in the row up top) to show only the
-  // projects that use it; tap it again, or "All", to clear.
+  const openRegisterVideo = useRowVideoPlayback();
+  // Pick a cartridge on the counter (or a tech chip on an open cabinet) to
+  // light up only the cabinets that use it; the rest power down. Pick it
+  // again, or "All", to clear.
   const [tag, setTag] = useState(null);
-  const shown = tag ? PROJECTS.filter((p) => p.tech?.includes(tag)) : PROJECTS;
+  const [openName, setOpenName] = useState(null);
+  const matches = (p) => !tag || p.tech?.includes(tag);
+  const matchCount = PROJECTS.filter(matches).length;
   const toggleTag = (t) => setTag((cur) => (cur === t ? null : t));
   const filterTags = tag && !FILTER_TAGS.includes(tag) ? [...FILTER_TAGS, tag] : FILTER_TAGS;
+  const open = PROJECTS.find((p) => p.name === openName);
+  const highScore = PROJECTS.find((p) => p.live);
+
+  // Escape closes an open cabinet first (capture phase, so it doesn't also
+  // walk the visitor out of the room).
+  useEffect(() => {
+    if (!openName) return undefined;
+    const onKeyDown = (e) => {
+      if (e.key !== 'Escape') return;
+      e.stopPropagation();
+      setOpenName(null);
+    };
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [openName]);
+
   return (
     <div ref={ref} className={`section-panel section-panel--projects ${active ? 'visible' : ''}`}>
       <div className="section-panel-inner">
-        <div className="section-floor section-floor--stone" />
-        <div className="section-content projects-content">
-          <h2 className="projects-heading">Projects</h2>
-          <div className="project-filter" role="group" aria-label="Filter projects by technology">
-            <button
-              type="button"
-              className={`tech-chip tech-chip--button ${tag ? '' : 'is-active'}`}
-              aria-pressed={!tag}
-              onClick={() => setTag(null)}
-            >
-              All ({PROJECTS.length})
-            </button>
-            {filterTags.map((t) => (
-              <button
-                key={t}
-                type="button"
-                className={`tech-chip tech-chip--button ${tag === t ? 'is-active' : ''}`}
-                aria-pressed={tag === t}
-                onClick={() => toggleTag(t)}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-          {tag && (
-            <p className="project-filter-status" aria-live="polite">
-              {shown.length} {shown.length === 1 ? 'project uses' : 'projects use'} {tag}.
-            </p>
-          )}
-          <div className="projects-grid">
-            {shown.map((p) => (
-              <article key={p.name} className="project-card">
-                <CardThumb video={p.video} image={p.image} color={p.color} alt={p.name} registerVideo={registerVideo} />
-                <div className="project-meta">
-                  <h3>{p.name}</h3>
-                  <span className="project-date">{p.date}</span>
+        <div className="section-content arcade-content">
+          <div className="arcade">
+            <div className="arcade-wall" aria-hidden="true" />
+            <div className="arcade-floor" aria-hidden="true" />
+            <div className="arcade-lights" aria-hidden="true" />
+
+            {/* Neon sign: each letter its own tube so one can buzz on its
+                own while the whole sign flickers off and on now and then. */}
+            <h2 className="arcade-sign" aria-label="Projects">
+              <span className="arcade-sign-tubes" aria-hidden="true">
+                {[...'PROJECTS'].map((c, i) => (
+                  <span key={i} className={i === 4 ? 'arcade-sign-buzz' : undefined}>
+                    {c}
+                  </span>
+                ))}
+              </span>
+            </h2>
+
+            {/* Back-wall decor either side of the sign: tribute posters
+                for the games Owen grew up on (drawn here as homage
+                pixel art, not the official logos or sprites) and two
+                small neon signs. */}
+            <div className="arcade-decor arcade-decor--l" aria-hidden="true">
+              <span className="arcade-poster arcade-poster--smash">
+                <span className="arcade-poster-art arcade-poster-art--burst" />
+                <span className="arcade-poster-title">Super Smash Bros</span>
+              </span>
+              <span className="arcade-poster arcade-poster--fighter">
+                <span className="arcade-poster-art arcade-poster-art--fireball" />
+                <span className="arcade-poster-title">Street Fighter II</span>
+              </span>
+              <span className="arcade-neon-small arcade-neon-small--cyan">Game On</span>
+            </div>
+            <div className="arcade-decor arcade-decor--r" aria-hidden="true">
+              <span className="arcade-neon-small arcade-neon-small--yellow">Insert Coin</span>
+              <span className="arcade-poster arcade-poster--mario">
+                <span className="arcade-poster-art arcade-poster-art--mushroom" />
+                <span className="arcade-poster-title">Super Mario</span>
+              </span>
+              <span className="arcade-poster arcade-poster--kart">
+                <span className="arcade-poster-art arcade-poster-art--kart" />
+                <span className="arcade-poster-title">Mario Kart</span>
+              </span>
+            </div>
+
+            <div className="arcade-back">
+              <div className="arcade-row">
+                {PROJECTS.map((p) => (
+                  <button
+                    key={p.name}
+                    type="button"
+                    className={`cabinet ${matches(p) ? '' : 'is-off'}`}
+                    style={{ '--cab': p.color }}
+                    onClick={() => setOpenName(p.name)}
+                    aria-label={`${p.name}: open cabinet`}
+                  >
+                    <span className="cabinet-marquee">{p.name}</span>
+                    <span className="cabinet-screen">
+                      <CabinetScreen project={p} registerVideo={registerVideo} />
+                    </span>
+                    <span className="cabinet-deck" aria-hidden="true">
+                      <span className="cabinet-stick" />
+                      <span className="cabinet-btn cabinet-btn--a" />
+                      <span className="cabinet-btn cabinet-btn--b" />
+                    </span>
+                    <span className="cabinet-slot" aria-hidden="true" />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="arcade-front">
+              <div className="arcade-counter">
+                <div className="arcade-cartridges" role="group" aria-label="Filter projects by technology">
+                  <span className="arcade-counter-label">Pick a cartridge:</span>
+                  <button
+                    type="button"
+                    className={`arcade-cartridge ${tag ? '' : 'is-active'}`}
+                    aria-pressed={!tag}
+                    onClick={() => setTag(null)}
+                  >
+                    All
+                  </button>
+                  {filterTags.map((t, i) => (
+                    <button
+                      key={t}
+                      type="button"
+                      className={`arcade-cartridge ${tag === t ? 'is-active' : ''}`}
+                      style={{ '--cart': CARTRIDGE_COLORS[i % CARTRIDGE_COLORS.length] }}
+                      aria-pressed={tag === t}
+                      onClick={() => toggleTag(t)}
+                    >
+                      {t}
+                    </button>
+                  ))}
                 </div>
-                {(p.link || p.live) && (
+                <p className="arcade-counter-status" aria-live="polite">
+                  {tag
+                    ? `${matchCount} ${matchCount === 1 ? 'cabinet runs' : 'cabinets run'} ${tag}`
+                    : `${PROJECTS.length} cabinets. Tap one to play.`}
+                </p>
+              </div>
+              {highScore && (
+                <p className="arcade-highscore">
+                  <span>High score</span>
+                  {highScore.name}: shipped, live at {highScore.live.replace(/^https?:\/\//, '')}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {open && (
+            <div className="arcade-open" role="dialog" aria-label={open.name} onClick={() => setOpenName(null)}>
+              <div className="arcade-open-card" style={{ '--cab': open.color }} onClick={(e) => e.stopPropagation()}>
+                <button type="button" className="hobby-detail-close" onClick={() => setOpenName(null)} aria-label="Close">
+                  ✕
+                </button>
+                <CardThumb
+                  video={open.video}
+                  image={open.image}
+                  color={open.color}
+                  alt={open.name}
+                  registerVideo={openRegisterVideo}
+                />
+                <div className="project-meta">
+                  <h3>{open.name}</h3>
+                  <span className="project-date">{open.date}</span>
+                </div>
+                {(open.link || open.live) && (
                   <div className="project-links">
-                    {p.link && (
-                      <a href={p.link} target="_blank" rel="noreferrer" className="project-live-link">
+                    {open.link && (
+                      <a href={open.link} target="_blank" rel="noreferrer" className="project-live-link">
                         <GitHubIcon /> GitHub
                       </a>
                     )}
-                    {p.live && (
-                      <a href={p.live} target="_blank" rel="noreferrer" className="project-live-link">
-                        Live Demo →
+                    {open.live && (
+                      <a href={open.live} target="_blank" rel="noreferrer" className="project-live-link">
+                        Visit Live Site →
                       </a>
                     )}
                   </div>
                 )}
-                <p>{p.desc}</p>
-                {p.tech?.length > 0 && (
+                <p>{open.desc}</p>
+                {open.tech?.length > 0 && (
                   <ul className="project-tech">
-                    {p.tech.map((t) => (
+                    {open.tech.map((t) => (
                       <li key={t}>
                         <button
                           type="button"
                           className={`tech-chip tech-chip--button ${tag === t ? 'is-active' : ''}`}
                           aria-pressed={tag === t}
-                          onClick={() => toggleTag(t)}
+                          onClick={() => {
+                            toggleTag(t);
+                            setOpenName(null);
+                          }}
                         >
                           {t}
                         </button>
@@ -219,16 +368,16 @@ export const ProjectsPanel = forwardRef(function ProjectsPanel({ active }, ref) 
                     ))}
                   </ul>
                 )}
-              </article>
-            ))}
-          </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 });
 
-// Experience is the town's Adventurers' Guild: each role is a quest notice
+// Experience is an adventurers'-guild hall: each role is a quest notice
 // pinned to the quest board, stamped ONGOING or COMPLETE from its dates,
 // with its headline result as the reward. Tapping one unrolls the full
 // notice (org, dates, bullets) over the board. Education hangs beside it as
@@ -250,7 +399,7 @@ export const ExperiencePanel = forwardRef(function ExperiencePanel({ active }, r
             <div className="guild-wall">
               <div className="guild-sign-row">
                 <span className="guild-torch" aria-hidden="true" />
-                <h2 className="guild-sign">Adventurers&apos; Guild</h2>
+                <h2 className="guild-sign">Experience</h2>
                 <span className="guild-torch" aria-hidden="true" />
               </div>
 
@@ -288,7 +437,7 @@ export const ExperiencePanel = forwardRef(function ExperiencePanel({ active }, r
                         >
                           <span className="guild-quest-role">{e.role}</span>
                           <span className="guild-quest-org">{e.org}</span>
-                          <span className="guild-quest-reward">Reward: {e.reward}</span>
+                          <span className="guild-quest-reward">Reward: {e.reward ?? '???'}</span>
                           <span className={`guild-stamp ${ongoing ? 'guild-stamp--ongoing' : ''}`}>
                             {ongoing ? 'Ongoing' : 'Complete'}
                           </span>
@@ -591,7 +740,7 @@ function ResumeIcon() {
 // currentColor rather than as MailIcon's stroke line-art — GitHub/LinkedIn
 // only read as themselves as a filled logo, the way every other place they
 // appear renders them.
-function GitHubIcon() {
+export function GitHubIcon() {
   return (
     <svg className="mail-icon" viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
       <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.84 1.237 1.84 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.625-5.479 5.921.43.372.823 1.102.823 2.222 0 1.606-.014 2.898-.014 3.293 0 .322.216.694.825.576C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
@@ -612,55 +761,165 @@ const CONTACT_LINK_ICONS = {
   LinkedIn: LinkedInIcon,
 };
 
+// Contact is the town post office, laid out like the Hobbies room: a tall
+// back wall with everything standing against it (a wide notice board with
+// the GitHub/LinkedIn posters and, once earned, the secret note; Owen
+// behind the clerk's window; a wall of mail cubbies), and in front, a
+// counter straddling the floor line. On the counter: a stamped envelope
+// with the email address (tap to copy), the résumé as a parcel, and a
+// notepad that opens a sheet of letter paper; "Mail it" opens the
+// visitor's own mail app with the letter addressed and filled in.
+function LetterPaper({ email, onClose }) {
+  const [name, setName] = useState('');
+  const [message, setMessage] = useState('');
+  const subject = name.trim() ? `Hello from ${name.trim()}` : 'Hello from your website';
+  const body = message.trim() + (name.trim() ? `\n\n- ${name.trim()}` : '');
+  const href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  const ready = message.trim().length > 0;
+  const nameRef = useRef(null);
+
+  useEffect(() => {
+    nameRef.current?.focus();
+    const onKeyDown = (e) => {
+      if (e.key !== 'Escape') return;
+      e.stopPropagation();
+      onClose();
+    };
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [onClose]);
+
+  return (
+    <div className="po-letter-backdrop" role="dialog" aria-label="Write Owen a letter" onClick={onClose}>
+      <form className="po-letter" onSubmit={(e) => e.preventDefault()} onClick={(e) => e.stopPropagation()}>
+        <button type="button" className="hobby-detail-close" onClick={onClose} aria-label="Close">
+          ✕
+        </button>
+        <span className="po-letter-title">Dear Owen,</span>
+        <label className="po-letter-field">
+          <span>From</span>
+          <input
+            ref={nameRef}
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Your name"
+            autoComplete="name"
+          />
+        </label>
+        <label className="po-letter-field">
+          <span>Message</span>
+          <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Hi Owen, ..." rows={6} />
+        </label>
+        <div className="po-letter-actions">
+          <a
+            href={ready ? href : undefined}
+            className={`po-mail-it ${ready ? '' : 'is-disabled'}`}
+            aria-disabled={!ready}
+            onClick={(e) => {
+              if (!ready) e.preventDefault();
+            }}
+          >
+            ✉ Mail it
+          </a>
+          <span className="po-letter-hint">Opens your email app with this letter ready to send.</span>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 export const ContactPanel = forwardRef(function ContactPanel({ active }, ref) {
   const { championAt } = useAchievements();
+  const [writing, setWriting] = useState(false);
   return (
     <div ref={ref} className={`section-panel section-panel--contact ${active ? 'visible' : ''}`}>
       <div className="section-panel-inner">
-        <div className="section-floor section-floor--wood" />
-        <div className="section-content contact-content">
-          {/* Owen's own photo as the "NPC" you're talking to. Once the
-              visitor is Champion (all 8 badges, see achievements.js) a star
-              pops onto the frame, and the secret note below unlocks. */}
-          <div className={`npc-portrait ${championAt ? 'npc-portrait--champion' : ''}`}>
-            <img src={owenPortrait} alt="Owen Lee" />
-            {championAt && (
-              <span className="npc-portrait-star" aria-hidden="true">
-                ★
-              </span>
-            )}
-          </div>
-          <div className="dialogue-box">
-            <p className="dialogue-text">{CONTACT.message}</p>
-            <div className="dialogue-links">
-              {CONTACT.email && <CopyEmailButton email={CONTACT.email} />}
-              <a href={RESUME_URL} className="dialogue-link" target="_blank" rel="noopener noreferrer">
-                <ResumeIcon /> Résumé
-              </a>
-              {CONTACT.links.map((l) => {
-                const Icon = CONTACT_LINK_ICONS[l.label];
-                return (
-                  <a
-                    key={l.label}
-                    href={l.href}
-                    className="dialogue-link"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {Icon && <Icon />}
-                    {l.label}
-                  </a>
-                );
-              })}
+        <div className="section-content po-content">
+          <div className="po">
+            <div className="po-wall" aria-hidden="true" />
+            <div className="po-floor" aria-hidden="true" />
+
+            <div className="po-back">
+              <h2 className="po-sign">Post Office</h2>
+              <div className="po-back-row">
+                <aside className="po-board" aria-label="Notice board">
+                  <span className="po-board-title">Notice Board</span>
+                  <div className="po-board-pins">
+                    <div className="po-posters">
+                      {CONTACT.links.map((l, i) => {
+                        const Icon = CONTACT_LINK_ICONS[l.label];
+                        return (
+                          <a
+                            key={l.label}
+                            href={l.href}
+                            className="po-poster"
+                            style={{ '--tilt': `${i % 2 ? 2 : -2}deg` }}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {Icon && <Icon />}
+                            {l.label}
+                          </a>
+                        );
+                      })}
+                    </div>
+                    {championAt && (
+                      <div className="po-secret" aria-label="Secret note">
+                        <span className="secret-note-pin" aria-hidden="true" />
+                        <h3 className="secret-note-title">{SECRET_NOTE.title}</h3>
+                        <p>{SECRET_NOTE.body}</p>
+                      </div>
+                    )}
+                  </div>
+                </aside>
+
+                <div className="po-window">
+                  <div className={`npc-portrait po-clerk ${championAt ? 'npc-portrait--champion' : ''}`}>
+                    <img src={owenPortrait} alt="Owen Lee" />
+                    {championAt && (
+                      <span className="npc-portrait-star" aria-hidden="true">
+                        ★
+                      </span>
+                    )}
+                  </div>
+                  <p className="po-bubble">{CONTACT.message}</p>
+                </div>
+
+                <div className="po-slots" aria-hidden="true">
+                  {Array.from({ length: 12 }, (_, i) => (
+                    <span key={i} className={`po-slot ${[1, 4, 5, 9].includes(i) ? 'has-letter' : ''}`} />
+                  ))}
+                </div>
+              </div>
             </div>
+
+            <div className="po-counter">
+              <div className="po-counter-items">
+                {CONTACT.email && (
+                  <div className="po-envelope">
+                    <span className="po-envelope-stamp" aria-hidden="true" />
+                    <CopyEmailButton email={CONTACT.email} />
+                  </div>
+                )}
+                <a href={RESUME_URL} className="po-parcel" target="_blank" rel="noopener noreferrer">
+                  <span className="po-parcel-label">
+                    <ResumeIcon /> Résumé
+                  </span>
+                </a>
+                {CONTACT.email && (
+                  <button type="button" className="po-notepad" onClick={() => setWriting(true)}>
+                    <span className="po-notepad-title">Write Owen a letter</span>
+                    <span className="po-notepad-pen" aria-hidden="true" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <span className="po-mailbox" aria-hidden="true" />
           </div>
-          {championAt && (
-            <aside className="secret-note" aria-label="Secret note">
-              <span className="secret-note-pin" aria-hidden="true" />
-              <h3 className="secret-note-title">{SECRET_NOTE.title}</h3>
-              <p className="secret-note-body">{SECRET_NOTE.body}</p>
-            </aside>
-          )}
+
+          {writing && <LetterPaper email={CONTACT.email} onClose={() => setWriting(false)} />}
         </div>
       </div>
     </div>

@@ -45,3 +45,7 @@ export function advanceDialogue() {
 export function closeDialogue() {
   if (state) emit(null);
 }
+
+// Signs, boards and barricades (as opposed to people and pets): they get a
+// wooden knock instead of a chirp when tapped, and a lower text blip.
+export const isObjectTalk = (id) => /^(sign|barricade|now-board|notice)/.test(id ?? '');

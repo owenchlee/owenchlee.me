@@ -1277,12 +1277,12 @@
 
 /* --- Picnic vignette ---
    One baked sprite (picnic_scene_sprite in gen_sprites.py): blanket,
-   basket and two seated townsfolk, drawn at the same 2x by 2.5x stretch as
-   .npc so they match the people walking around town. */
+   basket and two seated townsfolk, drawn at the same 3x as .npc-sprite
+   (16px sprites at 48px) so they match the people walking around town. */
 .picnic-scene {
   position: absolute;
-  width: 112px;
-  height: 85px;
+  width: 168px;
+  height: 102px;
 }
 
 .picnic-blanket {
@@ -3990,7 +3990,7 @@
 .workshop-light {
   position: absolute;
   top: 0;
-  bottom: 610px;
+  bottom: 720px;
   left: 50%;
   width: 4px;
   min-height: 40px;
@@ -4038,7 +4038,7 @@
    the ceiling). */
 .workshop-tools {
   position: absolute;
-  bottom: 330px;
+  bottom: 450px;
   display: flex;
   gap: 40px;
 }
@@ -4224,7 +4224,9 @@
 .workshop-bench {
   position: relative;
   width: min(900px, 100%);
-  margin-bottom: 26px;
+  /* Tall bench: its top sits well up the wall, and the legs run down onto
+     the floor (see .workshop-bench-leg). */
+  margin-bottom: 120px;
 }
 
 .workshop-bench-top {
@@ -4253,8 +4255,8 @@
 .workshop-bench-leg {
   position: absolute;
   top: 100%;
-  width: 22px;
-  height: 84px;
+  width: 24px;
+  height: 180px;
   background: var(--wood-dark);
   border: 4px solid var(--pal-ink);
   border-top: 0;
@@ -4267,6 +4269,260 @@
 .workshop-bench-leg--r {
   right: 30px;
 }
+
+/* Lower shelf between the legs: offcut planks and a clamp. */
+.workshop-bench-shelf {
+  position: absolute;
+  left: 50px;
+  right: 50px;
+  top: calc(100% + 96px);
+  height: 14px;
+  background: var(--wood-mid);
+  border: 4px solid var(--pal-ink);
+  box-shadow: inset 0 4px 0 var(--wood-light);
+}
+
+.workshop-bench-planks {
+  position: absolute;
+  left: 30px;
+  bottom: 100%;
+  width: 220px;
+  height: 30px;
+  background: linear-gradient(#d6a26a 0 3px, #c88c50 3px 10px, var(--pal-ink) 10px 13px, #d6a26a 13px 16px, #b5793c 16px 23px, var(--pal-ink) 23px 26px, #c88c50 26px);
+  border: 3px solid var(--pal-ink);
+}
+
+.workshop-bench-clamp {
+  position: absolute;
+  right: 60px;
+  bottom: 100%;
+  width: 46px;
+  height: 40px;
+  border: 7px solid #c9463e;
+  border-left: 0;
+  outline: 3px solid var(--pal-ink);
+}
+
+/* --- Workshop machines ---
+   CSS-drawn floor machines flanking the bench, all standing on the floor
+   (56px below the wall's bottom edge). */
+.ws-machines > span {
+  position: absolute;
+  bottom: -56px;
+  z-index: 1;
+  display: block;
+  filter: drop-shadow(6px 6px 0 rgba(0, 0, 0, 0.3));
+}
+
+.ws-machines span span {
+  position: absolute;
+  display: block;
+  border: 4px solid var(--pal-ink);
+  box-sizing: border-box;
+}
+
+/* Bandsaw: two wheel housings on a spine, the blade between them, a small
+   table, on a stand. */
+.ws-bandsaw {
+  right: calc(50% + 650px);
+  width: 110px;
+  height: 280px;
+}
+
+.ws-bandsaw-wheel {
+  left: 0;
+  width: 104px;
+  height: 100px;
+  background: radial-gradient(circle, #3f6656 0 16px, #5b8a74 17px);
+}
+
+.ws-bandsaw-wheel--top {
+  top: 0;
+  border-radius: 52px 52px 10px 10px;
+}
+
+.ws-bandsaw-wheel--bottom {
+  top: 124px;
+  border-radius: 10px 10px 52px 52px;
+}
+
+.ws-bandsaw::before {
+  content: '';
+  position: absolute;
+  right: 6px;
+  top: 90px;
+  width: 30px;
+  height: 44px;
+  background: #4f7a66;
+  border: 4px solid var(--pal-ink);
+  border-top: 0;
+  border-bottom: 0;
+}
+
+.ws-bandsaw::after {
+  content: '';
+  position: absolute;
+  left: 30px;
+  top: 96px;
+  width: 4px;
+  height: 32px;
+  background: #e6ebef;
+  z-index: 1;
+}
+
+.ws-bandsaw-table {
+  left: -16px;
+  top: 108px;
+  width: 92px;
+  height: 14px;
+  background: #a9b0b7;
+  z-index: 2;
+}
+
+.ws-bandsaw-base {
+  left: 16px;
+  bottom: 0;
+  width: 72px;
+  height: 58px;
+  background: #3d4a52;
+}
+
+/* Table saw: blade peeking through a steel top, on a yellow base. */
+.ws-tablesaw {
+  right: calc(50% + 470px);
+  width: 170px;
+  height: 140px;
+}
+
+.ws-tablesaw-blade {
+  left: 58px;
+  top: 4px;
+  width: 54px;
+  height: 30px;
+  border-radius: 27px 27px 0 0;
+  border-bottom: 0 !important;
+  background: repeating-conic-gradient(from 0deg at 50% 100%, #e6ebef 0 8deg, #b8bfc6 8deg 16deg);
+}
+
+.ws-tablesaw-top {
+  left: 0;
+  top: 30px;
+  width: 170px;
+  height: 18px;
+  background: linear-gradient(#c3c9cf 0 5px, #9aa1a8 5px);
+}
+
+.ws-tablesaw-base {
+  left: 22px;
+  top: 44px;
+  width: 126px;
+  height: 96px;
+  background: linear-gradient(#c9463e, #c9463e) 50% 22px / 18px 14px no-repeat, #e0b23c;
+}
+
+/* Drill press: red head and motor up top, a column down to the base, with
+   the work table partway up. */
+.ws-drillpress {
+  left: calc(50% + 470px);
+  width: 110px;
+  height: 290px;
+}
+
+.ws-drill-column {
+  left: 44px;
+  top: 50px;
+  width: 16px;
+  height: 230px;
+  background: #b8bfc6;
+}
+
+.ws-drill-head {
+  left: 14px;
+  top: 0;
+  width: 88px;
+  height: 66px;
+  background: linear-gradient(90deg, #e0645a 0 30%, #c9463e 30%);
+  border-radius: 8px;
+}
+
+.ws-drill-head::after {
+  content: '';
+  position: absolute;
+  left: 30px;
+  top: 100%;
+  width: 10px;
+  height: 34px;
+  margin-top: 4px;
+  background: #8d949b;
+  border: 3px solid var(--pal-ink);
+}
+
+.ws-drill-table {
+  left: 14px;
+  top: 150px;
+  width: 80px;
+  height: 14px;
+  background: #9aa1a8;
+}
+
+.ws-drill-base {
+  left: 6px;
+  bottom: 0;
+  width: 100px;
+  height: 18px;
+  background: #5b636b;
+}
+
+/* Sawhorse with a plank across it. */
+.ws-sawhorse {
+  left: calc(50% + 610px);
+  width: 170px;
+  height: 110px;
+}
+
+.ws-sawhorse::before,
+.ws-sawhorse::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  width: 14px;
+  height: 90px;
+  background: var(--wood-mid);
+  border: 4px solid var(--pal-ink);
+}
+
+.ws-sawhorse::before {
+  left: 26px;
+  rotate: 10deg;
+}
+
+.ws-sawhorse::after {
+  right: 26px;
+  rotate: -10deg;
+}
+
+.ws-sawhorse-plank {
+  left: 0;
+  top: 0;
+  width: 170px;
+  height: 22px;
+  z-index: 1;
+  background: linear-gradient(#e0b17a 0 5px, #c88c50 5px);
+}
+
+@media (max-width: 1640px) {
+  .ws-machines .ws-bandsaw,
+  .ws-machines .ws-sawhorse {
+    display: none;
+  }
+}
+
+@media (max-width: 1300px) {
+  .ws-machines {
+    display: none;
+  }
+}
+
 
 .workshop-gadget {
   display: flex;
@@ -5250,6 +5506,1375 @@
   }
 
   .guild-quest {
+    transition: none;
+  }
+}
+
+/* --- Projects: the arcade ---
+   Same build as the Hobbies room: a tall back wall over a short floor
+   band (grid rows 1fr / --floor-h). Every project is a cabinet standing
+   against the wall in one row, bases sunk past the floor line the way the
+   bookcase's is; the neon sign hangs above them. On the floor in front:
+   the cartridge counter (the tech filter) and the high-score note. The
+   floor is dark arcade carpet with a quiet confetti pattern. */
+.arcade-content {
+  --floor-h: clamp(170px, 24vh, 260px);
+  /* How far below the ceiling the neon sign hangs. */
+  --sign-top: clamp(64px, 9vh, 120px);
+  /* Cabinets fill the room: nine share the full width, unless the wall
+     isn't tall enough for that (cabinets are 2.25x as tall as wide, sunk
+     a little into the floor, and must clear the hanging sign), in which
+     case height decides. */
+  --cab-w: max(
+    104px,
+    min(calc((100vw - 96px) / 9 - 14px), calc((100vh - var(--floor-h) - var(--sign-top) - 150px) / 2.07))
+  );
+  --wood-dark: #3b2616;
+  --wood: #5e3b24;
+  --wood-mid: #7a4b2c;
+  --wood-light: #a0693f;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.arcade {
+  position: relative;
+  min-height: 100%;
+  display: grid;
+  grid-template-rows: 1fr var(--floor-h);
+  grid-template-columns: 100%;
+  box-shadow: inset 0 0 0 4px var(--pal-ink);
+}
+
+.arcade-wall {
+  grid-row: 1;
+  grid-column: 1;
+  position: relative;
+  background-color: #3a2a55;
+  background-image: repeating-linear-gradient(90deg, transparent 0 46px, #33254c 46px 48px);
+}
+
+/* Ceiling trim and a dark baseboard where the wall meets the floor. */
+.arcade-wall::before,
+.arcade-wall::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+
+.arcade-wall::before {
+  top: 0;
+  height: 18px;
+  background: #1c1410;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.2);
+}
+
+.arcade-wall::after {
+  bottom: 0;
+  height: 14px;
+  background: #241a36;
+  border-top: 4px solid var(--pal-ink);
+}
+
+.arcade-floor {
+  grid-row: 2;
+  grid-column: 1;
+  background-color: #2b2440;
+  background-image:
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.4), transparent 36px),
+    radial-gradient(circle at 20% 30%, #4a3d6b 0 3px, transparent 3.5px),
+    radial-gradient(circle at 70% 60%, #34556b 0 3px, transparent 3.5px),
+    radial-gradient(circle at 45% 85%, #5b3d5e 0 2px, transparent 2.5px);
+  background-size: auto, 34px 34px, 34px 34px, 34px 34px;
+  border-top: 4px solid var(--pal-ink);
+}
+
+.arcade-back {
+  grid-row: 1;
+  grid-column: 1;
+  align-self: end;
+  justify-self: center;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: calc(100% - 32px);
+  margin-bottom: calc(var(--cab-w) * -0.18);
+}
+
+/* Neon sign: pink tube lettering (and a tube border) on a dark backboard,
+   hung from the ceiling on two wires. Lit, each tube glows in layers; now
+   and then the whole sign stutters off and back on, and one letter (the
+   C) buzzes on its own like a failing tube. Off = dim unlit glass. */
+.arcade-sign {
+  --neon: #ff6fb5;
+  --neon-core: #ffe3f1;
+  --neon-off: #6e3a5a;
+  position: absolute;
+  top: var(--sign-top);
+  left: 50%;
+  translate: -50% 0;
+  z-index: 2;
+  margin: 0;
+  padding: 16px 26px 14px;
+  font-family: var(--font-pixel);
+  font-size: clamp(24px, calc(var(--cab-w) * 0.2), 44px);
+  font-weight: normal;
+  letter-spacing: 4px;
+  white-space: nowrap;
+  background: #1a1226;
+  border: 4px solid var(--pal-ink);
+  box-shadow: 0 0 0 6px #241a36, 8px 8px 0 6px rgba(0, 0, 0, 0.3);
+}
+
+/* The two hanging wires, from the ceiling trim down to the backboard. */
+.arcade-sign::before,
+.arcade-sign::after {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 10px);
+  width: 3px;
+  height: calc(var(--sign-top) - 18px - 10px);
+  background: #12101a;
+}
+
+.arcade-sign::before {
+  left: 16%;
+}
+
+.arcade-sign::after {
+  right: 16%;
+}
+
+.arcade-sign-tubes {
+  display: inline-flex;
+  padding: 8px 14px 6px;
+  border: 4px solid var(--neon);
+  border-radius: 10px;
+  color: var(--neon-core);
+  text-shadow: 0 0 4px var(--neon), 0 0 12px var(--neon), 0 0 26px var(--neon);
+  box-shadow: 0 0 10px var(--neon), 0 0 26px rgba(255, 111, 181, 0.55), inset 0 0 10px rgba(255, 111, 181, 0.5);
+  animation: arcade-neon 6.5s steps(1) infinite;
+}
+
+.arcade-sign-buzz {
+  animation: arcade-neon-buzz 2.3s steps(1) infinite;
+}
+
+/* Whole sign: on, then a quick double flicker off, then back on. */
+@keyframes arcade-neon {
+  0%,
+  86%,
+  89%,
+  92%,
+  100% {
+    color: var(--neon-core);
+    text-shadow: 0 0 4px var(--neon), 0 0 12px var(--neon), 0 0 26px var(--neon);
+    border-color: var(--neon);
+    box-shadow: 0 0 10px var(--neon), 0 0 26px rgba(255, 111, 181, 0.55), inset 0 0 10px rgba(255, 111, 181, 0.5);
+  }
+  87%,
+  88%,
+  90%,
+  91% {
+    color: var(--neon-off);
+    text-shadow: none;
+    border-color: var(--neon-off);
+    box-shadow: none;
+  }
+}
+
+/* The one bad tube: drops out briefly a few times a cycle. */
+@keyframes arcade-neon-buzz {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  12%,
+  15%,
+  58% {
+    opacity: 0.2;
+  }
+  13%,
+  16%,
+  60% {
+    opacity: 1;
+  }
+}
+
+/* String lights along the ceiling: two interleaved sets of bulbs that
+   twinkle in turn. */
+.arcade-lights {
+  grid-row: 1;
+  grid-column: 1;
+  position: relative;
+  z-index: 1;
+  align-self: start;
+  height: 30px;
+  margin-top: 18px;
+  overflow: hidden;
+  background: linear-gradient(transparent 0 6px, #12101a 6px 8px, transparent 8px) 0 0 / 100% 100% no-repeat;
+}
+
+.arcade-lights::before,
+.arcade-lights::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 55%, var(--a) 0 5px, transparent 6px) 0 4px / 96px 22px repeat-x,
+    radial-gradient(circle at 50% 55%, var(--b) 0 5px, transparent 6px) 48px 4px / 96px 22px repeat-x;
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.35));
+  animation: arcade-twinkle 1.8s steps(1) infinite;
+}
+
+.arcade-lights::before {
+  --a: #ff6fb5;
+  --b: #4dd8ff;
+}
+
+.arcade-lights::after {
+  --a: #ffe066;
+  --b: #7ee08a;
+  translate: 24px 0;
+  animation-delay: -0.9s;
+}
+
+@keyframes arcade-twinkle {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* Decor groups either side of the sign, on the same band of wall. */
+.arcade-decor {
+  position: absolute;
+  top: calc(var(--sign-top) - 6px);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: clamp(24px, 3vw, 56px);
+}
+
+.arcade-decor--l {
+  right: calc(50% + 230px);
+}
+
+.arcade-decor--r {
+  left: calc(50% + 230px);
+}
+
+.arcade-poster {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 96px;
+  padding: 12px 8px 8px;
+  border: 5px solid var(--wood-mid);
+  outline: 4px solid var(--pal-ink);
+  box-shadow: 6px 6px 0 4px rgba(0, 0, 0, 0.3);
+}
+
+.arcade-poster--smash {
+  background: #4b2f7a;
+  rotate: 2deg;
+}
+
+.arcade-poster--fighter {
+  background: #8a2c1c;
+  rotate: -2deg;
+}
+
+.arcade-poster--mario {
+  background: #3d8fd9;
+  rotate: 2deg;
+}
+
+/* Checkered finish-line strip along the bottom of the Mario Kart poster. */
+.arcade-poster--kart {
+  background:
+    repeating-conic-gradient(#1c1410 0 25%, #f3ead2 0 50%) bottom / 10px 10px repeat-x,
+    #2f8f5a;
+  padding-bottom: 18px;
+  rotate: -2deg;
+}
+
+/* Pixel art drawn with box-shadows off a single 5px pixel; the margins
+   reserve the drawing's size. */
+.arcade-poster-art {
+  width: 5px;
+  height: 5px;
+}
+
+.arcade-poster-art--mushroom {
+  margin: 0 45px 40px 0;
+  box-shadow: 15px 0px 0 #e0453a, 20px 0px 0 #e0453a, 25px 0px 0 #e0453a, 30px 0px 0 #e0453a, 5px 5px 0 #e0453a, 10px 5px 0 #e0453a, 15px 5px 0 #fff6e8, 20px 5px 0 #fff6e8, 25px 5px 0 #e0453a, 30px 5px 0 #e0453a, 35px 5px 0 #e0453a, 40px 5px 0 #e0453a, 0px 10px 0 #e0453a, 5px 10px 0 #fff6e8, 10px 10px 0 #fff6e8, 15px 10px 0 #fff6e8, 20px 10px 0 #fff6e8, 25px 10px 0 #e0453a, 30px 10px 0 #e0453a, 35px 10px 0 #fff6e8, 40px 10px 0 #fff6e8, 45px 10px 0 #e0453a, 0px 15px 0 #e0453a, 5px 15px 0 #fff6e8, 10px 15px 0 #fff6e8, 15px 15px 0 #fff6e8, 20px 15px 0 #e0453a, 25px 15px 0 #e0453a, 30px 15px 0 #e0453a, 35px 15px 0 #fff6e8, 40px 15px 0 #fff6e8, 45px 15px 0 #e0453a, 0px 20px 0 #e0453a, 5px 20px 0 #e0453a, 10px 20px 0 #e0453a, 15px 20px 0 #e0453a, 20px 20px 0 #e0453a, 25px 20px 0 #e0453a, 30px 20px 0 #e0453a, 35px 20px 0 #e0453a, 40px 20px 0 #e0453a, 45px 20px 0 #e0453a, 5px 25px 0 #e0453a, 10px 25px 0 #e0453a, 15px 25px 0 #fff6e8, 20px 25px 0 #e0453a, 25px 25px 0 #e0453a, 30px 25px 0 #e0453a, 35px 25px 0 #fff6e8, 40px 25px 0 #e0453a, 10px 30px 0 #f6d8a8, 15px 30px 0 #1c1410, 20px 30px 0 #f6d8a8, 25px 30px 0 #f6d8a8, 30px 30px 0 #1c1410, 35px 30px 0 #f6d8a8, 10px 35px 0 #f6d8a8, 15px 35px 0 #f6d8a8, 20px 35px 0 #f6d8a8, 25px 35px 0 #f6d8a8, 30px 35px 0 #f6d8a8, 35px 35px 0 #f6d8a8, 15px 40px 0 #f6d8a8, 20px 40px 0 #f6d8a8, 25px 40px 0 #f6d8a8, 30px 40px 0 #f6d8a8;
+}
+
+.arcade-poster-art--fireball {
+  margin: 0 55px 30px 0;
+  box-shadow: 30px 0px 0 #4dd8ff, 35px 0px 0 #4dd8ff, 40px 0px 0 #4dd8ff, 45px 0px 0 #4dd8ff, 10px 5px 0 #4dd8ff, 25px 5px 0 #4dd8ff, 30px 5px 0 #f0fbff, 35px 5px 0 #f0fbff, 40px 5px 0 #4dd8ff, 45px 5px 0 #4dd8ff, 50px 5px 0 #4dd8ff, 0px 10px 0 #4dd8ff, 10px 10px 0 #4dd8ff, 20px 10px 0 #4dd8ff, 25px 10px 0 #f0fbff, 30px 10px 0 #f0fbff, 35px 10px 0 #f0fbff, 40px 10px 0 #f0fbff, 45px 10px 0 #4dd8ff, 50px 10px 0 #4dd8ff, 55px 10px 0 #4dd8ff, 5px 15px 0 #4dd8ff, 10px 15px 0 #4dd8ff, 15px 15px 0 #4dd8ff, 20px 15px 0 #4dd8ff, 25px 15px 0 #f0fbff, 30px 15px 0 #f0fbff, 35px 15px 0 #f0fbff, 40px 15px 0 #f0fbff, 45px 15px 0 #f0fbff, 50px 15px 0 #4dd8ff, 55px 15px 0 #4dd8ff, 0px 20px 0 #4dd8ff, 10px 20px 0 #4dd8ff, 20px 20px 0 #4dd8ff, 25px 20px 0 #f0fbff, 30px 20px 0 #f0fbff, 35px 20px 0 #f0fbff, 40px 20px 0 #f0fbff, 45px 20px 0 #4dd8ff, 50px 20px 0 #4dd8ff, 55px 20px 0 #4dd8ff, 10px 25px 0 #4dd8ff, 25px 25px 0 #4dd8ff, 30px 25px 0 #f0fbff, 35px 25px 0 #f0fbff, 40px 25px 0 #4dd8ff, 45px 25px 0 #4dd8ff, 50px 25px 0 #4dd8ff, 30px 30px 0 #4dd8ff, 35px 30px 0 #4dd8ff, 40px 30px 0 #4dd8ff, 45px 30px 0 #4dd8ff;
+}
+
+.arcade-poster-art--kart {
+  margin: 0 55px 40px 0;
+  box-shadow: 20px 0px 0 #e0453a, 25px 0px 0 #e0453a, 15px 5px 0 #e0453a, 20px 5px 0 #e0453a, 25px 5px 0 #e0453a, 30px 5px 0 #9fdcff, 15px 10px 0 #e0453a, 20px 10px 0 #e0453a, 25px 10px 0 #e0453a, 30px 10px 0 #e0453a, 10px 15px 0 #e0453a, 15px 15px 0 #e0453a, 20px 15px 0 #f6d8a8, 25px 15px 0 #f6d8a8, 30px 15px 0 #e0453a, 35px 15px 0 #e0453a, 40px 15px 0 #e0453a, 5px 20px 0 #e0453a, 10px 20px 0 #e0453a, 15px 20px 0 #e0453a, 20px 20px 0 #e0453a, 25px 20px 0 #e0453a, 30px 20px 0 #e0453a, 35px 20px 0 #e0453a, 40px 20px 0 #e0453a, 45px 20px 0 #e0453a, 50px 20px 0 #e0453a, 0px 25px 0 #e0453a, 5px 25px 0 #e0453a, 10px 25px 0 #e0453a, 15px 25px 0 #e0453a, 20px 25px 0 #e0453a, 25px 25px 0 #e0453a, 30px 25px 0 #e0453a, 35px 25px 0 #e0453a, 40px 25px 0 #e0453a, 45px 25px 0 #e0453a, 50px 25px 0 #e0453a, 55px 25px 0 #ffe066, 5px 30px 0 #1c1410, 10px 30px 0 #1c1410, 40px 30px 0 #1c1410, 45px 30px 0 #1c1410, 0px 35px 0 #1c1410, 5px 35px 0 #a9b0b7, 10px 35px 0 #a9b0b7, 15px 35px 0 #1c1410, 35px 35px 0 #1c1410, 40px 35px 0 #a9b0b7, 45px 35px 0 #a9b0b7, 50px 35px 0 #1c1410, 5px 40px 0 #1c1410, 10px 40px 0 #1c1410, 40px 40px 0 #1c1410, 45px 40px 0 #1c1410;
+}
+
+.arcade-poster-art--burst {
+  margin: 0 45px 40px 0;
+  box-shadow: 20px 0px 0 #ffe066, 0px 5px 0 #ffe066, 15px 5px 0 #ffe066, 20px 5px 0 #ffe066, 25px 5px 0 #ffe066, 40px 5px 0 #ffe066, 5px 10px 0 #ffe066, 10px 10px 0 #ffe066, 15px 10px 0 #ffe066, 20px 10px 0 #ff8a3c, 25px 10px 0 #ffe066, 30px 10px 0 #ffe066, 35px 10px 0 #ffe066, 10px 15px 0 #ffe066, 15px 15px 0 #ff8a3c, 20px 15px 0 #ff8a3c, 25px 15px 0 #ff8a3c, 30px 15px 0 #ff8a3c, 35px 15px 0 #ffe066, 0px 20px 0 #ffe066, 5px 20px 0 #ffe066, 10px 20px 0 #ffe066, 15px 20px 0 #ff8a3c, 20px 20px 0 #ff8a3c, 25px 20px 0 #ff8a3c, 30px 20px 0 #ff8a3c, 35px 20px 0 #ff8a3c, 40px 20px 0 #ffe066, 45px 20px 0 #ffe066, 10px 25px 0 #ffe066, 15px 25px 0 #ff8a3c, 20px 25px 0 #ff8a3c, 25px 25px 0 #ff8a3c, 30px 25px 0 #ff8a3c, 35px 25px 0 #ffe066, 5px 30px 0 #ffe066, 10px 30px 0 #ffe066, 15px 30px 0 #ffe066, 20px 30px 0 #ff8a3c, 25px 30px 0 #ffe066, 30px 30px 0 #ffe066, 35px 30px 0 #ffe066, 0px 35px 0 #ffe066, 15px 35px 0 #ffe066, 20px 35px 0 #ffe066, 25px 35px 0 #ffe066, 40px 35px 0 #ffe066, 20px 40px 0 #ffe066;
+}
+
+.arcade-poster-title {
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  line-height: 1.5;
+  text-align: center;
+  text-transform: uppercase;
+  color: #ffe066;
+  text-shadow: 1px 1px 0 var(--pal-ink);
+}
+
+/* Small neon signs, same flicker idea as the big one but offset. */
+.arcade-neon-small {
+  --glow: #4dd8ff;
+  padding: 8px 10px;
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #f0fbff;
+  text-shadow: 0 0 4px var(--glow), 0 0 12px var(--glow);
+  border: 3px solid var(--glow);
+  border-radius: 8px;
+  box-shadow: 0 0 10px var(--glow), inset 0 0 8px var(--glow);
+  animation: arcade-neon-small 4.2s steps(1) infinite;
+}
+
+.arcade-neon-small--yellow {
+  --glow: #ffd23c;
+  color: #fff8dc;
+  animation-delay: -2.1s;
+}
+
+@keyframes arcade-neon-small {
+  0%,
+  93%,
+  96%,
+  100% {
+    opacity: 1;
+  }
+  94%,
+  95% {
+    opacity: 0.3;
+  }
+}
+
+@media (max-width: 1300px) {
+  .arcade-neon-small {
+    display: none;
+  }
+}
+
+@media (max-width: 1000px) {
+  .arcade-decor {
+    display: none;
+  }
+}
+
+.arcade-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  max-width: 100%;
+}
+
+/* One cabinet, proportioned like the mockup's (about 2.25:1): marquee,
+   screen in a dark bezel, the control deck with stick and two buttons,
+   and a coin slot. Body tinted per project, lit on the left edge. */
+.cabinet {
+  --cab: #c9463e;
+  position: relative;
+  flex: none;
+  width: var(--cab-w);
+  height: calc(var(--cab-w) * 2.25);
+  padding: 0;
+  font: inherit;
+  background-color: var(--cab);
+  background-image:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.22) 0 6%, transparent 6% 94%, rgba(0, 0, 0, 0.18) 94%),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.12));
+  border: 4px solid var(--pal-ink);
+  border-radius: 10px 10px 0 0;
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: translate 0.15s ease, filter 0.2s ease;
+}
+
+.cabinet:hover,
+.cabinet:focus-visible {
+  translate: 0 -5px;
+}
+
+.cabinet:focus-visible {
+  outline: 3px solid #ffe066;
+  outline-offset: 3px;
+}
+
+/* Filtered out: powered down. */
+.cabinet.is-off {
+  filter: brightness(0.45) saturate(0.4);
+}
+
+.cabinet.is-off .cabinet-screen-media,
+.cabinet.is-off .cabinet-screen-fallback {
+  visibility: hidden;
+}
+
+.cabinet-marquee {
+  position: absolute;
+  left: 7%;
+  right: 7%;
+  top: 3%;
+  height: 12%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  font-family: var(--font-pixel);
+  font-size: clamp(7px, calc(var(--cab-w) * 0.06), 14px);
+  line-height: 1.35;
+  text-align: center;
+  color: #ffe066;
+  text-shadow: 0 0 6px rgba(255, 224, 102, 0.7);
+  background: var(--pal-ink);
+}
+
+.cabinet-screen {
+  position: absolute;
+  left: 9%;
+  right: 9%;
+  top: 18%;
+  height: 33%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #10141c;
+  border: 4px solid #1c1d22;
+  outline: 3px solid var(--pal-ink);
+  box-shadow: inset 6px 6px 0 rgba(0, 0, 0, 0.45), inset 0 0 18px rgba(0, 0, 0, 0.6);
+}
+
+/* Faint scanlines over whatever's playing. */
+.cabinet-screen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(transparent 0 2px, rgba(0, 0, 0, 0.18) 2px 3px);
+  pointer-events: none;
+}
+
+.cabinet-screen-media {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cabinet-screen-media--image {
+  object-fit: contain;
+  padding: 10%;
+  box-sizing: border-box;
+}
+
+.cabinet-screen-fallback {
+  padding: 6px;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: #7dff8c;
+}
+
+.cabinet-deck {
+  position: absolute;
+  left: -2%;
+  right: -2%;
+  top: 55%;
+  height: 15%;
+  background: linear-gradient(#3a3c44 0 18%, #1c1d22 18%);
+  border: 3px solid var(--pal-ink);
+  border-radius: 4px;
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.35);
+}
+
+.cabinet-stick {
+  position: absolute;
+  left: 18%;
+  top: 30%;
+  width: 14%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #c9463e;
+  border: 3px solid #f3ead2;
+}
+
+.cabinet-btn {
+  position: absolute;
+  top: 38%;
+  width: 10%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+}
+
+.cabinet-btn--a {
+  left: 50%;
+  background: #ffe066;
+}
+
+.cabinet-btn--b {
+  left: 68%;
+  background: #4da3ff;
+}
+
+.cabinet-slot {
+  position: absolute;
+  left: 30%;
+  right: 30%;
+  bottom: 9%;
+  height: 7%;
+  background: #1c1d22;
+  border: 3px solid var(--pal-ink);
+  border-radius: 3px;
+}
+
+/* Coin slot glows on hover: the "press start" cue. */
+.cabinet-slot::after {
+  content: '';
+  position: absolute;
+  left: 42%;
+  right: 42%;
+  top: 25%;
+  bottom: 25%;
+  background: #ff8a3c;
+}
+
+.cabinet:hover .cabinet-slot::after,
+.cabinet:focus-visible .cabinet-slot::after {
+  animation: arcade-coin 0.6s steps(1) infinite;
+}
+
+@keyframes arcade-coin {
+  50% {
+    background: #ffe066;
+  }
+}
+
+/* Floor: the cartridge counter centered, the high-score note to the right. */
+.arcade-front {
+  grid-row: 2;
+  grid-column: 1;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--cab-w) * 0.18 + 16px) 24px 70px;
+}
+
+.arcade-counter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px 10px;
+  background: var(--wood);
+  border: 4px solid var(--pal-ink);
+  box-shadow: inset 0 4px 0 var(--wood-light), 6px 6px 0 rgba(0, 0, 0, 0.35);
+}
+
+.arcade-cartridges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.arcade-counter-label {
+  align-self: center;
+  margin-right: 6px;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  text-transform: uppercase;
+  color: var(--pal-cream);
+}
+
+.arcade-cartridge {
+  --cart: #c9c2b0;
+  position: relative;
+  padding: 6px 10px 5px;
+  font-family: var(--font-terminal);
+  font-size: 18px;
+  line-height: 1;
+  color: var(--pal-ink);
+  background: var(--cart);
+  border: 3px solid var(--pal-ink);
+  border-radius: 3px 3px 0 0;
+  cursor: pointer;
+  box-shadow: inset 0 -5px 0 rgba(0, 0, 0, 0.18);
+  transition: translate 0.12s ease;
+}
+
+.arcade-cartridge:hover,
+.arcade-cartridge:focus-visible {
+  translate: 0 -3px;
+}
+
+.arcade-cartridge.is-active {
+  translate: 0 -6px;
+  outline: 3px solid #ffe066;
+  outline-offset: 2px;
+}
+
+.arcade-counter-status {
+  margin: 0;
+  font-family: var(--font-terminal);
+  font-size: 17px;
+  color: var(--pal-cream);
+}
+
+/* Pinned on the left of the floor: the bottom-right corner belongs to the
+   minimap. */
+.arcade-highscore {
+  position: absolute;
+  left: max(24px, 5%);
+  top: calc(var(--cab-w) * 0.18 + 22px);
+  width: 170px;
+  margin: 0;
+  padding: 10px 12px;
+  font-family: var(--font-terminal);
+  font-size: 18px;
+  line-height: 1.1;
+  color: var(--pal-ink);
+  background: var(--pal-cream);
+  border: 3px solid var(--pal-ink);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.35);
+  rotate: 2deg;
+}
+
+.arcade-highscore span {
+  display: block;
+  margin-bottom: 4px;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  text-transform: uppercase;
+  color: #c9463e;
+}
+
+/* The opened cabinet: the project's full card over a dimmed room. */
+.arcade-open {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(20, 14, 30, 0.7);
+}
+
+.arcade-open-card {
+  position: relative;
+  width: min(640px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  padding: 20px 20px 18px;
+  color: var(--pal-ink);
+  background: var(--pal-cream);
+  border: 4px solid var(--pal-ink);
+  border-top: 12px solid var(--cab);
+  box-shadow: 8px 8px 0 #000;
+}
+
+.arcade-open-card .project-thumb {
+  margin-top: 26px;
+}
+
+.arcade-open-card p {
+  margin: 10px 0 0;
+  color: var(--pal-ink-soft);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* Too narrow for the row: it scrolls sideways like an arcade aisle, and
+   the high-score note joins the floor's flow. */
+@media (max-width: 1100px) {
+  .arcade-content {
+    --cab-w: 120px;
+  }
+
+  .arcade-row {
+    overflow-x: auto;
+    padding: 6px 4px 12px;
+  }
+
+  .arcade-front {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .arcade-highscore {
+    position: static;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arcade-sign-tubes,
+  .arcade-sign-buzz,
+  .arcade-lights::before,
+  .arcade-lights::after,
+  .arcade-neon-small,
+  .cabinet:hover .cabinet-slot::after,
+  .cabinet:focus-visible .cabinet-slot::after {
+    animation: none;
+  }
+
+  .cabinet,
+  .arcade-cartridge {
+    transition: none;
+  }
+}
+
+/* --- Contact: the post office ---
+   Same build again: tall back wall over a short floor band. Against the
+   wall in one row: a wide notice board (posters, and the secret note
+   beside them once earned), the clerk's arched window with Owen, and the
+   mail cubbies. In front, a counter straddles the floor line with the
+   envelope (copy the email), the résumé parcel and the letter notepad on
+   top; a mailbox stands on the floor to the right. */
+.po-content {
+  --floor-h: clamp(170px, 24vh, 260px);
+  --wood-dark: #3b2616;
+  --wood: #5e3b24;
+  --wood-mid: #7a4b2c;
+  --wood-light: #a0693f;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  font-family: var(--font-terminal);
+}
+
+.po {
+  position: relative;
+  min-height: 100%;
+  display: grid;
+  grid-template-rows: 1fr var(--floor-h);
+  grid-template-columns: 100%;
+  box-shadow: inset 0 0 0 4px var(--pal-ink);
+}
+
+.po-wall {
+  grid-row: 1;
+  grid-column: 1;
+  position: relative;
+  background-color: #e3d5b2;
+  background-image: repeating-linear-gradient(0deg, transparent 0 30px, #d6c69f 30px 32px);
+}
+
+.po-wall::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 16px;
+  background: #2f5f86;
+  border-bottom: 4px solid var(--pal-ink);
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.12);
+}
+
+.po-wall::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 12px;
+  background: #2f5f86;
+  border-top: 4px solid var(--pal-ink);
+}
+
+.po-floor {
+  grid-row: 2;
+  grid-column: 1;
+  background-color: #b9a27a;
+  background-image:
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.3), transparent 30px),
+    linear-gradient(45deg, #ad966e 25%, transparent 25%, transparent 75%, #ad966e 75%),
+    linear-gradient(45deg, #ad966e 25%, transparent 25%, transparent 75%, #ad966e 75%);
+  background-size: auto, 40px 40px, 40px 40px;
+  background-position: 0 0, 0 0, 20px 20px;
+  border-top: 4px solid var(--pal-ink);
+}
+
+.po-back {
+  grid-row: 1;
+  grid-column: 1;
+  align-self: end;
+  justify-self: center;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  max-width: calc(100% - 32px);
+  padding-top: 40px;
+  /* Leaves room for the counter items that rise above the floor line. */
+  margin-bottom: 104px;
+}
+
+.po-sign {
+  margin: 0;
+  padding: 11px 22px 10px;
+  font-family: var(--font-pixel);
+  font-size: 16px;
+  text-transform: uppercase;
+  color: var(--pal-cream);
+  text-shadow: 2px 2px 0 var(--pal-ink);
+  background: #c9463e;
+  border: 4px solid var(--pal-ink);
+  box-shadow: inset 0 4px 0 #e0766e, 5px 5px 0 rgba(0, 0, 0, 0.25);
+}
+
+.po-back-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 30px;
+}
+
+/* Wide, short cork board: posters in a column, the secret note beside. */
+.po-board {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px 18px;
+  background: #b98a55;
+  background-image: radial-gradient(circle, rgba(92, 65, 40, 0.35) 1px, transparent 1.5px);
+  background-size: 6px 6px;
+  border: 6px solid #5c4128;
+  outline: 4px solid var(--pal-ink);
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.25);
+}
+
+.po-board-title {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  text-transform: uppercase;
+  color: var(--pal-cream);
+  text-shadow: 2px 2px 0 var(--pal-ink);
+}
+
+.po-board-pins {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.po-posters {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 150px;
+}
+
+.po-poster {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 10px;
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  color: var(--pal-ink);
+  text-decoration: none;
+  background: var(--pal-cream);
+  border: 3px solid var(--pal-ink);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
+  rotate: var(--tilt, 0deg);
+  transition: rotate 0.15s ease, translate 0.15s ease;
+}
+
+.po-poster:hover,
+.po-poster:focus-visible {
+  rotate: 0deg;
+  translate: 0 -3px;
+  background: #fff8e8;
+}
+
+.po-secret {
+  position: relative;
+  width: 290px;
+  padding: 14px 14px 12px;
+  color: var(--pal-ink);
+  background: #fff7c2;
+  border: 3px solid var(--pal-ink);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
+  rotate: 1.5deg;
+}
+
+.po-secret .secret-note-title {
+  font-size: 10px;
+}
+
+.po-secret p {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.15;
+}
+
+/* The clerk's window: an arched frame with Owen behind it. */
+.po-window {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 240px;
+  padding: 26px 16px 18px;
+  background: #2f5f86;
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.12), transparent);
+  border: 8px solid var(--wood-mid);
+  border-radius: 120px 120px 0 0;
+  outline: 4px solid var(--pal-ink);
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.25);
+}
+
+.po-clerk {
+  width: 104px;
+  height: 104px;
+}
+
+.po-bubble {
+  position: relative;
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 19px;
+  line-height: 1.15;
+  text-align: center;
+  color: var(--pal-ink);
+  background: var(--pal-cream);
+  border: 3px solid var(--pal-ink);
+}
+
+.po-bubble::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -12px;
+  margin-left: -8px;
+  border: 8px solid transparent;
+  border-top: 0;
+  border-bottom: 10px solid var(--pal-ink);
+}
+
+/* Mail cubbies: a few with letters waiting. */
+.po-slots {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  width: 190px;
+  padding: 10px;
+  background: var(--wood);
+  border: 4px solid var(--pal-ink);
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.25);
+}
+
+.po-slot {
+  position: relative;
+  height: 40px;
+  background: #2b1c12;
+  border: 2px solid var(--pal-ink);
+}
+
+.po-slot.has-letter::after {
+  content: '';
+  position: absolute;
+  left: 7px;
+  right: 7px;
+  bottom: 5px;
+  height: 14px;
+  background: var(--pal-cream);
+  border: 2px solid var(--pal-ink);
+}
+
+/* The counter straddles the floor line: items stand on its top board,
+   the front panel is drawn under them by the pseudo-elements. */
+.po-counter {
+  grid-row: 2;
+  grid-column: 1;
+  align-self: start;
+  justify-self: center;
+  position: relative;
+  z-index: 3;
+  width: min(820px, calc(100% - 48px));
+  margin-top: -80px;
+  padding: 0 28px 70px;
+  box-sizing: border-box;
+}
+
+.po-counter::before {
+  content: '';
+  position: absolute;
+  left: -10px;
+  right: -10px;
+  bottom: 56px;
+  height: 14px;
+  background: var(--wood-mid);
+  border: 4px solid var(--pal-ink);
+  box-shadow: inset 0 4px 0 var(--wood-light);
+}
+
+.po-counter::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 56px;
+  background: var(--wood) repeating-linear-gradient(90deg, transparent 0 78px, var(--wood-dark) 78px 80px);
+  border: 4px solid var(--pal-ink);
+  border-top: 0;
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.25);
+}
+
+.po-counter-items {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 16px 34px;
+}
+
+/* Envelope with a stamp; the address on it is the copy button. */
+.po-envelope {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  width: 290px;
+  height: 96px;
+  padding: 0 10px 10px;
+  box-sizing: border-box;
+  background:
+    linear-gradient(to bottom right, transparent calc(50% - 2px), var(--pal-ink) calc(50% - 2px) 50%, transparent 50%) left top / 50% 58% no-repeat,
+    linear-gradient(to bottom left, transparent calc(50% - 2px), var(--pal-ink) calc(50% - 2px) 50%, transparent 50%) right top / 50% 58% no-repeat,
+    var(--pal-cream);
+  border: 4px solid var(--pal-ink);
+  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.3);
+  rotate: -3deg;
+}
+
+.po-envelope-stamp {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  width: 26px;
+  height: 30px;
+  background: #c9463e radial-gradient(circle at 50% 45%, #ffe066 0 5px, transparent 6px);
+  outline: 3px dashed var(--pal-cream);
+  outline-offset: -5px;
+  border: 2px solid var(--pal-ink);
+}
+
+.po-envelope .dialogue-link {
+  width: 100%;
+  justify-content: center;
+  padding: 9px 8px;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+/* Résumé parcel: brown paper and string. */
+.po-parcel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 130px;
+  height: 86px;
+  text-decoration: none;
+  background:
+    linear-gradient(90deg, transparent calc(50% - 4px), #e3c47a calc(50% - 4px) calc(50% + 4px), transparent calc(50% + 4px)),
+    linear-gradient(transparent calc(50% - 4px), #e3c47a calc(50% - 4px) calc(50% + 4px), transparent calc(50% + 4px)),
+    #c8955c;
+  border: 4px solid var(--pal-ink);
+  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.3);
+  transition: translate 0.15s ease;
+}
+
+.po-parcel:hover,
+.po-parcel:focus-visible {
+  translate: 0 -4px;
+}
+
+.po-parcel-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 7px;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--pal-ink);
+  background: var(--pal-cream);
+  border: 3px solid var(--pal-ink);
+}
+
+/* Notepad with a pen: opens the letter paper. */
+.po-notepad {
+  position: relative;
+  width: 150px;
+  height: 92px;
+  padding: 12px 10px;
+  text-align: left;
+  cursor: pointer;
+  background:
+    repeating-linear-gradient(transparent 0 15px, #cfd9e8 15px 16px) 0 26px / 100% calc(100% - 26px) no-repeat,
+    #fffdf4;
+  border: 4px solid var(--pal-ink);
+  border-top: 10px solid #c9463e;
+  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.3);
+  rotate: 2deg;
+  transition: translate 0.15s ease;
+}
+
+.po-notepad:hover,
+.po-notepad:focus-visible {
+  translate: 0 -4px;
+}
+
+.po-notepad-title {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  line-height: 1.5;
+  color: var(--pal-ink);
+}
+
+.po-notepad-pen {
+  position: absolute;
+  right: -14px;
+  bottom: 12px;
+  width: 70px;
+  height: 7px;
+  background: linear-gradient(90deg, var(--pal-ink) 0 10%, #2f5f86 10% 85%, #e0b23c 85%);
+  border: 2px solid var(--pal-ink);
+  rotate: -28deg;
+}
+
+/* Mailbox on the floor, right of the counter. */
+.po-mailbox {
+  grid-row: 2;
+  grid-column: 1;
+  align-self: center;
+  justify-self: end;
+  position: relative;
+  z-index: 2;
+  width: 64px;
+  height: 80px;
+  margin-right: max(24px, calc(50% - 560px));
+  background: #2f5f86;
+  border: 4px solid var(--pal-ink);
+  border-radius: 32px 32px 0 0;
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.3);
+}
+
+.po-mailbox::before {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 26px;
+  height: 7px;
+  background: var(--pal-ink);
+}
+
+.po-mailbox::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 14px;
+  height: 30px;
+  margin-left: -7px;
+  background: var(--pal-ink);
+}
+
+/* The letter paper, over a dimmed room. */
+.po-letter-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(28, 23, 18, 0.6);
+}
+
+.po-letter {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(440px, 100%);
+  padding: 22px 22px 20px;
+  background:
+    repeating-linear-gradient(transparent 0 27px, #cfd9e8 27px 28px),
+    #fffdf4;
+  border: 4px solid var(--pal-ink);
+  box-shadow: 8px 8px 0 #000;
+}
+
+.po-letter-title {
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  color: #c9463e;
+}
+
+.po-letter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 17px;
+  color: var(--pal-ink-soft);
+}
+
+.po-letter-field input,
+.po-letter-field textarea {
+  font-family: var(--font-terminal);
+  font-size: 20px;
+  color: var(--pal-ink);
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid var(--pal-ink);
+  padding: 2px 0;
+  resize: vertical;
+}
+
+.po-letter-field input:focus,
+.po-letter-field textarea:focus {
+  outline: none;
+  border-bottom-color: #c9463e;
+  background: rgba(255, 224, 102, 0.15);
+}
+
+.po-letter-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.po-mail-it {
+  padding: 10px 14px;
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  color: var(--pal-cream);
+  text-decoration: none;
+  background: #c9463e;
+  border: 3px solid var(--pal-ink);
+  box-shadow: 3px 3px 0 var(--pal-ink);
+}
+
+.po-mail-it:hover,
+.po-mail-it:focus-visible {
+  background: #b33a33;
+}
+
+.po-mail-it.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.po-letter-hint {
+  flex: 1;
+  min-width: 160px;
+  font-size: 16px;
+  color: var(--pal-ink-soft);
+}
+
+/* Everything in the room scales up together on bigger screens (zoom also
+   scales each piece's margins, so the counter keeps its place across the
+   floor line), stepping by width and height so it always fits on screen. */
+.po-back,
+.po-counter {
+  zoom: var(--po-zoom, 1);
+}
+
+/* Once things scale up, the counter fills the floor and the mailbox would
+   run into the minimap, so it bows out. */
+@media (min-width: 1100px) and (min-height: 740px) {
+  .po-content {
+    --po-zoom: 1.3;
+  }
+
+  .po-mailbox {
+    display: none;
+  }
+}
+
+@media (min-width: 1400px) and (min-height: 880px) {
+  .po-content {
+    --po-zoom: 1.6;
+  }
+}
+
+@media (min-width: 1700px) and (min-height: 1040px) {
+  .po-content {
+    --po-zoom: 1.9;
+  }
+}
+
+@media (max-width: 900px) {
+  .po-back {
+    margin-bottom: 40px;
+  }
+
+  .po-counter {
+    grid-row: 2;
+    margin-top: 0;
+    padding-top: 20px;
+  }
+
+  .po-board-pins {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .po-mailbox {
+    display: none;
+  }
+
+  .po-content {
+    --floor-h: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .po-poster,
+  .po-parcel,
+  .po-notepad {
     transition: none;
   }
 }

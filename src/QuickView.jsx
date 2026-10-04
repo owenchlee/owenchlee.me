@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { INTRO, PROJECTS, HOBBIES, CONTACT, EDUCATION, EXPERIENCE, SKILLS, RESUME_URL } from './content';
 import { Highlighted } from './Highlighted';
-import { CardThumb, useRowVideoPlayback } from './sections';
+import { CardThumb, GitHubIcon, useRowVideoPlayback } from './sections';
 import './QuickView.css';
 
 function MailIcon() {
@@ -207,12 +207,12 @@ function QuickView({ onClose, isMobileLanding }) {
                 <div className="quick-view-links">
                   {p.link && (
                     <a href={p.link} target="_blank" rel="noreferrer">
-                      Code ↗
+                      <GitHubIcon /> GitHub
                     </a>
                   )}
                   {p.live && (
                     <a href={p.live} target="_blank" rel="noreferrer">
-                      Live Demo ↗
+                      Visit Live Site ↗
                     </a>
                   )}
                   {!p.link && !p.live && <span className="quick-view-nolink">No public link yet</span>}

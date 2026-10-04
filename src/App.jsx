@@ -42,12 +42,12 @@ import QuickView from './QuickView';
 import { BadgeCase, BadgeToast } from './Badges';
 import { earnBadge, installLinkTracking } from './achievements';
 import DialogueBox from './DialogueBox';
-import { openDialogue, advanceDialogue, closeDialogue, getDialogue } from './dialogue';
+import { openDialogue, advanceDialogue, closeDialogue, getDialogue, isObjectTalk } from './dialogue';
 import FishingBox from './FishingBox';
 import { startFishing, fishingAction, stopFishing, getFishing } from './fishing';
 import Workshop from './Workshop';
 import { useSecrets, isWorkshopOpen, installKonami, findSecret } from './secrets';
-import { playStep, playDoor } from './sfx';
+import { playStep, playDoor, playTalk, playKnock } from './sfx';
 import { SEASON, treeVariant, useSeasonTreeUrls } from './season';
 import SeasonFx from './SeasonFx';
 import { ParticleBurst } from './Badges';
@@ -360,6 +360,8 @@ function App() {
 
   function talkTo(id) {
     stopFishing();
+    if (isObjectTalk(id)) playKnock();
+    else playTalk();
     if (getDialogue()?.id === id) {
       advanceDialogue();
       return;
@@ -1356,7 +1358,7 @@ function App() {
             {PICNICS.map((p) => {
               const { x, y } = tileToPx(p.col, p.row);
               return (
-                <div key={p.id} className="picnic-scene" style={{ left: x, top: y, zIndex: zFromGroundY(y + 78) }}>
+                <div key={p.id} className="picnic-scene" style={{ left: x, top: y, zIndex: zFromGroundY(y + 96) }}>
                   <img src={picnicScene} className="picnic-blanket" alt="" />
                 </div>
               );

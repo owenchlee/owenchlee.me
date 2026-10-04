@@ -15,7 +15,7 @@
 // `tech` is an optional array of stack tags rendered as chips on the card —
 // keep it short and accurate, recruiters scan these for keyword matches.
 // `link` is the repo/source URL; `live` (optional) is a separate deployed-
-// site URL rendered as its own "Live Demo" link alongside the title link.
+// site URL rendered as its own "Visit Live Site" link alongside the title link.
 
 // Demo clips live under public/projects/ (not src/assets/) and are
 // referenced by plain path — Vite's dev-server asset-import pipeline hangs
@@ -73,7 +73,7 @@ export const EDUCATION = [
     program: 'Systems Design Engineering',
     school: 'University of Waterloo',
     location: 'Waterloo, ON',
-    dates: 'Sept 2026 – May 2031 (Incoming)',
+    dates: 'Sept 2026 – June 2031',
     notes: [],
   },
   {
@@ -91,8 +91,27 @@ export const EDUCATION = [
 ];
 
 // `reward` is the one-line result shown on each role's quest notice in the
-// Experience guild (sections.jsx); the bullets carry the full story.
+// Experience room (sections.jsx); the bullets carry the full story. A role
+// still underway can leave it out (its notice shows "Reward: ???").
 export const EXPERIENCE = [
+  {
+    role: 'Campus Ambassador',
+    org: 'ElevenLabs',
+    reward: 'Selected for the 2026 cohort',
+    location: 'Waterloo, ON',
+    dates: 'Aug 2026 – Present',
+    bullets: [
+      "Selected for ElevenLabs' 2026 Campus Ambassador Program, representing ElevenReader at the University of Waterloo",
+      'Promoting ElevenReader, an AI app that turns course readings into audio, through campus outreach and events',
+    ],
+  },
+  {
+    role: 'Autonomy Software Member',
+    org: 'Waterloo Aerial Robotics Group (WARG)',
+    location: 'Waterloo, ON',
+    dates: 'Sept 2026 – Present',
+    bullets: ["Designing autonomy software for the team's aircraft"],
+  },
   {
     role: "Founder & Web Developer",
     org: "Catch 'Em Crate",
@@ -109,7 +128,7 @@ export const EXPERIENCE = [
     org: 'Trudeau Athletic Council',
     reward: '$5,700 raised for charity',
     location: 'Markham, ON',
-    dates: 'Sept 2024 – Present',
+    dates: 'Sept 2024 – June 2026',
     bullets: [
       'Lead a team of 24 members creating events for ~1,800 attendees, including a fundraiser that earned $5,700 for charity',
       'Designed and launched new initiatives, including an internal mentorship program and inclusivity efforts across events',
@@ -131,7 +150,7 @@ export const EXPERIENCE = [
     org: 'Trudeau Student Activity Council',
     reward: '$8,000+ budget managed',
     location: 'Markham, ON',
-    dates: 'Sept 2022 – Present',
+    dates: 'Sept 2022 – June 2026',
     bullets: [
       "Managed the council's $8,000+ budget, tracking expenses and optimizing fund allocation",
       'Organized 25+ events for ~1,800 attendees while advocating for 400+ students',

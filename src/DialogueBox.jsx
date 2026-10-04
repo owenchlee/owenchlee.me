@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useDialogue, advanceDialogue, closeDialogue } from './dialogue';
 import { useTypewriter } from './useTypewriter';
+import { playBlip } from './sfx';
+import { isObjectTalk } from './dialogue';
 
 // The box townsfolk and signs talk through: pinned to the bottom of the
 // screen like the badge announcement, with the speaker's name on a tab.
@@ -12,7 +14,10 @@ function DialogueBox() {
   const reducedMotion = useMemo(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches, []);
   const [skipTyping, setSkipTyping] = useState(false);
   const line = dialogue ? dialogue.lines[dialogue.index] : '';
-  const typed = useTypewriter(line, skipTyping || reducedMotion);
+  // Text blips while the line types out: a little lower for signs and
+  // boards than for people.
+  const voice = dialogue && isObjectTalk(dialogue.id) ? 0.75 : 1;
+  const typed = useTypewriter(line, skipTyping || reducedMotion, () => playBlip(voice));
   const doneTyping = typed.length === line.length;
   const key = dialogue ? `${dialogue.id}-${dialogue.index}` : null;
 

@@ -142,3 +142,28 @@ export function playMiss() {
   if (!ac) return;
   tone(ac, { freq: 330, slideTo: 165, dur: 0.3, type: 'triangle', vol: 0.05 });
 }
+
+// Tapping someone: a quick rising two-note chirp, like a "hm?".
+export function playTalk() {
+  const ac = audio();
+  if (!ac) return;
+  tone(ac, { freq: 660, dur: 0.05, vol: 0.035 });
+  tone(ac, { freq: 880, start: 0.055, dur: 0.07, vol: 0.035 });
+}
+
+// Tapping a sign or board: a soft wooden knock.
+export function playKnock() {
+  const ac = audio();
+  if (!ac) return;
+  tone(ac, { freq: 220, slideTo: 140, dur: 0.06, type: 'triangle', vol: 0.08 });
+  hiss(ac, { dur: 0.03, freq: 900, q: 2, vol: 0.03 });
+}
+
+// One tick per letter as dialogue types out, the classic text blip: very
+// short and quiet, with a touch of pitch wobble so a long line doesn't
+// drone. `voice` shifts the pitch (signs read lower than people).
+export function playBlip(voice = 1) {
+  const ac = audio(0.3);
+  if (!ac) return;
+  tone(ac, { freq: (520 + Math.random() * 40) * voice, dur: 0.035, vol: 0.022 });
+}
