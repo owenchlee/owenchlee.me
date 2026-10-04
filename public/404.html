@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>Lost in the tall grass · Owen Lee</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNSAxNSIgc2hhcGUtcmVuZGVyaW5nPSJjcmlzcEVkZ2VzIj48cGF0aCBkPSJNMSAxaDEzdjFoLTEzek0xIDJoMTN2MWgtMTN6TTEgM2gxM3YxaC0xM3pNMSA0aDJ2MWgtMnpNNiA0aDJ2MWgtMnpNOSA0aDV2MWgtNXpNMSA1aDF2MWgtMXpNMyA1aDF2MWgtMXpNNyA1aDF2MWgtMXpNMTAgNWg0djFoLTR6TTEgNmgxdjFoLTF6TTQgNmgydjFoLTJ6TTEwIDZoNHYxaC00ek0xIDdoMXYxaC0xek00IDdoMnYxaC0yek0xMCA3aDR2MWgtNHpNMSA4aDF2MWgtMXpNNCA4aDJ2MWgtMnpNMTAgOGg0djFoLTR6TTEgOWgxdjFoLTF6TTQgOWgydjFoLTJ6TTEwIDloNHYxaC00ek0xIDEwaDJ2MWgtMnpNNiAxMGgxdjFoLTF6TTEzIDEwaDF2MWgtMXpNMSAxMWgzdjFoLTN6TTcgMTFoMnYxaC0yek0xIDEyaDEzdjFoLTEzek0xIDEzaDEzdjFoLTEzeiIgZmlsbD0iIzE5NzE1MyIvPjxwYXRoIGQ9Ik0wIDBoMTV2MWgtMTV6TTAgMWgxdjFoLTF6TTE0IDFoMXYxaC0xek0wIDJoMXYxaC0xek0xNCAyaDF2MWgtMXpNMCAzaDF2MWgtMXpNMTQgM2gxdjFoLTF6TTAgNGgxdjFoLTF6TTE0IDRoMXYxaC0xek0wIDVoMXYxaC0xek00IDVoMnYxaC0yek05IDVoMXYxaC0xek0xNCA1aDF2MWgtMXpNMCA2aDF2MWgtMXpNMyA2aDF2MWgtMXpNNyA2aDF2MWgtMXpNOSA2aDF2MWgtMXpNMTQgNmgxdjFoLTF6TTAgN2gxdjFoLTF6TTMgN2gxdjFoLTF6TTcgN2gxdjFoLTF6TTkgN2gxdjFoLTF6TTE0IDdoMXYxaC0xek0wIDhoMXYxaC0xek0zIDhoMXYxaC0xek03IDhoMXYxaC0xek05IDhoMXYxaC0xek0xNCA4aDF2MWgtMXpNMCA5aDF2MWgtMXpNMyA5aDF2MWgtMXpNNyA5aDF2MWgtMXpNOSA5aDF2MWgtMXpNMTQgOWgxdjFoLTF6TTAgMTBoMXYxaC0xek03IDEwaDF2MWgtMXpNMTQgMTBoMXYxaC0xek0wIDExaDF2MWgtMXpNNCAxMWgzdjFoLTN6TTkgMTFoNnYxaC02ek0wIDEyaDF2MWgtMXpNMTQgMTJoMXYxaC0xek0wIDEzaDF2MWgtMXpNMTQgMTNoMXYxaC0xek0wIDE0aDE1djFoLTE1eiIgZmlsbD0iIzFjMTcxMiIvPjxwYXRoIGQ9Ik0zIDRoM3YxaC0zek04IDRoMXYxaC0xek0yIDVoMXYxaC0xek02IDVoMXYxaC0xek04IDVoMXYxaC0xek0yIDZoMXYxaC0xek02IDZoMXYxaC0xek04IDZoMXYxaC0xek0yIDdoMXYxaC0xek02IDdoMXYxaC0xek04IDdoMXYxaC0xek0yIDhoMXYxaC0xek02IDhoMXYxaC0xek04IDhoMXYxaC0xek0yIDloMXYxaC0xek02IDloMXYxaC0xek04IDloMXYxaC0xek0zIDEwaDN2MWgtM3pNOCAxMGg1djFoLTV6IiBmaWxsPSIjZjhmMGRjIi8+PC9zdmc+" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
+    <!-- Served by Vercel for any path that doesn't exist. Self-contained on
+         purpose: no React, no bundle, so it loads instantly and can't break
+         when the app does. Styled as a battle screen from the same palette
+         as src/index.css; the four "moves" are the rooms' deep links. -->
+    <style>
+      :root {
+        --grass: #197153;
+        --grass-light: #4da338;
+        --path: #a67a54;
+        --cream: #f8f0dc;
+        --ink: #1c1712;
+        --ink-soft: #3a2f24;
+        --hp: #4da338;
+        --hp-low: #c9463e;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; }
+      body {
+        background: var(--grass);
+        background-image:
+          radial-gradient(circle at 25% 30%, rgba(77, 163, 56, 0.35) 0 2px, transparent 3px),
+          radial-gradient(circle at 75% 70%, rgba(77, 163, 56, 0.35) 0 2px, transparent 3px);
+        background-size: 32px 32px, 32px 32px;
+        color: var(--ink);
+        font-family: 'VT323', ui-monospace, monospace;
+        display: grid;
+        place-items: center;
+        padding: 16px;
+        image-rendering: pixelated;
+      }
+      .battle {
+        width: min(640px, 100%);
+        background: var(--cream);
+        border: 4px solid var(--ink);
+        box-shadow: 0 0 0 4px var(--cream), 0 0 0 8px var(--ink), 0 12px 0 8px rgba(0, 0, 0, 0.25);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .field {
+        position: relative;
+        height: clamp(220px, 46vw, 300px);
+        background: linear-gradient(#cfe8c0 0 55%, #b6d8a0 55% 100%);
+        border-bottom: 4px solid var(--ink);
+      }
+      .pad {
+        position: absolute;
+        border-radius: 50%;
+        background: #8fbf6f;
+        box-shadow: inset 0 -6px 0 #6fa354;
+      }
+      .pad--foe { width: 38%; height: 14%; right: 6%; top: 40%; }
+      .pad--you { width: 44%; height: 16%; left: 2%; bottom: 4%; }
+      .sprite { position: absolute; }
+      .sprite svg { display: block; width: 100%; height: auto; shape-rendering: crispEdges; }
+      .sprite--foe { width: 22%; right: 14%; top: 8%; animation: bob 1.2s steps(2) infinite; }
+      .sprite--you { width: 24%; left: 12%; bottom: 10%; }
+      @keyframes bob { 50% { transform: translateY(-4px); } }
+      .card {
+        position: absolute;
+        background: var(--cream);
+        border: 3px solid var(--ink);
+        border-radius: 6px 0 6px 0;
+        padding: 6px 10px 8px;
+        min-width: 40%;
+        font-family: 'Press Start 2P', monospace;
+        font-size: clamp(8px, 1.9vw, 11px);
+        line-height: 1.6;
+      }
+      .card--foe { left: 5%; top: 8%; }
+      .card--you { right: 5%; bottom: 8%; }
+      .card-row { display: flex; justify-content: space-between; gap: 12px; }
+      .hp { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+      .hp-label { color: #e0b23c; background: var(--ink); padding: 0 3px; font-size: 0.8em; }
+      .hp-track { display: block; flex: 1; height: 7px; border: 2px solid var(--ink); background: var(--ink-soft); }
+      .hp-fill { display: block; height: 100%; width: 100%; background: var(--hp); transition: width 1.2s steps(12); }
+      .hp-fill--low { background: var(--hp-low); }
+      .panel { display: grid; grid-template-columns: 1fr; }
+      .text {
+        min-height: 92px;
+        padding: 14px 18px;
+        font-size: clamp(22px, 4.6vw, 28px);
+        line-height: 1.15;
+      }
+      .text::after { content: '▼'; display: inline-block; margin-left: 6px; font-size: 0.6em; animation: blink 0.8s steps(1) infinite; }
+      .text.typing::after { visibility: hidden; }
+      @keyframes blink { 50% { opacity: 0; } }
+      .moves {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2px 10px;
+        padding: 0 14px 14px;
+        margin: 0;
+        list-style: none;
+      }
+      .moves a {
+        display: block;
+        padding: 6px 8px 6px 26px;
+        position: relative;
+        font-family: 'Press Start 2P', monospace;
+        font-size: clamp(9px, 2.2vw, 12px);
+        line-height: 1.5;
+        color: var(--ink);
+        text-decoration: none;
+        border-radius: 3px;
+      }
+      .moves a::before { content: '▶'; position: absolute; left: 8px; visibility: hidden; }
+      .moves a:hover::before, .moves a:focus-visible::before { visibility: visible; }
+      .moves a:focus-visible { outline: 2px dashed var(--ink); outline-offset: 1px; }
+      .moves a small { display: block; font-family: 'VT323', monospace; font-size: 1.5em; color: var(--ink-soft); }
+      .run { grid-column: 1 / -1; }
+      @media (max-width: 420px) {
+        .moves { grid-template-columns: 1fr; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .sprite--foe, .text::after { animation: none; }
+        .hp-fill { transition: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="battle">
+      <div class="field" aria-hidden="true">
+        <div class="pad pad--foe"></div>
+        <div class="pad pad--you"></div>
+        <div class="sprite sprite--foe" id="foe"></div>
+        <div class="sprite sprite--you" id="you"></div>
+        <div class="card card--foe">
+          <div class="card-row"><span>MISSING PAGE</span><span>Lv404</span></div>
+          <div class="hp"><span class="hp-label">HP</span><span class="hp-track"><span class="hp-fill" id="foe-hp"></span></span></div>
+        </div>
+        <div class="card card--you">
+          <div class="card-row"><span>YOU</span><span>Lv1</span></div>
+          <div class="hp"><span class="hp-label">HP</span><span class="hp-track"><span class="hp-fill"></span></span></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h1 class="text" id="text">A wild MISSING PAGE appeared! There's nothing at this address.</h1>
+        <nav aria-label="Where to go instead">
+          <ul class="moves">
+            <li><a href="/#projects">PROJECTS<small>Builds, with demo clips</small></a></li>
+            <li><a href="/#experience">EXPERIENCE<small>Roles and résumé</small></a></li>
+            <li><a href="/#hobbies">HOBBIES<small>The shelf of favourite things</small></a></li>
+            <li><a href="/#contact">CONTACT<small>Say hi to Owen</small></a></li>
+            <li class="run"><a href="/" id="run">RUN BACK TO TOWN<small>Got away safely!</small></a></li>
+          </ul>
+        </nav>
+      </div>
+    </main>
+    <script>
+      // Pixel maps drawn as SVG rects (same idea as the badge pixel maps in
+      // src/achievements.js). One character per pixel, '.' is empty.
+      const PALETTE = { o: '#1c1712', w: '#f8f0dc', g: '#cfd6e6', s: '#8e97b3', r: '#c9463e', b: '#5b7a94', k: '#e0b23c', n: '#a67a54' };
+      const FOE = [
+        '....oooooo....',
+        '..oowwwwwwoo..',
+        '.owwwwwwwwwwo.',
+        '.owwoowwoowwo.',
+        'owwwoowwoowwwo',
+        'owwwwwwwwwwwwo',
+        'owwwwoooowwwwo',
+        'owwwwwrrwwwwgo',
+        'owwwwwwwwwwggo',
+        'owwwwwwwwwwgso',
+        'owgwwwgwwwgsso',
+        'oggo.ogggo.oso',
+        'oo....ooo....o',
+      ];
+      const YOU = [
+        '....oooooo....',
+        '...obbbbbbo...',
+        '..obbbbbbbbo..',
+        '..obbbbbbbbo..',
+        '..onnnnnnnno..',
+        '...onnnnnno...',
+        '..orrrrrrrro..',
+        '.orrrrrrrrrro.',
+        '.onrrrrrrrrno.',
+        '.onrrrrrrrrno.',
+        '..obbbbbbbbo..',
+        '..obbbo.obbbo.',
+        '..ooo....ooo..',
+      ];
+      function draw(map) {
+        const h = map.length;
+        const w = map[0].length;
+        let rects = '';
+        map.forEach((row, y) =>
+          [...row].forEach((ch, x) => {
+            if (PALETTE[ch]) rects += `<rect x="${x}" y="${y}" width="1" height="1" fill="${PALETTE[ch]}"/>`;
+          }),
+        );
+        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">${rects}</svg>`;
+      }
+      document.getElementById('foe').innerHTML = draw(FOE);
+      document.getElementById('you').innerHTML = draw(YOU);
+
+      const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const text = document.getElementById('text');
+      const lines = [
+        'A wild MISSING PAGE appeared!',
+        `Nothing lives at ${location.pathname}. Pick a move to go somewhere real.`,
+      ];
+
+      // Typewriter, like the dialogue box in town. The full message is in the
+      // HTML already, so screen readers and no-JS visitors get it at once.
+      function type(line) {
+        return new Promise((done) => {
+          if (reduced) {
+            text.textContent = line;
+            return done();
+          }
+          text.classList.add('typing');
+          let i = 0;
+          const tick = () => {
+            text.textContent = line.slice(0, ++i);
+            if (i < line.length) setTimeout(tick, 28);
+            else {
+              text.classList.remove('typing');
+              done();
+            }
+          };
+          tick();
+        });
+      }
+
+      text.setAttribute('aria-live', 'polite');
+      (async () => {
+        await type(lines[0]);
+        await new Promise((r) => setTimeout(r, reduced ? 0 : 900));
+        await type(lines[1]);
+      })();
+
+      // Pointing at any move knocks the page's HP down, purely for fun.
+      const hp = document.getElementById('foe-hp');
+      document.querySelectorAll('.moves a').forEach((a) => {
+        const hit = () => {
+          hp.style.width = '18%';
+          hp.classList.add('hp-fill--low');
+        };
+        const heal = () => {
+          hp.style.width = '100%';
+          hp.classList.remove('hp-fill--low');
+        };
+        a.addEventListener('mouseenter', hit);
+        a.addEventListener('focus', hit);
+        a.addEventListener('mouseleave', heal);
+        a.addEventListener('blur', heal);
+      });
+
+      // Arrow keys move between the moves, like a battle menu.
+      const moves = [...document.querySelectorAll('.moves a')];
+      document.addEventListener('keydown', (e) => {
+        const i = moves.indexOf(document.activeElement);
+        const step = { ArrowDown: 2, ArrowUp: -2, ArrowRight: 1, ArrowLeft: -1 }[e.key];
+        if (step === undefined) return;
+        e.preventDefault();
+        const next = i === -1 ? 0 : Math.min(moves.length - 1, Math.max(0, i + step));
+        moves[next].focus();
+      });
+    </script>
+  </body>
+</html>
