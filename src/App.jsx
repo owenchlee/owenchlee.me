@@ -46,6 +46,7 @@ import { openDialogue, advanceDialogue, closeDialogue, getDialogue, isObjectTalk
 import FishingBox from './FishingBox';
 import { startFishing, fishingAction, stopFishing, getFishing } from './fishing';
 import Workshop from './Workshop';
+import NowLog from './NowLog';
 import { useSecrets, isWorkshopOpen, installKonami, findSecret } from './secrets';
 import { playStep, playDoor, playTalk, playKnock } from './sfx';
 import { SEASON, treeVariant, useSeasonTreeUrls } from './season';
@@ -351,10 +352,12 @@ function App() {
   const [quickView, setQuickView] = useState(isMobileLanding);
   const [welcomeSeen, setWelcomeSeen] = useState(readWelcomeSeen);
   const [workshopOpen, setWorkshopOpen] = useState(false);
+  const [nowLogOpen, setNowLogOpen] = useState(false);
   // Timestamp of the last secret found (0 = none showing), doubling as the
   // confetti's key so a second find replays it.
   const [secretBurst, setSecretBurst] = useState(0);
   const secrets = useSecrets();
+  const hasFished = Object.keys(secrets.fish).length > 0 || Boolean(secrets.found.key);
   const workshopUnlocked = isWorkshopOpen(secrets);
   const seasonTrees = useSeasonTreeUrls(treeRoundSprite, treePineSprite);
 
@@ -362,6 +365,12 @@ function App() {
     stopFishing();
     if (isObjectTalk(id)) playKnock();
     else playTalk();
+    // The NOW board opens its monthly log instead of a dialogue line.
+    if (id === 'now-board') {
+      closeDialogue();
+      setNowLogOpen(true);
+      return;
+    }
     if (getDialogue()?.id === id) {
       advanceDialogue();
       return;
@@ -1137,9 +1146,11 @@ function App() {
               {PONDS.map(({ id, ...style }) => (
                 <div key={id} className="water-pond ambient" style={style}>
                   {/* A bobber floating mid-pond (and now and then a fish
-                      leaping) is the hint that the water can be fished. */}
+                      leaping) says the water can be fished; until the
+                      visitor has caught something, a sign spells it out. */}
                   <span className="pond-bobber" />
                   <span className="pond-fish" />
+                  {!hasFished && <span className="pond-hint">Tap to fish!</span>}
                 </div>
               ))}
             </GroundCanvas>
@@ -1515,6 +1526,7 @@ function App() {
       <FishingBox />
 
       {workshopOpen && <Workshop onClose={() => setWorkshopOpen(false)} />}
+      {nowLogOpen && <NowLog onClose={() => setNowLogOpen(false)} />}
 
       {secretBurst > 0 && <ParticleBurst key={secretBurst} />}
 

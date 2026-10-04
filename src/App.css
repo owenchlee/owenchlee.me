@@ -1519,6 +1519,82 @@
   padding: 8px;
 }
 
+/* The music guide: a townsperson standing just right of the player, with
+   a speech bubble pointing at the disc until the visitor first plays
+   music. Bobs along while music plays. */
+.music-guide {
+  position: absolute;
+  left: calc(100% + 10px);
+  bottom: -4px;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.music-guide-sprite {
+  display: block;
+  width: 48px;
+  height: 48px;
+  image-rendering: pixelated;
+  filter: drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.45));
+}
+
+.music-guide.is-dancing .music-guide-sprite {
+  animation: music-guide-bob 0.65s steps(2) infinite;
+}
+
+@keyframes music-guide-bob {
+  50% {
+    translate: 0 -4px;
+  }
+}
+
+.music-guide-bubble {
+  position: absolute;
+  left: 4px;
+  bottom: calc(100% + 10px);
+  width: 170px;
+  padding: 8px 10px;
+  font-family: var(--font-terminal);
+  font-size: 17px;
+  line-height: 1.15;
+  text-align: left;
+  color: var(--pal-ink);
+  background: var(--pal-cream);
+  border: 3px solid var(--pal-ink);
+  box-shadow: 3px 3px 0 #000;
+  animation: music-guide-nudge 2.4s ease-in-out infinite;
+}
+
+/* Tail pointing down at the person. */
+.music-guide-bubble::after {
+  content: '';
+  position: absolute;
+  left: 14px;
+  top: 100%;
+  border: 7px solid transparent;
+  border-top: 9px solid var(--pal-ink);
+  border-bottom: 0;
+}
+
+@keyframes music-guide-nudge {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .music-guide.is-dancing .music-guide-sprite,
+  .music-guide-bubble {
+    animation: none;
+  }
+}
+
 .music-row {
   display: flex;
   align-items: stretch;
@@ -6876,5 +6952,202 @@
   .po-parcel,
   .po-notepad {
     transition: none;
+  }
+}
+
+/* --- NOW board log (NowLog.jsx) ---
+   A cork board of diary notes: this month pinned big at the top with the
+   standing co-op note under it, then earlier months as smaller pinned
+   notes grouped by year. Scrolls inside the frame. */
+.nowlog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 240;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(28, 23, 18, 0.72);
+}
+
+.nowlog {
+  display: flex;
+  flex-direction: column;
+  width: min(760px, 100%);
+  max-height: calc(100vh - 32px);
+  background: #b98a55;
+  background-image: radial-gradient(circle, rgba(92, 65, 40, 0.35) 1px, transparent 1.5px);
+  background-size: 6px 6px;
+  border: 8px solid #5c4128;
+  outline: 4px solid var(--pal-ink);
+  box-shadow: 10px 10px 0 rgba(0, 0, 0, 0.45);
+}
+
+.nowlog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #5c4128;
+  border-bottom: 4px solid var(--pal-ink);
+}
+
+.nowlog-head h2 {
+  margin: 0;
+  font-family: var(--font-pixel);
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--pal-cream);
+  text-shadow: 2px 2px 0 var(--pal-ink);
+}
+
+.nowlog-scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 26px 22px 28px;
+}
+
+.nowlog-note {
+  position: relative;
+  padding: 16px 16px 14px;
+  color: var(--pal-ink);
+  background: #fff8e8;
+  border: 3px solid var(--pal-ink);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
+  rotate: var(--tilt, 0deg);
+}
+
+.nowlog-pin {
+  position: absolute;
+  left: 50%;
+  top: -8px;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  border-radius: 50%;
+  background: #c9463e;
+  border: 2px solid var(--pal-ink);
+}
+
+.nowlog-note h3,
+.nowlog-note h4 {
+  margin: 0 0 6px;
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  color: #c9463e;
+}
+
+.nowlog-note p {
+  margin: 0;
+  font-family: var(--font-terminal);
+  font-size: 19px;
+  line-height: 1.2;
+}
+
+.nowlog-note--latest {
+  padding: 20px 22px 18px;
+  background: #fff7c2;
+  rotate: -0.8deg;
+}
+
+.nowlog-note--latest h3 {
+  font-size: 13px;
+}
+
+.nowlog-note--latest p {
+  font-size: 22px;
+}
+
+.nowlog-pinned {
+  margin: 18px 0 0;
+  padding: 10px 14px;
+  font-family: var(--font-terminal);
+  font-size: 19px;
+  line-height: 1.2;
+  color: var(--pal-ink);
+  background: #dbeaff;
+  border: 3px solid var(--pal-ink);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.3);
+  rotate: 0.6deg;
+}
+
+.nowlog-year {
+  margin-top: 30px;
+}
+
+.nowlog-year-label {
+  display: inline-block;
+  margin: 0 0 16px;
+  padding: 6px 10px;
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  color: var(--pal-cream);
+  background: var(--pal-ink);
+}
+
+.nowlog-notes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px 18px;
+}
+
+@media (max-width: 640px) {
+  .nowlog-notes {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* "Tap to fish!" plaque floating over each pond until the visitor's first
+   catch: a little wooden sign with a fishing rod, bobbing gently. */
+.pond-hint {
+  position: absolute;
+  left: 50%;
+  top: 14%;
+  translate: -50% 0;
+  padding: 6px 8px 6px 26px;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--pal-cream);
+  text-shadow: 1px 1px 0 var(--pal-ink);
+  background:
+    linear-gradient(135deg, transparent 0 46%, #8a6a44 46% 56%, transparent 56%) 6px 4px / 14px 14px no-repeat,
+    #5e3b24;
+  border: 3px solid var(--pal-ink);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.4);
+  animation: pond-hint-bob 1.6s ease-in-out infinite;
+}
+
+/* The fishing line hanging off the rod. */
+.pond-hint::after {
+  content: '';
+  position: absolute;
+  left: 18px;
+  top: 4px;
+  width: 1px;
+  height: 14px;
+  background: var(--pal-cream);
+}
+
+@keyframes pond-hint-bob {
+  0%,
+  100% {
+    translate: -50% 0;
+  }
+  50% {
+    translate: -50% -3px;
+  }
+}
+
+.water-pond.is-offscreen .pond-hint {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pond-hint {
+    animation: none;
   }
 }

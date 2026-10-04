@@ -1,0 +1,57 @@
+{
+  "about": "Owen's monthly log for the NOW board, newest first. One entry per month, written in first person. A scheduled Claude routine appends the new month on the 1st; past entries can be edited by hand. The site also fetches this file live from GitHub, so a pushed entry shows up without a redeploy.",
+  "entries": [
+    {
+      "month": "2026-10",
+      "text": "Turned this website into a little town. Projects became an arcade, Contact became a post office, Experience is a quest board, and there's a hidden workshop if you know where to look. Still pushing small fixes to FoodFindr too."
+    },
+    {
+      "month": "2026-09",
+      "text": "First month of Systems Design Engineering at Waterloo! I joined WARG as an autonomy software member, worked through the WATonomous onboarding assignment, and started my term as an ElevenLabs campus ambassador. I also shipped a big round of FoodFindr updates and started TappedIn, my own tracker for co-op postings, design teams and clubs."
+    },
+    {
+      "month": "2026-08",
+      "text": "Built Fits, a workout tracker where the progress charts are free instead of paywalled. I brought Beat the Bulk back to life (a browser game where your webcam counts your reps), kept polishing Sing Score, and found out I got into the ElevenLabs Campus Ambassador Program."
+    },
+    {
+      "month": "2026-07",
+      "text": "Two big builds this month. FoodFindr, a map-based restaurant finder that has Claude read real reviews and pick one spot and one dish for you, and Sing Score, a karaoke game that grades your singing against the melody. I also started this website."
+    },
+    {
+      "month": "2026-06",
+      "text": "Finished high school and wrapped up my terms as Athletic Council president and Student Council treasurer. I also built the Ladder Game on a breadboard: all circuitry, no screen."
+    },
+    {
+      "month": "2026-04",
+      "text": "Built Thumb Detector, which lets you scroll Reels and Shorts by flicking a finger, tracked live with MediaPipe and OpenCV. I also started Beat the Bulk."
+    },
+    {
+      "month": "2026-01",
+      "text": "Made ClashMate with my group in Greenfoot: chess crossed with Clash Royale, with an elixir bar and piece abilities."
+    },
+    {
+      "month": "2025-11",
+      "text": "Built a whole supermarket in Greenfoot with my group, with checkout lines, restocking trucks and shoppers ranging from bargain hunters to impulse buyers."
+    },
+    {
+      "month": "2025-10",
+      "text": "Spent the month on my Vehicle Simulation in Greenfoot: spreading fires, fire trucks, lane-based traffic, collisions and explosions. 41 commits in one month."
+    },
+    {
+      "month": "2025-09",
+      "text": "Our team won 1st place out of 115+ at the Daydream Hackathon with Just Die, a puzzle-platformer where your corpses become blocks. I led level design, art direction and the pitch. Also wrapped up Catch 'Em Crate for the summer."
+    },
+    {
+      "month": "2025-06",
+      "text": "Launched Catch 'Em Crate, a trading card subscription box business, and built its store with HTML, CSS, JavaScript and Shopify. It went on to make $1,000 and win the Markham Youth Startups award."
+    },
+    {
+      "month": "2024-09",
+      "text": "Became president of the Trudeau Athletic Council, leading a team of 24, and started tutoring high school math and science."
+    },
+    {
+      "month": "2022-09",
+      "text": "Started high school and joined the Student Activity Council as treasurer and grade rep."
+    }
+  ]
+}

@@ -1,17 +1,34 @@
 import { useEffect, useRef, useState } from 'react';
 import { createMusicEngine, TRACK_LIST } from './music';
-import { setSoundEnabled } from './sfx';
+import guideSprite from './assets/npc-c.png';
 
 // Bottom-left HUD — the one corner section-nav (top-left)/quick-view-toggle
 // (top-right)/minimap (bottom-right) leave free. Music never autostarts:
 // Web Audio requires a user gesture before it'll make sound, and starting
 // on load is bad manners besides, so the engine is only ever built lazily
-// on the visitor's own first Play click.
+// on the visitor's own first Play click. (Sound effects are separate and
+// always on; this disc is only the background music.)
+//
+// A townsperson stands beside the player with a speech bubble pointing at
+// the disc until the visitor has played music once (remembered across
+// visits); tapping them toggles the music too, and they bob along while
+// it plays.
+const HINT_KEY = 'music-hint-done';
+
+function readHintDone() {
+  try {
+    return localStorage.getItem(HINT_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
 function MusicPlayer() {
   const engineRef = useRef(null);
   const [playing, setPlaying] = useState(false);
   const [trackId, setTrackId] = useState(TRACK_LIST[0].id);
   const [expanded, setExpanded] = useState(false);
+  const [hintDone, setHintDone] = useState(readHintDone);
 
   useEffect(() => () => engineRef.current?.destroy(), []);
 
@@ -25,11 +42,17 @@ function MusicPlayer() {
     if (playing) {
       engine.pause();
       setPlaying(false);
-      setSoundEnabled(false);
     } else {
       engine.play(trackId);
       setPlaying(true);
-      setSoundEnabled(true);
+      if (!hintDone) {
+        setHintDone(true);
+        try {
+          localStorage.setItem(HINT_KEY, '1');
+        } catch {
+          // Non-fatal: the hint just shows again next visit.
+        }
+      }
     }
   }
 
@@ -74,6 +97,21 @@ function MusicPlayer() {
           ))}
         </div>
       )}
+
+      <button
+        type="button"
+        className={`music-guide ${playing ? 'is-dancing' : ''}`}
+        onClick={togglePlay}
+        aria-label={playing ? 'Pause music' : 'Play music'}
+        tabIndex={-1}
+      >
+        {!hintDone && (
+          <span className="music-guide-bubble">
+            Psst! Tap the disc for some music <span aria-hidden="true">♪</span>
+          </span>
+        )}
+        <img src={guideSprite} className="music-guide-sprite" alt="" />
+      </button>
     </div>
   );
 }

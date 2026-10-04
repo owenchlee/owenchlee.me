@@ -198,7 +198,7 @@ export const SIGNS = [
 ];
 
 // The town notice board: a bigger sign by the spawn point whose text is
-// NOW in content.js (what Owen is up to at the moment).
+// NOW_LOG in content.js (Owen's monthly log; tapping it opens NowLog.jsx).
 export const NOTICE_BOARD = { id: 'now-board', col: 51, row: 30 };
 
 // The hidden workshop at the end of the dirt track past Contact: locked

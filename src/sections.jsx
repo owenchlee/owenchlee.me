@@ -240,7 +240,7 @@ export const ProjectsPanel = forwardRef(function ProjectsPanel({ active }, ref) 
               <span className="arcade-neon-small arcade-neon-small--cyan">Game On</span>
             </div>
             <div className="arcade-decor arcade-decor--r" aria-hidden="true">
-              <span className="arcade-neon-small arcade-neon-small--yellow">Insert Coin</span>
+              <span className="arcade-neon-small arcade-neon-small--yellow">Tap to Play!</span>
               <span className="arcade-poster arcade-poster--mario">
                 <span className="arcade-poster-art arcade-poster-art--mushroom" />
                 <span className="arcade-poster-title">Super Mario</span>

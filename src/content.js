@@ -31,6 +31,7 @@ import singingPixel from './assets/Hobbies/pixel/singing.png';
 import pokemonCardsPixel from './assets/Hobbies/pixel/pokemon-cards.png';
 import fitsIcon from './assets/projects/fits-icon.svg';
 import thumbDetectorShot from './assets/projects/thumb-detector.webp';
+import nowLog from './data/now-log.json';
 
 const foodfindrDemo = '/projects/foodfindr-demo.mp4';
 const clashmateDemo = '/projects/clashmate-demo.mp4';
@@ -97,7 +98,7 @@ export const EXPERIENCE = [
   {
     role: 'Campus Ambassador',
     org: 'ElevenLabs',
-    reward: 'Selected for the 2026 cohort',
+    reward: 'Selected for the 2026 cohort to promote ElevenReader',
     location: 'Waterloo, ON',
     dates: 'Aug 2026 – Present',
     bullets: [
@@ -265,7 +266,7 @@ export const HOBBIES = [
   { label: 'Basketball', color: '#f0a94e', image: basketballPixel, desc: "Pickup ball with friends whenever I can get a run going. I play small forward, and my black Wilson Evolution is my go-to ball on indoor courts." },
   { label: 'Badminton', color: '#4da338', image: badmintonPixel, scale: 0.7, desc: "Watching the birdie fly at ridiculous speeds is weirdly relaxing. It's one of my favorite ways to spend time with friends." },
   { label: 'Cooking', color: '#e8877a', image: cookingPixel, desc: "Always experimenting in the kitchen, from steak to noodles. Watching people actually enjoy what I cook is one of my favorite feelings." },
-  { label: 'Board Games', color: '#6f5fa3', image: boardGamesPixel, desc: "Strategy games, party games, anything with a table full of friends and a bit of friendly competition. 7 Wonders is my current favorite." },
+  { label: 'Board Games', color: '#6f5fa3', image: boardGamesPixel, desc: "Strategy games, party games, anything with a table full of friends and a bit of friendly competition. Catan is my current favorite." },
   { label: 'Running', color: '#26a8b1', image: runningPixel, desc: "The scenery, a good playlist, and the odd new personal best. That's what keeps getting me back out the door for another run." },
   { label: 'Working Out', color: '#8ea9c9', image: workoutPixel, desc: "Regular gym sessions to build strength and stay consistent. It's become one of my favorite daily habits." },
   { label: 'Singing', color: '#b5495b', image: singingPixel, desc: "Karaoke nights and car singalongs are when I feel most free, and I'll take any excuse for one. It's also part of why I built Sing Score, so anyone can do karaoke anywhere." },
@@ -290,16 +291,15 @@ export const SECRET_NOTE = {
   body: "Thanks for exploring every corner of this little town. Most people stop after a house or two, so that makes you the Champion. Send me an email with \"Champion\" in the subject and tell me which house you liked best. I'd love to hear from you.",
 };
 
-// The notice board by the spawn point: what Owen is up to right now.
-// DRAFT: update these whenever they go stale (and bump `updated`).
-export const NOW = {
-  updated: 'October 2026',
-  lines: [
-    'Starting my first term of Systems Design Engineering at the University of Waterloo.',
-    'Building Fits, a workout tracker where the progress charts are free.',
-    'Looking for a Summer 2027 co-op. If your team is hiring, the Contact house is down the road!',
-  ],
-};
+// The notice board by the spawn point is Owen's monthly log (NowLog.jsx):
+// one first-person entry per month in data/now-log.json, newest first. A
+// scheduled Claude routine adds each new month and pushes it; the board
+// also fetches the file live from GitHub (NOW_LOG_URL), so a new entry
+// shows up without redeploying the site.
+export const NOW_LOG = [...nowLog.entries].sort((a, b) => b.month.localeCompare(a.month));
+export const NOW_LOG_URL = 'https://raw.githubusercontent.com/owenchlee/owenchlee.me/main/src/data/now-log.json';
+// A standing note pinned under the latest entry.
+export const NOW_PINNED = 'Looking for a Summer 2027 co-op. If your team is hiring, the Contact house is down the road!';
 
 // The hands-on builds in the hidden workshop (see secrets.js for how
 // visitors get in): the hardware projects from the résumé's Computer
@@ -444,7 +444,11 @@ export const DIALOGUE = {
   },
   'pet-1': {
     name: 'Dog Walker',
-    lines: ['This is Biscuit. Say hi!', 'Biscuit: Woof!'],
+    lines: [
+      'This is Biscuit. Say hi!',
+      'Biscuit: Woof!',
+      "Fun fact: Owen's allergic to cats, so this is strictly a dog town. Sorry, cat lovers!",
+    ],
   },
   'pet-2': {
     name: 'Dog Walker',
@@ -453,8 +457,10 @@ export const DIALOGUE = {
       'Psst... collect all 8 badges and a secret note shows up at the Contact house.',
     ],
   },
+  // Tapping the board opens the log itself (NowLog.jsx); these lines are
+  // only the fallback.
   'now-board': {
     name: 'Notice Board',
-    lines: [`NOW (updated ${NOW.updated})`, ...NOW.lines],
+    lines: [NOW_LOG[0]?.text ?? '', NOW_PINNED],
   },
 };

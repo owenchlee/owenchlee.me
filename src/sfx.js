@@ -1,21 +1,16 @@
-// Little synthesized sound effects: badge stings, footsteps, doors and the
-// fishing sounds. Like the music, nothing here is an audio file. They only
-// play once the visitor has turned the music on themselves (MusicPlayer
-// calls setSoundEnabled), so a sound effect is never the first thing a
-// visitor hears, and pausing the music silences them too.
-let enabled = false;
+// Little synthesized sound effects: badge stings, footsteps, doors, the
+// fishing sounds and the talk/text blips. Like the music, nothing here is
+// an audio file. They're always on (the music disc only controls the
+// background music); every one of them is triggered by something the
+// visitor just did (a tap, a key), so the browser's autoplay rule is
+// satisfied and nothing ever plays unprompted.
 let ctx = null;
 let noise = null;
 let suspendId = null;
 
-export function setSoundEnabled(on) {
-  enabled = on;
-}
-
 // The shared context, woken up for a sound and put back to sleep a couple
 // of seconds after the last one so the audio thread isn't left running.
 function audio(holdS = 1) {
-  if (!enabled) return null;
   try {
     ctx ??= new AudioContext();
     if (ctx.state === 'suspended') ctx.resume();
