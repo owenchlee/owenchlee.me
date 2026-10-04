@@ -6,3 +6,11 @@ Sourced art used in `src/assets/`, in addition to this project's own hand-author
 - **`houses/house-*.png`** — individual sprites cropped from the ["Pixel Houses RPG" asset pack](https://kepx.itch.io/pixel-houses-rpg-top-down-pixel-art-asset-pack-16x16) by JellyBeam (itch.io). Free pack; usable in commercial and non-commercial projects with modification, but may not be resold or redistributed (even modified) outside this project. Attribution: JellyBeam, https://kepx.itch.io.
 
 The LPC assets' license requires attribution (this file satisfies that) but otherwise permits free commercial and personal use, including modification (recoloring via CSS filters, compositing crops together, as done here).
+
+## Fonts
+
+Self-hosted in `public/fonts/` (latin subsets, as served by Google Fonts), all under the [SIL Open Font License 1.1](https://openfontlicense.org), which permits bundling and redistribution with the site:
+
+- **Press Start 2P** by CodeMan38 (Cody "CodeMan38" Boisclair).
+- **VT323** by Peter Hull.
+- **Caveat** by Pablo Impallari.

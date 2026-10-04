@@ -55,7 +55,7 @@ function MusicPlayer() {
           className={`music-expand ${expanded ? 'active' : ''}`}
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
-          aria-label="Choose track"
+          aria-label={`${TRACK_LIST.find((t) => t.id === trackId)?.label}, choose track`}
         >
           {TRACK_LIST.find((t) => t.id === trackId)?.label}
         </button>

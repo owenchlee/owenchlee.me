@@ -1092,11 +1092,16 @@
   filter: blur(1px);
 }
 
+/* 16x16 sprite at 3x, the same size as the player (.character-wrap), feet
+   on the bottom of the 32x40 box. Filling the box instead stretched every
+   villager 25% taller than wide. */
 .npc-sprite {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  left: 50%;
+  bottom: 0;
+  width: 48px;
+  height: 48px;
+  transform: translateX(-50%);
   image-rendering: pixelated;
   filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.3));
 }
@@ -1156,11 +1161,15 @@
   height: 18px;
 }
 
+/* Each critter at exactly 2x its own size (the rat is 16x12, the bird
+   12x12), feet on the bottom of the box. Stretching both to fill the box
+   squashed them out of shape. */
 .critter-sprite {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%) scale(2);
+  transform-origin: bottom center;
   image-rendering: pixelated;
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3));
 }
@@ -1326,6 +1335,9 @@
 .section-nav-item.active {
   opacity: 1;
   color: var(--section-color, var(--pal-cream));
+  /* Text halfway to white keeps the hue but reads at 4.5:1 on the dark
+     panel; the glow still uses the full house color. */
+  color: color-mix(in srgb, var(--section-color, var(--pal-cream)) 50%, white);
   text-shadow: 0 0 6px var(--section-color), 0 0 10px var(--section-color);
 }
 
@@ -3548,7 +3560,7 @@
 .talk-hint {
   position: absolute;
   left: 50%;
-  top: -14px;
+  top: -22px;
   width: 16px;
   height: 11px;
   margin-left: -8px;
