@@ -236,43 +236,189 @@
   pointer-events: none;
 }
 
-.ground-canvas {
+.ground-base {
   position: absolute;
   left: 0;
   top: 0;
-  display: block;
-  image-rendering: pixelated;
   background: var(--pal-grass);
 }
 
-/* Pond tiles are the only animated ground, so they stay live elements
-   layered over the canvas's still copy. animationDelay is set per tile
-   inline (App.jsx) from row/col so the ponds don't pulse in lockstep. */
-.water-tile {
+.ground-chunk {
   position: absolute;
-  width: 32px;
-  height: 32px;
-  background-image: url('./assets/water-lpc.png');
-  background-size: cover;
+  display: block;
   image-rendering: pixelated;
-  animation: water-shimmer 3.2s ease-in-out infinite;
+}
+
+/* Ponds are the only animated ground, so each one is a live element over
+   the canvas's still copy, shaped to the pond's nicked corners by an
+   inline clip-path (App.jsx). The ripple drifts the water texture a
+   couple of pixels and the shimmer fades a light wash in and out — both
+   transform/opacity only, so they run on the compositor instead of
+   repainting every frame (animating background-position and filter on
+   each tile kept the main thread busy even with nothing else moving). */
+.water-pond {
+  position: absolute;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.water-pond::before,
+.water-pond::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+}
+
+.water-pond::before {
+  background-image: url('./assets/water-lpc.png');
+  background-size: 32px 32px;
+  background-position: 4px 4px;
+  image-rendering: pixelated;
+  animation: water-ripple 3.2s steps(2, jump-none) infinite alternate;
+}
+
+.water-pond::after {
+  background: rgb(190, 245, 255);
+  mix-blend-mode: soft-light;
+  opacity: 0;
+  animation: water-shimmer 2.3s ease-in-out infinite alternate;
+}
+
+/* Fishing hint: a red-and-white bobber bobbing at the pond's center with
+   a ring spreading under it, and every ~11s a little fish arcs out of the
+   water nearby. */
+.pond-bobber {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 10px;
+  margin: -5px 0 0 -4px;
+  background: linear-gradient(#d8443c 0 50%, #f4efe4 50%);
+  border: 2px solid var(--pal-ink);
+  border-radius: 50%;
+  animation: pond-bob 2.2s ease-in-out infinite;
+}
+
+.pond-bobber::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: -6px;
+  width: 2px;
+  height: 5px;
+  background: var(--pal-ink);
+}
+
+.pond-bobber::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 70%;
+  width: 14px;
+  height: 6px;
+  border: 2px solid rgba(235, 252, 255, 0.75);
+  border-radius: 50%;
+  translate: -50% 0;
+  animation: pond-ring 2.2s ease-out infinite;
+}
+
+@keyframes pond-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(2px);
+  }
+}
+
+@keyframes pond-ring {
+  from {
+    scale: 0.6;
+    opacity: 0.9;
+  }
+  to {
+    scale: 2.2;
+    opacity: 0;
+  }
+}
+
+.pond-fish {
+  position: absolute;
+  left: 22%;
+  top: 62%;
+  width: 12px;
+  height: 6px;
+  background: #3d6f8f;
+  border: 2px solid var(--pal-ink);
+  border-radius: 50%;
+  opacity: 0;
+  animation: pond-fish-jump 11s linear 2s infinite;
+}
+
+.pond-fish::after {
+  content: '';
+  position: absolute;
+  left: -7px;
+  top: -2px;
+  border: 4px solid transparent;
+  border-right: 5px solid var(--pal-ink);
+}
+
+@keyframes pond-fish-jump {
+  0% {
+    opacity: 1;
+    transform: translate(0, 4px) rotate(-40deg);
+  }
+  4% {
+    transform: translate(10px, -14px) rotate(0deg);
+  }
+  8% {
+    opacity: 1;
+    transform: translate(20px, 4px) rotate(40deg);
+  }
+  8.1%,
+  100% {
+    opacity: 0;
+    transform: translate(20px, 4px) rotate(40deg);
+  }
+}
+
+.water-pond.is-offscreen .pond-bobber,
+.water-pond.is-offscreen .pond-bobber::after,
+.water-pond.is-offscreen .pond-fish {
+  animation-play-state: paused;
+}
+
+@keyframes water-ripple {
+  to {
+    transform: translate(2px, 2px);
+  }
 }
 
 @keyframes water-shimmer {
-  0%,
-  100% {
-    filter: brightness(1) saturate(1);
-    background-position: 0 0;
-  }
-  50% {
-    filter: brightness(1.15) saturate(1.3);
-    background-position: 2px 1px;
+  to {
+    opacity: 0.45;
   }
 }
 
+.ambient.is-offscreen,
+.water-pond.is-offscreen::before,
+.water-pond.is-offscreen::after {
+  animation-play-state: paused;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .water-tile {
+  .water-pond::before,
+  .water-pond::after,
+  .pond-bobber,
+  .pond-bobber::after {
     animation: none;
+  }
+
+  .pond-fish {
+    display: none;
   }
 }
 
@@ -797,8 +943,8 @@
 /* The polyline runs destination -> character, so a growing offset marches
    the dots toward the destination: the trail visibly flows the way the
    character is headed. */
-.route-preview-shadow,
-.route-preview-dots {
+.route-preview.is-shown .route-preview-shadow,
+.route-preview.is-shown .route-preview-dots {
   animation: route-march 0.5s steps(5) infinite;
 }
 
@@ -1121,13 +1267,13 @@
 }
 
 /* --- Picnic vignette ---
-   Fully static — a checkered blanket + basket (see PICNICS in tileMap.js)
-   with two seated npc_sitting_sprite() figures anchored to its corners, so
-   "having a picnic" reads through composition alone with no motion needed. */
+   One baked sprite (picnic_scene_sprite in gen_sprites.py): blanket,
+   basket and two seated townsfolk, drawn at the same 2x by 2.5x stretch as
+   .npc so they match the people walking around town. */
 .picnic-scene {
   position: absolute;
-  width: 64px;
-  height: 38px;
+  width: 112px;
+  height: 85px;
 }
 
 .picnic-blanket {
@@ -1136,26 +1282,6 @@
   width: 100%;
   height: 100%;
   image-rendering: pixelated;
-  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.25));
-}
-
-.picnic-sitter {
-  position: absolute;
-  width: 34px;
-  height: auto;
-  image-rendering: pixelated;
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3));
-}
-
-.picnic-sitter--a {
-  left: 0;
-  bottom: 1px;
-}
-
-.picnic-sitter--b {
-  right: 0;
-  bottom: 1px;
-  transform: scaleX(-1);
 }
 
 /* --- Section nav HUD ---
@@ -1311,25 +1437,51 @@
 }
 
 .minimap-player {
-  fill: #fff;
-  stroke: var(--pal-ink);
-  stroke-width: 12;
-  animation: minimap-pulse 1.4s ease-in-out infinite;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+}
+
+/* Centered on the (0x0) anchor the transform moves. */
+.minimap-player::before,
+.minimap-player::after {
+  content: '';
+  position: absolute;
+  left: -3px;
+  top: -3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.minimap-player::before {
+  background: #fff;
+  border: 1px solid var(--pal-ink);
+}
+
+.minimap-player::after {
+  border: 1px solid #fff;
+  animation: minimap-pulse 1.4s ease-out infinite;
 }
 
 @keyframes minimap-pulse {
-  0%,
-  100% {
-    r: 60;
+  from {
+    transform: scale(1);
+    opacity: 0.9;
   }
-  50% {
-    r: 85;
+  to {
+    transform: scale(2.4);
+    opacity: 0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .minimap-player {
+  .minimap-player::after {
     animation: none;
+    opacity: 0;
   }
 }
 
@@ -1851,99 +2003,6 @@
   color: var(--pal-ink-soft);
 }
 
-/* Experience: résumé-style groups (Education / Work & Leadership / Skills)
-   sitting in .projects-content alongside .projects-heading, reusing
-   .project-card/.project-tech/.tech-chip from the Projects styling above —
-   a résumé entry is a project card with a bullet list instead of a single
-   prose paragraph, not a different visual language. */
-.experience-group {
-  width: 100%;
-  max-width: 1400px;
-  margin: 0 auto 40px;
-}
-
-.experience-group-heading {
-  font-family: var(--font-pixel);
-  color: var(--pal-cream);
-  font-size: 14px;
-  margin: 0 0 20px;
-  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.4);
-}
-
-.experience-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr));
-  gap: 24px;
-}
-
-.experience-org {
-  margin: 4px 0 0;
-  color: var(--pal-ink-soft);
-  font-family: var(--font-terminal);
-  font-size: 14px;
-}
-
-.experience-bullets {
-  margin: 10px 0 0;
-  padding-left: 18px;
-  color: var(--pal-ink-soft);
-  font-size: 15px;
-  line-height: 1.6;
-}
-
-.experience-bullets li + li {
-  margin-top: 4px;
-}
-
-.skills-list {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.skills-category-label {
-  display: block;
-  font-family: var(--font-terminal);
-  font-weight: bold;
-  color: var(--pal-cream);
-  font-size: 14px;
-  margin-bottom: 6px;
-}
-
-.experience-resume-link {
-  display: inline-block;
-  margin: 8px auto 0;
-  background: var(--pal-grass-light);
-  color: var(--pal-ink);
-  border: 3px solid var(--pal-ink);
-  font-family: var(--font-pixel);
-  font-size: 13px;
-  padding: 12px 20px;
-  text-decoration: none;
-  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.35);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.experience-resume-link:hover,
-.experience-resume-link:focus-visible {
-  background: var(--pal-grass);
-  color: var(--pal-cream);
-  transform: translate(-2px, -2px);
-  box-shadow: 5px 5px 0 var(--pal-ink);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .experience-resume-link {
-    transition: none;
-  }
-}
-
-@media (max-width: 640px) {
-  .experience-cards {
-    gap: 16px;
-  }
-}
-
 /* Hobbies: a 3/4 top-down interior, built the way 16-bit RPG rooms
    (Pokémon, Stardew, EarthBound) are — a tall back wall with crown trim,
    striped wallpaper, wood wainscot and a dark baseboard, over a plank floor
@@ -2104,14 +2163,206 @@
   left: calc((50% - var(--case-half)) / 2 - 84px);
   width: 168px;
   height: 132px;
-  background:
-    linear-gradient(90deg, transparent calc(50% - 3px), #f4ead0 calc(50% - 3px) calc(50% + 3px), transparent calc(50% + 3px)),
-    linear-gradient(transparent calc(50% - 3px), #f4ead0 calc(50% - 3px) calc(50% + 3px), transparent calc(50% + 3px)),
-    linear-gradient(135deg, transparent 0 30%, rgba(255, 255, 255, 0.55) 30% 36%, transparent 36% 44%, rgba(255, 255, 255, 0.4) 44% 47%, transparent 47%),
-    linear-gradient(to bottom, #7cc8f0, #c9ecff);
   border: 8px solid #f4ead0;
   outline: 4px solid var(--pal-ink);
   box-shadow: 6px 6px 0 8px rgba(0, 0, 0, 0.18);
+}
+
+/* Muntins and glass glare, laid over the sky so whatever drifts past
+   goes behind the frame. */
+.room-window::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(90deg, transparent calc(50% - 3px), #f4ead0 calc(50% - 3px) calc(50% + 3px), transparent calc(50% + 3px)),
+    linear-gradient(transparent calc(50% - 3px), #f4ead0 calc(50% - 3px) calc(50% + 3px), transparent calc(50% + 3px)),
+    linear-gradient(135deg, transparent 0 30%, rgba(255, 255, 255, 0.4) 30% 36%, transparent 36% 44%, rgba(255, 255, 255, 0.28) 44% 47%, transparent 47%);
+}
+
+/* --- Sky through the window ---
+   .room--dawn/day/dusk/night comes from the visitor's local clock
+   (useSkyPhase in sections.jsx). Each sky has a sun or moon (the orb), and
+   every so often something crosses: a cloud and a pair of birds by day, a
+   shooting star at night. Long animation cycles with the crossing packed
+   into the first slice keep it occasional rather than constant. */
+.room-window-sky {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: linear-gradient(to bottom, #7cc8f0, #c9ecff);
+}
+
+.room--dawn .room-window-sky {
+  background: linear-gradient(to bottom, #9fb4e0, #f2c6c0 60%, #ffd9a0);
+}
+
+.room--dusk .room-window-sky {
+  background: linear-gradient(to bottom, #5a4f93, #d9708a 55%, #f7a65a);
+}
+
+.room--night .room-window-sky {
+  background:
+    radial-gradient(circle at 18% 22%, #fff 0 1.5px, transparent 2px),
+    radial-gradient(circle at 70% 14%, #fff 0 1px, transparent 1.5px),
+    radial-gradient(circle at 86% 46%, #fff 0 1.5px, transparent 2px),
+    radial-gradient(circle at 40% 60%, #fff 0 1px, transparent 1.5px),
+    radial-gradient(circle at 60% 80%, #fff 0 1px, transparent 1.5px),
+    radial-gradient(circle at 10% 74%, #fff 0 1px, transparent 1.5px),
+    linear-gradient(to bottom, #0f1638, #26326a);
+}
+
+.room-window-orb {
+  position: absolute;
+  right: 22px;
+  top: 16px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #ffe27a;
+  box-shadow: 0 0 0 4px rgba(255, 226, 122, 0.35);
+}
+
+.room--dawn .room-window-orb {
+  right: auto;
+  left: 20px;
+  top: 82px;
+  background: #ffcf73;
+}
+
+.room--dusk .room-window-orb {
+  top: 84px;
+  background: #ff9a4a;
+  box-shadow: 0 0 0 5px rgba(255, 154, 74, 0.35);
+}
+
+/* Crescent moon: a pale disc with a sky-colored bite. */
+.room--night .room-window-orb {
+  background: #f3efd8;
+  box-shadow: inset -8px -3px 0 0 #1c2652, 0 0 0 4px rgba(243, 239, 216, 0.12);
+}
+
+.room-window-cloud {
+  position: absolute;
+  top: 26px;
+  left: 0;
+  width: 36px;
+  height: 12px;
+  background: #fff;
+  box-shadow: 8px -6px 0 -1px #fff, 20px -4px 0 0 #fff;
+  animation: room-cloud-drift 46s linear infinite;
+}
+
+.room--dawn .room-window-cloud,
+.room--dusk .room-window-cloud {
+  background: #fde3d4;
+  box-shadow: 8px -6px 0 -1px #fde3d4, 20px -4px 0 0 #fde3d4;
+}
+
+.room--night .room-window-cloud {
+  display: none;
+}
+
+@keyframes room-cloud-drift {
+  from {
+    transform: translateX(-70px);
+  }
+  to {
+    transform: translateX(190px);
+  }
+}
+
+/* A little pixel "V" (3px pixels) drawn with box-shadows in currentColor;
+   the two flap frames swap which way the wingtips point. Most of the
+   17s cycle it waits off past the right edge, so it only crosses now and
+   then. */
+.room-window-bird {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 3px;
+  height: 3px;
+  color: #2b2b3a;
+  transform: translate(-30px, 70px);
+  animation:
+    room-bird-fly 17s linear 3s infinite both,
+    room-bird-flap 0.36s steps(1) infinite;
+}
+
+.room-window-bird--2 {
+  color: #3a3a4a;
+  scale: 0.8;
+  animation-delay: 3.5s, 0.18s;
+}
+
+.room--night .room-window-bird {
+  display: none;
+}
+
+@keyframes room-bird-flap {
+  0% {
+    box-shadow: 0 0, 12px 0, 3px 3px, 9px 3px, 6px 6px;
+  }
+  50% {
+    box-shadow: 0 6px, 12px 6px, 3px 3px, 6px 3px, 9px 3px;
+  }
+}
+
+@keyframes room-bird-fly {
+  0% {
+    transform: translate(-30px, 70px);
+  }
+  22% {
+    transform: translate(90px, 40px);
+  }
+  40%,
+  100% {
+    transform: translate(200px, 30px);
+  }
+}
+
+.room-window-shooting-star {
+  display: none;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 34px;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0), #fff);
+  rotate: 24deg;
+  opacity: 0;
+}
+
+.room--night .room-window-shooting-star {
+  display: block;
+  animation: room-shooting-star 13s ease-in 4s infinite;
+}
+
+@keyframes room-shooting-star {
+  0% {
+    transform: translate(10px, -10px);
+    opacity: 0;
+  }
+  2% {
+    opacity: 1;
+  }
+  8%,
+  100% {
+    transform: translate(130px, 50px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .room-window-cloud {
+    animation: none;
+  }
+
+  .room-window-bird,
+  .room--night .room-window-shooting-star {
+    display: none;
+  }
 }
 
 /* Sill */
@@ -2216,6 +2467,18 @@
   background: rgba(255, 244, 205, 0.16);
   transform: skewX(-24deg);
   transform-origin: top;
+}
+
+.room--dawn .room-window-light {
+  background: rgba(255, 214, 170, 0.14);
+}
+
+.room--dusk .room-window-light {
+  background: rgba(255, 170, 110, 0.14);
+}
+
+.room--night .room-window-light {
+  background: rgba(150, 175, 255, 0.07);
 }
 
 .room-rug {
@@ -2382,22 +2645,36 @@
 
 .room-chair {
   position: absolute;
-  bottom: 30px;
+  bottom: 14px;
   left: calc(50% + var(--case-half) + (50% - var(--case-half)) / 2 - 60px);
   width: 120px;
   height: 116px;
 }
 
+/* Two stubby wooden feet under the arms, so the chair stands on the floor
+   rather than hovering over it. */
+.room-chair::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  bottom: -9px;
+  width: 12px;
+  height: 9px;
+  background: var(--wood-dark);
+  border: 3px solid var(--pal-ink);
+  border-top: 0;
+  box-shadow: 88px 0 0 0 var(--wood-dark), 88px 3px 0 0 var(--pal-ink);
+}
+
+/* Hard contact shadow, the same treatment as the bookcase's. */
 .room-chair::after {
   content: '';
   position: absolute;
-  left: 50%;
-  bottom: -10px;
-  transform: translateX(-50%);
-  width: 124px;
-  height: 16px;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 50%;
+  left: 8px;
+  right: -12px;
+  bottom: -12px;
+  height: 14px;
+  background: rgba(0, 0, 0, 0.32);
   z-index: -1;
 }
 
@@ -2488,7 +2765,7 @@
   align-items: center;
   max-width: calc(100% - 48px);
   margin-bottom: -44px;
-  padding-top: 96px;
+  padding-top: 270px;
 }
 
 .bookshelf {
@@ -2525,11 +2802,12 @@
   z-index: -1;
 }
 
-/* Wooden sign hung on the wall above the case. */
+/* Wooden sign hung on the wall high above the case: high enough that an
+   open hobby description (which pops up between the two) never covers it. */
 .bookshelf-sign {
   position: absolute;
   left: 50%;
-  top: -86px;
+  top: -262px;
   transform: translateX(-50%);
   margin: 0;
   padding: 10px 18px 9px;
@@ -2684,7 +2962,7 @@
 .hobby-detail {
   position: absolute;
   left: 50%;
-  bottom: calc(100% - 96px + 20px);
+  bottom: calc(100% - 270px + 32px);
   z-index: 4;
   width: min(620px, calc(100vw - 48px));
   opacity: 0;
@@ -3254,5 +3532,1712 @@
   }
   .badge-toast-glint {
     display: none;
+  }
+}
+
+/* --- Talking to townsfolk ---
+   Anything with data-talk-id (NPCs, dog walkers, signposts) opens the
+   dialogue box when tapped (see onStagePointerDown in App.jsx). */
+.talkable {
+  cursor: pointer;
+}
+
+/* A little "..." speech bubble over each NPC's head, the usual RPG cue
+   that someone has something to say. Static on purpose: a dozen bobbing
+   bubbles would be a dozen more animations running. */
+.talk-hint {
+  position: absolute;
+  left: 50%;
+  top: -14px;
+  width: 16px;
+  height: 11px;
+  margin-left: -8px;
+  background: var(--pal-cream);
+  border: 2px solid var(--pal-ink);
+  pointer-events: none;
+}
+
+.talk-hint::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 2.5px;
+  width: 2px;
+  height: 2px;
+  background: var(--pal-ink);
+  box-shadow: 3px 0 0 var(--pal-ink), 6px 0 0 var(--pal-ink);
+}
+
+.talk-hint::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  bottom: -5px;
+  border: 3px solid transparent;
+  border-top-color: var(--pal-ink);
+  border-bottom: 0;
+}
+
+.talkable:hover .talk-hint {
+  background: #fff;
+}
+
+/* Wooden signpost, drawn in CSS like the lamp posts: a post with a board
+   on top, sitting on its tile's ground line. */
+.signpost {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+}
+
+.signpost-post {
+  position: absolute;
+  left: 50%;
+  bottom: 2px;
+  width: 4px;
+  height: 16px;
+  margin-left: -2px;
+  background: #5c4128;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.signpost-board {
+  position: absolute;
+  left: 3px;
+  bottom: 12px;
+  width: 26px;
+  height: 16px;
+  background:
+    linear-gradient(#5c4128, #5c4128) 5px 5px / 16px 2px no-repeat,
+    linear-gradient(#5c4128, #5c4128) 5px 9px / 12px 2px no-repeat,
+    #c99a62;
+  border: 2px solid #3d2a19;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.signpost:hover .signpost-board {
+  background-color: #dcae74;
+}
+
+/* The dialogue box itself: same cream/ink frame as the badge
+   announcement, a little lower in the stack so a badge earned
+   mid-conversation shows on top. */
+.talk-box {
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  z-index: 240;
+  width: min(600px, calc(100vw - 32px));
+  min-height: 92px;
+  transform: translateX(-50%);
+  background: var(--pal-cream);
+  color: var(--pal-ink);
+  border: 4px solid var(--pal-ink);
+  outline: 4px solid var(--pal-cream);
+  box-shadow: 6px 6px 0 #000;
+  padding: 18px 44px 16px 18px;
+  cursor: pointer;
+  animation: badgeToastIn 0.24s steps(4) both;
+}
+
+.talk-box-name {
+  position: absolute;
+  left: 12px;
+  top: -17px;
+  background: var(--pal-ink);
+  color: var(--pal-cream);
+  border: 3px solid var(--pal-cream);
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  padding: 5px 8px 4px;
+}
+
+.talk-box-line {
+  margin: 0;
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.talk-box-next {
+  position: absolute;
+  right: 12px;
+  bottom: 8px;
+  background: none;
+  border: none;
+  color: var(--pal-ink);
+  font-size: 14px;
+  padding: 4px;
+  animation: badgeNextBlink 0.8s steps(2) infinite;
+}
+
+@media (max-width: 600px) {
+  .talk-box-line {
+    font-size: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .talk-box,
+  .talk-box-next {
+    animation: none;
+  }
+}
+
+/* --- Closed dirt roads ---
+   One wooden sawhorse across the mouth of each dirt road where it meets
+   the pavement (BARRIERS in tileMap.js): only the stone road is walkable,
+   and this says so at a glance. left/top are the mouth's bottom-center. */
+.barricade {
+  position: absolute;
+  height: 22px;
+  transform: translate(-50%, -100%);
+}
+
+.barricade::before,
+.barricade::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  width: 4px;
+  height: 18px;
+  background: #5c4128;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.barricade::before {
+  left: 3px;
+}
+
+.barricade::after {
+  right: 3px;
+}
+
+.barricade-board {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 10px;
+  z-index: 1;
+  border: 2px solid #3d2a19;
+  background: repeating-linear-gradient(-45deg, #c9463e 0 6px, #f3ead2 6px 12px);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* Vertical runs close off a pavement edge that runs north-south: seen from
+   above, the board stands on end with its two feet poking out either side
+   at the top and bottom. left/top are the run's center-x and top. */
+.barricade--v {
+  width: 10px;
+  transform: translate(-50%, 0);
+}
+
+.barricade--v::before,
+.barricade--v::after {
+  left: -4px;
+  right: auto;
+  width: 18px;
+  height: 4px;
+}
+
+.barricade--v::before {
+  top: 3px;
+  bottom: auto;
+}
+
+.barricade--v::after {
+  bottom: 3px;
+}
+
+.barricade--v .barricade-board {
+  bottom: 0;
+  height: auto;
+}
+
+.barricade:hover .barricade-board {
+  filter: brightness(1.12);
+}
+
+/* --- Where to start ---
+   The welcome sign is a size up from the others, and until it's been read
+   it wears a bouncing "!" (the usual "talk to me" marker) that the HUD
+   hint points at. */
+.signpost--welcome {
+  transform: scale(1.5);
+  transform-origin: 50% 100%;
+}
+
+.signpost-alert {
+  position: absolute;
+  left: 50%;
+  bottom: 34px;
+  width: 18px;
+  margin-left: -9px;
+  font-family: var(--font-pixel);
+  font-size: 13px;
+  line-height: 20px;
+  text-align: center;
+  color: var(--pal-ink);
+  background: #ffe066;
+  border: 2px solid var(--pal-ink);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  animation: signpost-alert-bounce 0.9s steps(3) infinite alternate;
+}
+
+@keyframes signpost-alert-bounce {
+  to {
+    transform: translateY(-6px);
+  }
+}
+
+.signpost--welcome.is-unread .signpost-board {
+  outline: 2px solid #ffe066;
+  outline-offset: 1px;
+}
+
+.hud-start-hint {
+  margin: 12px 0 0;
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  line-height: 1.6;
+  color: #ffe066;
+  text-shadow: 2px 2px 0 var(--pal-ink), -1px -1px 0 var(--pal-ink), 1px -1px 0 var(--pal-ink),
+    -1px 1px 0 var(--pal-ink);
+}
+
+.hud-start-bang {
+  display: inline-block;
+  padding: 0 4px;
+  color: var(--pal-ink);
+  background: #ffe066;
+  border: 2px solid var(--pal-ink);
+  text-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .signpost-alert {
+    animation: none;
+  }
+}
+
+/* --- Notice board ---
+   The "NOW" board by the spawn point: a cork board on two legs, bigger
+   than a signpost so it reads as a different thing. */
+.notice-board {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+}
+
+.notice-board::before,
+.notice-board::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  width: 4px;
+  height: 14px;
+  background: #5c4128;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.notice-board::before {
+  left: 3px;
+}
+
+.notice-board::after {
+  right: 3px;
+}
+
+.notice-board-face {
+  position: absolute;
+  left: -8px;
+  right: -8px;
+  bottom: 12px;
+  height: 28px;
+  z-index: 1;
+  background:
+    linear-gradient(#f3ead2, #f3ead2) 6px 13px / 12px 8px no-repeat,
+    linear-gradient(#f3ead2, #f3ead2) 24px 12px / 14px 9px no-repeat,
+    #b98a55;
+  border: 3px solid #5c4128;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.notice-board-title {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 1px;
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  text-align: center;
+  color: #3d2a19;
+}
+
+.notice-board .talk-hint {
+  top: -30px;
+}
+
+.notice-board:hover .notice-board-face {
+  background-color: #cb9c66;
+}
+
+/* --- The hidden workshop ---
+   A secret, so it never draws attention: no window glow, label or halo.
+   Locked: dimmed, with planks nailed over the door. Open: the planks are
+   gone and it looks like any other house. */
+.workshop {
+  cursor: pointer;
+}
+
+.workshop.is-locked .decor-house {
+  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.3)) saturate(0.35) brightness(0.75);
+}
+
+.workshop-boards {
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  width: 26px;
+  height: 26px;
+  margin-left: -13px;
+  pointer-events: none;
+  background:
+    linear-gradient(#8a6a44, #8a6a44) 0 5px / 26px 5px no-repeat,
+    linear-gradient(#7a5a38, #7a5a38) 0 16px / 26px 5px no-repeat;
+}
+
+.workshop-boards::after {
+  content: '';
+  position: absolute;
+  left: 9px;
+  top: 8px;
+  width: 8px;
+  height: 7px;
+  background: #e0b23c;
+  border: 2px solid var(--pal-ink);
+  border-top-width: 3px;
+}
+
+.workshop:hover .decor-house {
+  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.3)) brightness(1.1);
+}
+
+/* --- Inside the workshop ---
+   A full-screen room in the Hobbies room's style, made a tinkerer's shed:
+   pegboard wall with tools hung on it, a bare bulb on a cord, a concrete
+   floor, and a workbench whose props are the projects (Workshop.jsx). The
+   props are plain CSS shapes with the same ink outlines and hard drop
+   shadows as the rest of the pixel art. */
+.workshop-room {
+  /* Same wood palette as the Hobbies room (scoped there, so repeated). */
+  --wood-dark: #3b2616;
+  --wood: #5e3b24;
+  --wood-mid: #7a4b2c;
+  --wood-light: #a0693f;
+  position: fixed;
+  inset: 0;
+  z-index: 240;
+  display: grid;
+  grid-template-rows: 1fr 96px;
+  overflow: auto;
+  background: #8d8a84;
+  box-shadow: inset 0 0 0 4px var(--pal-ink);
+}
+
+.workshop-wall {
+  position: relative;
+  z-index: 1;
+  min-height: 560px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 18px;
+  padding: 120px 24px 0;
+  background-color: #b98a5a;
+  background-image:
+    radial-gradient(circle, #6e4c2c 0 2px, transparent 2.5px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.25), transparent 60px);
+  background-size: 20px 20px, auto;
+  border-bottom: 4px solid var(--pal-ink);
+}
+
+.workshop-floor {
+  background-color: #8d8a84;
+  background-image:
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.35), transparent 30px),
+    linear-gradient(90deg, transparent 0 158px, rgba(0, 0, 0, 0.12) 158px 160px),
+    linear-gradient(transparent 0 46px, rgba(0, 0, 0, 0.12) 46px 48px);
+  background-size: auto, 160px 100%, 100% 48px;
+}
+
+/* Bare bulb on a cord, swaying a little. */
+.workshop-light {
+  position: absolute;
+  top: 0;
+  bottom: 610px;
+  left: 50%;
+  width: 4px;
+  min-height: 40px;
+  margin-left: -2px;
+  background: var(--pal-ink);
+  transform-origin: top center;
+  animation: workshop-sway 4.5s ease-in-out infinite alternate;
+}
+
+.workshop-light-bulb {
+  position: absolute;
+  left: 50%;
+  bottom: -18px;
+  width: 16px;
+  height: 20px;
+  margin-left: -8px;
+  background: #fff1b8;
+  border: 3px solid var(--pal-ink);
+  border-radius: 50% 50% 45% 45%;
+  box-shadow: 0 0 30px 18px rgba(255, 225, 140, 0.35);
+}
+
+.workshop-light-bulb::before {
+  content: '';
+  position: absolute;
+  left: 1px;
+  top: -9px;
+  width: 8px;
+  height: 7px;
+  background: #8a8f96;
+  border: 2px solid var(--pal-ink);
+}
+
+@keyframes workshop-sway {
+  from {
+    rotate: -4deg;
+  }
+  to {
+    rotate: 4deg;
+  }
+}
+
+/* Tools hung on the pegboard either side, level with the sign and note
+   (anchored from the bench up, so tall screens don't strand them near
+   the ceiling). */
+.workshop-tools {
+  position: absolute;
+  bottom: 330px;
+  display: flex;
+  gap: 40px;
+}
+
+.workshop-tools--l {
+  left: max(40px, calc(50% - 560px));
+}
+
+.workshop-tools--r {
+  right: max(40px, calc(50% - 560px));
+}
+
+.workshop-tools > span {
+  position: relative;
+  display: block;
+  filter: drop-shadow(4px 4px 0 rgba(0, 0, 0, 0.25));
+}
+
+.tool-hammer {
+  width: 14px;
+  height: 110px;
+  margin-top: 20px;
+  background: linear-gradient(90deg, #c8955c 0 60%, #a8763f 60%);
+  border: 3px solid var(--pal-ink);
+}
+
+.tool-hammer::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  left: -22px;
+  width: 52px;
+  height: 18px;
+  background: linear-gradient(#a5acb4 0 40%, #7c838c 40%);
+  border: 3px solid var(--pal-ink);
+}
+
+.tool-saw {
+  width: 44px;
+  height: 140px;
+  background: linear-gradient(90deg, #cfd5db 0 50%, #aab1b8 50%);
+  border: 3px solid var(--pal-ink);
+  clip-path: polygon(0 18%, 100% 18%, 100% 100%, 40% 100%, 0 96%);
+}
+
+.tool-saw::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 2px;
+  width: 34px;
+  height: 22px;
+  background: #b5493d;
+  border-radius: 6px 6px 0 0;
+}
+
+.tool-wrench {
+  width: 14px;
+  height: 120px;
+  margin-top: 16px;
+  background: linear-gradient(90deg, #b8bfc6 0 55%, #8d949b 55%);
+  border: 3px solid var(--pal-ink);
+}
+
+.tool-wrench::before,
+.tool-wrench::after {
+  content: '';
+  position: absolute;
+  left: -11px;
+  width: 30px;
+  height: 26px;
+  background: #b8bfc6;
+  border: 3px solid var(--pal-ink);
+  border-radius: 50%;
+}
+
+.tool-wrench::before {
+  top: -22px;
+  box-shadow: inset 0 -10px 0 -2px #b98a5a;
+}
+
+.tool-wrench::after {
+  bottom: -22px;
+}
+
+/* Tape measure, for the woodworking. */
+.tool-tape {
+  width: 56px;
+  height: 56px;
+  margin-top: 40px;
+  background: radial-gradient(circle, #3a3a40 0 7px, #f0c419 8px);
+  border: 3px solid var(--pal-ink);
+  border-radius: 12px;
+}
+
+.tool-tape::after {
+  content: '';
+  position: absolute;
+  right: -46px;
+  bottom: 4px;
+  width: 44px;
+  height: 8px;
+  background: repeating-linear-gradient(90deg, #f6e27a 0 5px, var(--pal-ink) 5px 6px);
+  border: 2px solid var(--pal-ink);
+}
+
+/* Sign and the taped-up note. */
+.workshop-sign {
+  margin: 0;
+  padding: 10px 18px 9px;
+  font-family: var(--font-pixel);
+  font-size: 16px;
+  color: var(--pal-cream);
+  text-shadow: 2px 2px 0 var(--pal-ink);
+  background: var(--wood-mid);
+  border: 4px solid var(--pal-ink);
+  box-shadow: inset 0 4px 0 var(--wood-light), 5px 5px 0 rgba(0, 0, 0, 0.2);
+  rotate: -1.5deg;
+}
+
+.workshop-note {
+  position: relative;
+  max-width: 460px;
+  margin: 0;
+  padding: 12px 16px;
+  font-family: var(--font-terminal);
+  font-size: 18px;
+  line-height: 1.2;
+  color: var(--pal-ink);
+  background: #fff8e8;
+  border: 3px solid var(--pal-ink);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.25);
+  rotate: 1deg;
+}
+
+.workshop-note::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  width: 54px;
+  height: 16px;
+  margin-left: -27px;
+  background: rgba(240, 225, 170, 0.85);
+  rotate: -3deg;
+}
+
+/* The selected project's card, between the note and the bench. Holds its
+   height when empty so the bench doesn't jump when a card opens. */
+.workshop-detail {
+  width: min(620px, 100%);
+  min-height: 150px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.workshop-detail-inner {
+  width: 100%;
+  background: var(--pal-cream);
+  border: 4px solid var(--pal-ink);
+  border-left: 10px solid var(--accent);
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.35);
+  padding: 14px 18px;
+}
+
+.workshop-detail-inner h3 {
+  margin: 0 0 8px;
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  color: var(--pal-ink);
+}
+
+.workshop-detail-inner p {
+  margin: 0;
+  font-family: var(--font-terminal);
+  font-size: 18px;
+  line-height: 1.2;
+  color: var(--pal-ink);
+}
+
+/* Workbench: a thick top with the props standing on it, two legs down
+   past the wall line onto the floor. */
+.workshop-bench {
+  position: relative;
+  width: min(900px, 100%);
+  margin-bottom: 26px;
+}
+
+.workshop-bench-top {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 22px 36px;
+  padding: 0 24px;
+  border-bottom: 22px solid var(--wood);
+}
+
+.workshop-bench-top::after {
+  content: '';
+  position: absolute;
+  left: -4px;
+  right: -4px;
+  bottom: -26px;
+  height: 22px;
+  border: 4px solid var(--pal-ink);
+  box-shadow: inset 0 4px 0 var(--wood-light), 6px 8px 0 rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+.workshop-bench-leg {
+  position: absolute;
+  top: 100%;
+  width: 22px;
+  height: 84px;
+  background: var(--wood-dark);
+  border: 4px solid var(--pal-ink);
+  border-top: 0;
+}
+
+.workshop-bench-leg--l {
+  left: 30px;
+}
+
+.workshop-bench-leg--r {
+  right: 30px;
+}
+
+.workshop-gadget {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 6px;
+  background: none;
+  border: 3px solid transparent;
+  cursor: pointer;
+}
+
+.workshop-gadget:hover,
+.workshop-gadget:focus-visible {
+  border-color: rgba(255, 224, 102, 0.8);
+}
+
+.workshop-gadget.is-selected {
+  border-color: #ffe066;
+  background: rgba(255, 224, 102, 0.15);
+}
+
+.workshop-gadget:hover > span:first-child {
+  translate: 0 -3px;
+}
+
+.workshop-gadget-label {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--pal-cream);
+  text-shadow: 2px 2px 0 var(--pal-ink);
+  white-space: nowrap;
+}
+
+/* Arduino: board with header pins, USB jack and chip, its LCD propped
+   up behind it asking a sum with a blinking cursor. */
+.gadget-arduino {
+  position: relative;
+  display: block;
+  width: 128px;
+  height: 106px;
+  filter: drop-shadow(4px 4px 0 rgba(0, 0, 0, 0.3));
+}
+
+.gadget-arduino-lcd {
+  position: absolute;
+  left: 10px;
+  top: 0;
+  width: 104px;
+  height: 40px;
+  padding: 8px 9px;
+  box-sizing: border-box;
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  color: #23361a;
+  background: #9ccb3c;
+  border: 4px solid #2a3a8c;
+  outline: 3px solid var(--pal-ink);
+}
+
+.gadget-arduino-cursor {
+  display: inline-block;
+  width: 7px;
+  height: 11px;
+  margin-left: 2px;
+  vertical-align: -1px;
+  background: #23361a;
+  animation: workshop-blink 1s steps(1) infinite;
+}
+
+@keyframes workshop-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.gadget-arduino-board {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 128px;
+  height: 56px;
+  background:
+    repeating-linear-gradient(90deg, #1f2a2e 0 4px, transparent 4px 8px) 30px 5px / 84px 6px no-repeat,
+    repeating-linear-gradient(90deg, #1f2a2e 0 4px, transparent 4px 8px) 44px 41px / 70px 6px no-repeat,
+    #1d8a99;
+  border: 3px solid var(--pal-ink);
+  border-radius: 4px;
+}
+
+.gadget-arduino-usb {
+  position: absolute;
+  left: -8px;
+  top: 14px;
+  width: 22px;
+  height: 18px;
+  background: linear-gradient(#d6dbe0 0 50%, #a9b0b7 50%);
+  border: 3px solid var(--pal-ink);
+}
+
+.gadget-arduino-chip {
+  position: absolute;
+  left: 52px;
+  top: 17px;
+  width: 44px;
+  height: 14px;
+  background: #22262a;
+  border: 2px solid var(--pal-ink);
+}
+
+/* Helmet with its Micro:bit (5x5 red LEDs) and radio waves pulsing. */
+.gadget-helmet {
+  position: relative;
+  display: block;
+  width: 132px;
+  height: 106px;
+  filter: drop-shadow(4px 4px 0 rgba(0, 0, 0, 0.3));
+}
+
+.gadget-helmet-dome {
+  position: absolute;
+  left: 4px;
+  bottom: 0;
+  width: 118px;
+  height: 78px;
+  background:
+    radial-gradient(ellipse at 30% 25%, rgba(255, 255, 255, 0.45) 0 12px, transparent 13px),
+    linear-gradient(to top, #b98a1e 0 12px, var(--pal-ink) 12px 15px, #e0b23c 15px);
+  border: 4px solid var(--pal-ink);
+  border-radius: 60px 60px 8px 8px;
+}
+
+.gadget-helmet-microbit {
+  position: absolute;
+  left: 50%;
+  top: 22px;
+  width: 36px;
+  height: 30px;
+  margin-left: -18px;
+  background:
+    radial-gradient(circle, #ff4a3d 0 1.6px, transparent 2px) 3px 2px / 6px 5.4px,
+    #1d1f22;
+  border: 3px solid var(--pal-ink);
+}
+
+.gadget-helmet-waves {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 34px;
+  height: 34px;
+  border: 4px solid transparent;
+  border-top-color: #f6f0dc;
+  border-right-color: #f6f0dc;
+  border-radius: 0 100% 0 0;
+  animation: workshop-waves 1.6s ease-out infinite;
+}
+
+.gadget-helmet-waves::before {
+  content: '';
+  position: absolute;
+  left: -14px;
+  bottom: -14px;
+  width: 18px;
+  height: 18px;
+  border: 4px solid transparent;
+  border-top-color: #f6f0dc;
+  border-right-color: #f6f0dc;
+  border-radius: 0 100% 0 0;
+}
+
+@keyframes workshop-waves {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.15;
+  }
+}
+
+/* The woodworking-class phone stand: a slanted back, a lipped base, and
+   a phone resting in it. */
+.gadget-stand {
+  position: relative;
+  display: block;
+  width: 108px;
+  height: 106px;
+  filter: drop-shadow(4px 4px 0 rgba(0, 0, 0, 0.3));
+}
+
+.gadget-stand-base {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100px;
+  height: 18px;
+  background: linear-gradient(#d6a26a 0 5px, #b5793c 5px);
+  border: 3px solid var(--pal-ink);
+}
+
+.gadget-stand-base::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  top: -14px;
+  width: 12px;
+  height: 11px;
+  background: #c88c50;
+  border: 3px solid var(--pal-ink);
+  border-bottom: 0;
+}
+
+.gadget-stand-back {
+  position: absolute;
+  left: 54px;
+  bottom: 14px;
+  width: 18px;
+  height: 84px;
+  background: linear-gradient(90deg, #c88c50 0 50%, #a86c34 50%);
+  border: 3px solid var(--pal-ink);
+  transform: skewX(-18deg);
+  transform-origin: bottom;
+}
+
+.gadget-stand-phone {
+  position: absolute;
+  left: 22px;
+  bottom: 16px;
+  width: 42px;
+  height: 78px;
+  background:
+    linear-gradient(#f6f0dc, #f6f0dc) 7px 14px / 22px 4px no-repeat,
+    linear-gradient(#f6f0dc, #f6f0dc) 7px 24px / 16px 4px no-repeat,
+    linear-gradient(to bottom, #7cc8f0, #3a6fa8);
+  border: 5px solid #23252a;
+  outline: 2px solid var(--pal-ink);
+  border-radius: 6px;
+  transform: rotate(-12deg);
+  transform-origin: bottom left;
+}
+
+/* Oscilloscope, just set dressing: a running sine trace. */
+.workshop-scope {
+  position: relative;
+  align-self: flex-end;
+  width: 110px;
+  height: 78px;
+  margin-bottom: 6px;
+  background: linear-gradient(90deg, transparent 0 78px, #6f757c 78px);
+  background-color: #8d949b;
+  border: 4px solid var(--pal-ink);
+  filter: drop-shadow(4px 4px 0 rgba(0, 0, 0, 0.3));
+}
+
+.workshop-scope::after {
+  content: '';
+  position: absolute;
+  right: 9px;
+  top: 12px;
+  width: 10px;
+  height: 10px;
+  background: #c9463e;
+  border: 2px solid var(--pal-ink);
+  border-radius: 50%;
+  box-shadow: 0 22px 0 -2px #e0b23c, 0 22px 0 0 var(--pal-ink);
+}
+
+.workshop-scope-wave {
+  position: absolute;
+  left: 7px;
+  top: 8px;
+  width: 64px;
+  height: 54px;
+  background:
+    linear-gradient(90deg, rgba(120, 255, 140, 0.15) 1px, transparent 1px) 0 0 / 16px 100%,
+    linear-gradient(rgba(120, 255, 140, 0.15) 1px, transparent 1px) 0 0 / 100% 13.5px,
+    #12261a;
+  border: 3px solid var(--pal-ink);
+  overflow: hidden;
+}
+
+.workshop-scope-wave path {
+  fill: none;
+  stroke: #7dff8c;
+  stroke-width: 2.5;
+  vector-effect: non-scaling-stroke;
+  animation: workshop-trace 1.2s linear infinite;
+}
+
+@keyframes workshop-trace {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-30px);
+  }
+}
+
+.workshop-leave {
+  position: fixed;
+  z-index: 241;
+}
+
+@media (max-width: 900px) {
+  .workshop-tools,
+  .workshop-scope {
+    display: none;
+  }
+
+  .workshop-room {
+    grid-template-rows: auto 120px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workshop-light,
+  .gadget-arduino-cursor,
+  .gadget-helmet-waves,
+  .workshop-scope-wave path {
+    animation: none;
+  }
+}
+
+/* --- Secrets & fish on the Trainer Card --- */
+.trainer-card-extras {
+  margin-top: 16px;
+}
+
+.trainer-card-extras h3 {
+  margin: 0 0 8px;
+  font-family: var(--font-pixel);
+  font-size: 11px;
+}
+
+.trainer-card-secrets {
+  list-style: none;
+  margin: 0;
+  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px 12px;
+  background: var(--pal-ink-soft);
+  border: 3px solid var(--pal-ink);
+  color: var(--pal-cream);
+}
+
+.trainer-card-secrets li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.trainer-card-secrets li:not(.is-found) .trainer-card-name {
+  opacity: 0.55;
+}
+
+.trainer-card-secrets li.is-found .trainer-card-name {
+  color: #ffe066;
+}
+
+.trainer-card-fish {
+  margin: 10px 0 0;
+  font-family: var(--font-terminal);
+  font-size: 18px;
+}
+
+/* --- Fishing --- */
+.stage-box.over-water {
+  cursor: crosshair;
+}
+
+.fish-box {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-right: 18px;
+}
+
+.fish-box-art {
+  flex: none;
+  width: 66px;
+  height: 66px;
+  display: grid;
+  place-items: center;
+  background: #3a7fb8;
+  border: 3px solid var(--pal-ink);
+  box-shadow: inset 0 -10px 0 #2f6a9c;
+}
+
+.fish-box--caught .fish-box-art {
+  background: var(--pal-ink-soft);
+  box-shadow: none;
+}
+
+.fish-box.is-shiny .fish-box-art .badge-icon {
+  animation: fish-shiny 0.6s steps(2) infinite;
+}
+
+@keyframes fish-shiny {
+  to {
+    filter: hue-rotate(160deg) brightness(1.2);
+  }
+}
+
+/* The bobber: red-and-white float, bobbing gently while waiting and
+   dunking under when something bites. */
+.fish-bobber {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  background: linear-gradient(#c9463e 0 50%, #f3ead2 50% 100%);
+  border: 2px solid var(--pal-ink);
+  border-radius: 50%;
+  animation: fish-bob 1.2s steps(2) infinite alternate;
+}
+
+.fish-bobber.is-biting {
+  animation: fish-dunk 0.18s steps(2) infinite alternate;
+}
+
+@keyframes fish-bob {
+  to {
+    transform: translateY(2px);
+  }
+}
+
+@keyframes fish-dunk {
+  to {
+    transform: translateY(6px);
+  }
+}
+
+.fish-alert {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  width: 18px;
+  margin-left: -9px;
+  font-family: var(--font-pixel);
+  font-size: 14px;
+  line-height: 20px;
+  text-align: center;
+  background: #ffe066;
+  border: 2px solid var(--pal-ink);
+  color: var(--pal-ink);
+}
+
+.fish-box-text {
+  min-width: 0;
+}
+
+.fish-box-sub {
+  margin: 6px 0 0;
+  font-family: var(--font-terminal);
+  font-size: 18px;
+  line-height: 1.15;
+}
+
+.fish-box-log {
+  margin: 8px 0 0;
+  font-family: var(--font-terminal);
+  font-size: 14px;
+  opacity: 0.65;
+}
+
+.fish-new {
+  color: #c9463e;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fish-bobber,
+  .fish-bobber.is-biting,
+  .fish-box.is-shiny .fish-box-art .badge-icon {
+    animation: none;
+  }
+}
+
+/* --- Seasons --- */
+:root[data-season='winter'] .ground-base {
+  background: #dfe7ea;
+}
+
+/* Leaves / snow / petals drifting down the screen (SeasonFx.jsx). Each
+   one falls the full height of the stage while swaying side to side,
+   transform only. */
+.season-fx {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.season-flake {
+  position: absolute;
+  top: -12px;
+  width: var(--size);
+  height: var(--size);
+  animation-name: season-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.season-fx--winter .season-flake {
+  border-radius: 50%;
+  opacity: 0.85;
+}
+
+.season-fx--autumn .season-flake {
+  box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.25);
+}
+
+@keyframes season-fall {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  25% {
+    transform: translate3d(calc(var(--sway) * 30px), 27vh, 0) rotate(90deg);
+  }
+  50% {
+    transform: translate3d(calc(var(--sway) * -10px), 54vh, 0) rotate(180deg);
+  }
+  75% {
+    transform: translate3d(calc(var(--sway) * 30px), 81vh, 0) rotate(270deg);
+  }
+  100% {
+    transform: translate3d(0, 108vh, 0) rotate(360deg);
+  }
+}
+
+/* --- Project filter --- */
+.project-filter {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  max-width: 900px;
+  margin: 0 auto 12px;
+}
+
+.project-filter-status {
+  margin: 0 0 16px;
+  text-align: center;
+  font-family: var(--font-terminal);
+  font-size: 18px;
+  color: var(--pal-cream);
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.4);
+}
+
+.tech-chip--button {
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--pal-ink);
+}
+
+.tech-chip--button:hover,
+.tech-chip--button:focus-visible {
+  background: #fff;
+}
+
+.tech-chip--button.is-active {
+  background: var(--pal-grass-light);
+}
+
+/* --- Experience: the Adventurers' Guild ---
+   Stone hall with two torches, a hanging sign, and three boards on the
+   wall: Training (education scrolls), the Quest Board (one pinned notice
+   per role, stamped ONGOING or COMPLETE) and Inventory (skills). A wooden
+   counter stands on the plank floor below with the membership card and
+   the résumé ledger. Like the Hobbies room it fills the screen and scrolls
+   internally on short viewports. */
+.guild-content {
+  --wood-dark: #3b2616;
+  --wood: #5e3b24;
+  --wood-mid: #7a4b2c;
+  --wood-light: #a0693f;
+  --parchment: #f1e2bc;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.guild {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: inset 0 0 0 4px var(--pal-ink);
+}
+
+.guild-wall {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+  padding: 64px 32px 60px;
+  background-color: #8a8478;
+  /* Staggered stone blocks (a 144x72 tile: two rows, joints offset by
+     half a block), each block with a lit top edge. */
+  background-image:
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.3), transparent 50px),
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='144' height='72' shape-rendering='crispEdges'><rect width='144' height='72' fill='%238a8478'/><rect x='0' y='0' width='69' height='4' fill='%23968f83'/><rect x='72' y='0' width='69' height='4' fill='%23968f83'/><rect x='36' y='36' width='69' height='4' fill='%23968f83'/><rect x='108' y='36' width='33' height='4' fill='%23968f83'/><rect x='0' y='36' width='33' height='4' fill='%23968f83'/><rect x='72' y='4' width='69' height='29' fill='%23847e72'/><rect x='0' y='40' width='33' height='29' fill='%23847e72'/><g fill='%235e594f'><rect y='33' width='144' height='3'/><rect y='69' width='144' height='3'/><rect x='69' y='0' width='3' height='33'/><rect x='141' y='0' width='3' height='33'/><rect x='33' y='36' width='3' height='33'/><rect x='105' y='36' width='3' height='33'/></g></svg>");
+}
+
+/* The sign with a wall torch either side: a bracket and a flickering
+   flame. */
+.guild-sign-row {
+  display: flex;
+  align-items: center;
+  gap: 56px;
+}
+
+.guild-torch {
+  position: relative;
+  flex: none;
+  margin-top: 24px;
+  width: 12px;
+  height: 34px;
+  background: var(--wood-mid);
+  border: 3px solid var(--pal-ink);
+}
+
+.guild-torch::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  width: 16px;
+  height: 22px;
+  margin-left: -8px;
+  background: radial-gradient(ellipse at 50% 80%, #fff3b0 0 25%, #ffb43c 45%, #e05a2a 70%, transparent 72%);
+  transform-origin: 50% 100%;
+  animation: guild-flicker 0.9s steps(3) infinite alternate;
+}
+
+.guild-torch::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -40px;
+  width: 120px;
+  height: 120px;
+  margin-left: -60px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 190, 90, 0.28), transparent 65%);
+  pointer-events: none;
+}
+
+@keyframes guild-flicker {
+  from {
+    scale: 1 1;
+  }
+  to {
+    scale: 0.85 1.12;
+  }
+}
+
+.guild-sign {
+  position: relative;
+  margin: 0;
+  padding: 12px 22px 11px;
+  font-family: var(--font-pixel);
+  font-size: 16px;
+  color: var(--pal-cream);
+  text-shadow: 2px 2px 0 var(--pal-ink);
+  background: var(--wood-mid);
+  border: 4px solid var(--pal-ink);
+  box-shadow: inset 0 4px 0 var(--wood-light), 5px 5px 0 rgba(0, 0, 0, 0.25);
+}
+
+.guild-boards {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 28px;
+  width: min(1240px, 100%);
+}
+
+.guild-board {
+  position: relative;
+  padding: 34px 16px 16px;
+  background: var(--wood-light);
+  border: 6px solid var(--wood-dark);
+  outline: 4px solid var(--pal-ink);
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.3);
+}
+
+.guild-board-title {
+  position: absolute;
+  left: 50%;
+  top: -18px;
+  translate: -50% 0;
+  margin: 0;
+  padding: 7px 12px;
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  white-space: nowrap;
+  color: var(--pal-cream);
+  text-shadow: 2px 2px 0 var(--pal-ink);
+  background: var(--wood);
+  border: 4px solid var(--pal-ink);
+}
+
+.guild-board--quests {
+  flex: 1 1 520px;
+  max-width: 600px;
+}
+
+.guild-board--training,
+.guild-board--inventory {
+  flex: 0 1 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.guild-board--inventory {
+  background: #2e3a2f;
+}
+
+.guild-quests {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 16px;
+}
+
+/* A pinned notice: parchment, red pin, and a rubber stamp in the corner. */
+.guild-quest,
+.guild-scroll,
+.guild-quest-open {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 14px 12px;
+  text-align: left;
+  color: var(--pal-ink);
+  background: var(--parchment);
+  border: 3px solid var(--pal-ink);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.3);
+}
+
+.guild-quest {
+  min-height: 132px;
+  padding-bottom: 36px;
+  font: inherit;
+  cursor: pointer;
+  rotate: var(--tilt, 0deg);
+  transition: rotate 0.15s ease, translate 0.15s ease;
+}
+
+.guild-quest:hover,
+.guild-quest:focus-visible {
+  rotate: 0deg;
+  translate: 0 -3px;
+}
+
+.guild-quest::before,
+.guild-scroll::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -7px;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  border-radius: 50%;
+  background: #c9463e;
+  border: 2px solid var(--pal-ink);
+}
+
+.guild-quest-role {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.guild-quest-org,
+.guild-quest-reward,
+.guild-scroll,
+.guild-quest-open li {
+  font-family: var(--font-terminal);
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+.guild-quest-reward {
+  color: var(--wood-mid);
+}
+
+.guild-stamp {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 3px 6px;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  text-transform: uppercase;
+  color: #2f8f5a;
+  border: 2px solid currentColor;
+  rotate: -10deg;
+  opacity: 0.9;
+}
+
+.guild-stamp--ongoing {
+  color: #c9463e;
+}
+
+/* The full notice unrolled over the board. */
+.guild-quest-open {
+  position: absolute;
+  inset: 22px 12px 12px;
+  z-index: 2;
+  overflow-y: auto;
+  padding: 18px 48px 44px 18px;
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.35);
+}
+
+.guild-quest-open ul,
+.guild-scroll ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+.guild-quest-open li + li {
+  margin-top: 6px;
+}
+
+.guild-scroll {
+  gap: 2px;
+}
+
+.guild-scroll strong {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  line-height: 1.5;
+  font-weight: normal;
+}
+
+.guild-scroll ul {
+  font-size: 16px;
+}
+
+.guild-scroll-dates {
+  font-family: var(--font-terminal);
+  font-size: 16px;
+  color: var(--wood-mid);
+}
+
+.guild-inventory-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.guild-inventory-label {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: #ffe066;
+}
+
+.guild-board--inventory .project-tech {
+  margin: 0;
+}
+
+/* Plank floor with the counter standing on it. */
+.guild-floor {
+  display: flex;
+  justify-content: center;
+  padding: 0 24px 90px;
+  background-color: #7a4b2c;
+  background-image:
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.35), transparent 30px),
+    repeating-linear-gradient(0deg, transparent 0 22px, #5e3b24 22px 24px);
+  border-top: 4px solid var(--pal-ink);
+}
+
+.guild-counter {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 18px 28px;
+  box-sizing: border-box;
+  width: 720px;
+  max-width: 100%;
+  margin-top: -30px;
+  padding: 0 24px 54px;
+  background: linear-gradient(to bottom, transparent 0 calc(100% - 50px), var(--wood) calc(100% - 50px));
+}
+
+.guild-counter::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 42px;
+  border: 4px solid var(--pal-ink);
+  border-top-width: 0;
+  box-shadow: inset 0 -6px 0 var(--wood-dark), 6px 6px 0 rgba(0, 0, 0, 0.25);
+  background: repeating-linear-gradient(90deg, transparent 0 58px, var(--wood-dark) 58px 60px);
+  pointer-events: none;
+}
+
+.guild-counter::before {
+  content: '';
+  position: absolute;
+  left: -10px;
+  right: -10px;
+  bottom: 42px;
+  height: 14px;
+  background: var(--wood-mid);
+  border: 4px solid var(--pal-ink);
+  box-shadow: inset 0 4px 0 var(--wood-light);
+}
+
+.guild-card,
+.guild-ledger {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 4px;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
+}
+
+.guild-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  font-family: var(--font-terminal);
+  font-size: 18px;
+  line-height: 1;
+  color: var(--pal-ink);
+  background: var(--pal-cream);
+  border: 3px solid var(--pal-ink);
+  rotate: -3deg;
+}
+
+.guild-card-title {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: #c9463e;
+}
+
+.guild-ledger {
+  padding: 12px 14px;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  line-height: 1.5;
+  color: var(--pal-cream);
+  text-decoration: none;
+  background: #7a2f3a;
+  border: 3px solid var(--pal-ink);
+  border-left-width: 8px;
+}
+
+.guild-ledger:hover,
+.guild-ledger:focus-visible {
+  background: #93394a;
+}
+
+@media (max-width: 700px) {
+  .guild-quests {
+    grid-template-columns: 1fr;
+  }
+
+  .guild-torch {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guild-torch::before {
+    animation: none;
+  }
+
+  .guild-quest {
+    transition: none;
   }
 }

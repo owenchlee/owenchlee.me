@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { HOBBIES, RESUME_URL } from './content';
+import { playJingle } from './sfx';
 
 // Pokémon-style gym badges for exploring the world. Eight of them, like a
 // badge case, and earning all eight makes the visitor "Champion", which
@@ -162,56 +163,4 @@ export function installLinkTracking() {
   }
   document.addEventListener('click', onClick, true);
   return () => document.removeEventListener('click', onClick, true);
-}
-
-// The short "badge get" fanfare. Only plays if the visitor has already
-// turned music on themselves (MusicPlayer calls setJingleEnabled) — a
-// badge popping should never be the first sound a visitor hears.
-let jingleEnabled = false;
-let jingleCtx = null;
-
-export function setJingleEnabled(on) {
-  jingleEnabled = on;
-}
-
-const JINGLES = {
-  // Rising arpeggio + held top note, loosely in the spirit of the
-  // classic "obtained a badge" sting — not a transcription of it.
-  badge: [
-    [523.25, 0, 0.12],
-    [659.25, 0.12, 0.12],
-    [783.99, 0.24, 0.12],
-    [1046.5, 0.36, 0.45],
-  ],
-  champion: [
-    [523.25, 0, 0.14],
-    [523.25, 0.16, 0.14],
-    [523.25, 0.32, 0.14],
-    [659.25, 0.48, 0.3],
-    [587.33, 0.8, 0.14],
-    [659.25, 0.96, 0.14],
-    [783.99, 1.12, 0.7],
-  ],
-};
-
-function playJingle(kind) {
-  if (!jingleEnabled) return;
-  try {
-    jingleCtx ??= new AudioContext();
-    const t0 = jingleCtx.currentTime + 0.05;
-    JINGLES[kind].forEach(([freq, start, dur]) => {
-      const osc = jingleCtx.createOscillator();
-      const gain = jingleCtx.createGain();
-      osc.type = 'square';
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.0001, t0 + start);
-      gain.gain.exponentialRampToValueAtTime(0.05, t0 + start + 0.01);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + start + dur);
-      osc.connect(gain).connect(jingleCtx.destination);
-      osc.start(t0 + start);
-      osc.stop(t0 + start + dur + 0.02);
-    });
-  } catch {
-    // No Web Audio — the badge still shows, just silently.
-  }
 }

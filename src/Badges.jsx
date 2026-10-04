@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { BADGES, useAchievements, dismissAnnouncement } from './achievements';
-import { HOBBIES } from './content';
+import { HOBBIES, FISH } from './content';
+import { SECRETS, useSecrets } from './secrets';
+import { useTypewriter } from './useTypewriter';
 
 // Mixes a hex color toward white (amt > 0) or black (amt < 0) — enough to
 // derive each badge's highlight/shadow pixels from its one base color.
@@ -63,7 +65,7 @@ function makeParticles(count) {
   });
 }
 
-function ParticleBurst() {
+export function ParticleBurst() {
   const [particles] = useState(() => makeParticles(48));
   return (
     <div className="badge-burst" aria-hidden="true">
@@ -82,31 +84,6 @@ function ParticleBurst() {
       ))}
     </div>
   );
-}
-
-// Types text out a character at a time, like a Pokémon dialogue box.
-// `skip` jumps straight to the full line (first click on the box does this,
-// the same way pressing A mid-line does in the games).
-function useTypewriter(text, skip) {
-  const [shown, setShown] = useState(skip ? text.length : 0);
-  useEffect(() => {
-    if (skip) {
-      setShown(text.length);
-      return undefined;
-    }
-    setShown(0);
-    const id = setInterval(() => {
-      setShown((n) => {
-        if (n >= text.length) {
-          clearInterval(id);
-          return n;
-        }
-        return n + 1;
-      });
-    }, 28);
-    return () => clearInterval(id);
-  }, [text, skip]);
-  return text.slice(0, shown);
 }
 
 const AUTO_DISMISS_MS = 4200;
@@ -207,6 +184,9 @@ export function BadgeToast() {
 // silhouettes with a hint, so a visitor can see what's left to find.
 export function BadgeCase() {
   const { earned, hobbiesSeen, championAt } = useAchievements();
+  const { found, fish } = useSecrets();
+  const secretsFound = SECRETS.filter((x) => found[x.id]).length;
+  const species = FISH.filter((f) => fish[f.id]).length;
   const [open, setOpen] = useState(false);
   const closeRef = useRef(null);
   const openerRef = useRef(null);
@@ -215,13 +195,19 @@ export function BadgeCase() {
   useEffect(() => {
     if (!open) return undefined;
     closeRef.current?.focus();
+    // Capture phase + stopPropagation so the world's own key handler (App.jsx)
+    // never sees these: Escape here should close the card, not also walk
+    // out of the house behind it, and arrow keys shouldn't walk the
+    // character around under an open dialog.
     const onKeyDown = (e) => {
+      if (e.key === 'Tab') return;
+      e.stopPropagation();
       if (e.key === 'Escape') setOpen(false);
     };
-    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keydown', onKeyDown, true);
     const opener = openerRef.current;
     return () => {
-      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keydown', onKeyDown, true);
       opener?.focus();
     };
   }, [open]);
@@ -276,6 +262,23 @@ export function BadgeCase() {
                 );
               })}
             </ul>
+            <div className="trainer-card-extras">
+              <h3>
+                Secrets {secretsFound}/{SECRETS.length}
+              </h3>
+              <ul className="trainer-card-secrets">
+                {SECRETS.map((x) => (
+                  <li key={x.id} className={found[x.id] ? 'is-found' : ''}>
+                    <span className="trainer-card-name">{found[x.id] ? `★ ${x.name}` : '???'}</span>
+                    <span className="trainer-card-hint">{x.hint}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="trainer-card-fish">
+                Fish log: {species}/{FISH.length} kinds caught
+                {species === 0 ? '. Try tapping a pond.' : ''}
+              </p>
+            </div>
           </div>
         </div>
       )}

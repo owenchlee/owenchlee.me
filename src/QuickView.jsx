@@ -69,8 +69,21 @@ function QuickView({ onClose, isMobileLanding }) {
   // Move focus into the overlay on open so keyboard users land somewhere
   // sensible instead of on whatever was focused underneath (which is now
   // inert anyway).
+  // A room link (#projects etc., see App.jsx) opened on a phone lands
+  // here instead of the world, so it scrolls to that section.
+  // Waits for the web fonts first: scrolling during the initial load
+  // doesn't stick, and the pixel font reflows every heading anyway.
   useEffect(() => {
-    headingRef.current?.focus();
+    headingRef.current?.focus({ preventScroll: true });
+    const section = document.getElementById(`qv-${window.location.hash.slice(1)}-heading`);
+    if (!section) return undefined;
+    let cancelled = false;
+    document.fonts.ready.then(() => {
+      if (!cancelled) section.scrollIntoView({ block: 'start' });
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (

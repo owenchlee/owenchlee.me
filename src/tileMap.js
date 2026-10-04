@@ -72,7 +72,7 @@ export const NPCS = [
   { id: 'npc-1', col: 24, row: 36, sprite: 'a', axis: 'x', range: 56, duration: 6 },
   { id: 'npc-2', col: 30, row: 57, sprite: 'b', axis: 'y', range: 44, duration: 5 },
   { id: 'npc-3', col: 77, row: 27, sprite: 'c', axis: 'x', range: 64, duration: 7.5 },
-  { id: 'npc-4', col: 19, row: 67, sprite: 'a', axis: 'y', range: 48, duration: 5.5 },
+  { id: 'npc-4', col: 30, row: 72, sprite: 'a', axis: 'y', range: 48, duration: 5.5 },
   { id: 'npc-5', col: 75, row: 92, sprite: 'b', axis: 'x', range: 52, duration: 6.5 },
   { id: 'npc-6', col: 52, row: 40, sprite: 'c', axis: 'y', range: 40, duration: 4.5 },
   { id: 'npc-7', col: 70, row: 44, sprite: 'a', axis: 'x', range: 48, duration: 5.8 },
@@ -129,6 +129,29 @@ function nearestWaypoint(col, row) {
   return best;
 }
 
+// Nearest tile on the route itself (anywhere along a segment, not just at
+// a corner). Decor driveways run here, so each one takes the short way to
+// the road instead of every house in a neighbourhood converging on the
+// same corner and merging into one big patch of dirt.
+function nearestRouteTile(col, row) {
+  let best = WAYPOINTS_TILE[0];
+  let bestDist = Infinity;
+  for (let i = 0; i < WAYPOINTS_TILE.length - 1; i++) {
+    const a = WAYPOINTS_TILE[i];
+    const b = WAYPOINTS_TILE[i + 1];
+    const dx = b.col - a.col;
+    const dy = b.row - a.row;
+    const t = Math.min(1, Math.max(0, ((col - a.col) * dx + (row - a.row) * dy) / (dx * dx + dy * dy)));
+    const p = { col: Math.round(a.col + dx * t), row: Math.round(a.row + dy * t) };
+    const d = Math.hypot(p.col - col, p.row - row);
+    if (d < bestDist) {
+      bestDist = d;
+      best = p;
+    }
+  }
+  return best;
+}
+
 // Small wandering wildlife — same shape as NPCS but a smaller, subtler range
 // since critters should read as idle/twitchy rather than deliberately
 // patrolling the way villager NPCs do.
@@ -158,10 +181,31 @@ export const PET_WALKERS = [
 // .sports-ball). `gap` is in tiles.
 export const SPORTS = [{ id: 'sports-1', col: 36, row: 56, gap: 3, npc1Sprite: 'b', npc2Sprite: 'c' }];
 
-// A checkered blanket + basket with two seated figures on it — entirely
-// static, reads as "having a picnic" through composition rather than
-// motion.
-export const PICNICS = [{ id: 'picnic-1', col: 55, row: 34, sitterA: 'a', sitterB: 'b' }];
+// A gingham blanket + basket with two people sitting on it (one baked
+// sprite, see picnic_scene_sprite in gen_sprites.py), on the grass above
+// the road. Entirely static: it reads as "having a picnic" through
+// composition rather than motion.
+export const PICNICS = [{ id: 'picnic-1', col: 54, row: 32 }];
+
+// Readable signposts beside the road (text is in DIALOGUE in content.js):
+// one at the spawn point with the controls, one just past the last house.
+// Both tiles were picked to sit clear of trees, fences and lamps. The
+// welcome sign sits just below the road to the right of the HUD's button,
+// where it's in view on the very first screen and nothing covers it.
+export const SIGNS = [
+  { id: 'sign-welcome', col: 47, row: 34 },
+  { id: 'sign-end', col: 57, row: 88 },
+];
+
+// The town notice board: a bigger sign by the spawn point whose text is
+// NOW in content.js (what Owen is up to at the moment).
+export const NOTICE_BOARD = { id: 'now-board', col: 51, row: 30 };
+
+// The hidden workshop at the end of the dirt track past Contact: locked
+// and boarded up until a visitor finds a way in (see secrets.js). Same
+// anchor convention as HOUSES (the tile under the building's left side,
+// door two rows down).
+export const WORKSHOP = { id: 'workshop', col: 63, row: 90, sprite: 'workshop-shed' };
 
 // Three ponds — a big one off to the side near the start, a smaller one near
 // the Hobbies clearing, and a third scattered along the way — all with
@@ -193,6 +237,11 @@ const BORDER_TAPER_DENSITY = 0.35;
 export function hash(col, row) {
   const n = Math.sin(col * 127.1 + row * 311.7) * 43758.5453;
   return n - Math.floor(n);
+}
+
+// The fenced yard around a checkpoint building (see yardFence below).
+function yardBounds(h) {
+  return { left: h.col - 3, right: h.col + 3, top: h.row - 2, bottom: h.row + 3 };
 }
 
 function paintPond(grid, patch) {
@@ -266,12 +315,39 @@ function buildTileGrid() {
   // (The checkpoint houses' walkways were already painted above, as
   // walkable.)
   DECOR_HOUSES.forEach((h) => {
-    const anchor = nearestWaypoint(h.col, h.row);
-    paintSegment({ col: h.col, row: h.row + 3 }, anchor);
+    paintSegment({ col: h.col, row: h.row + 3 }, nearestRouteTile(h.col, h.row + 3));
   });
 
+  // The workshop's track: a dirt stub from the end of the road tail to its
+  // door, so the locked building visibly sits at the end of it.
+  paintSegment(PATH_TAIL_TILE, { col: WORKSHOP.col, row: WORKSHOP.row + 3 });
+
+  // Dirt never runs through a checkpoint's yard: a driveway that would
+  // cut across one stops at the fence instead (the yard's own walkway is
+  // walkable, so it stays).
+  HOUSES.forEach((h) => {
+    const { left, right, top, bottom } = yardBounds(h);
+    for (let r = top; r <= bottom; r++) {
+      for (let c = left; c <= right; c++) {
+        if (grid[r][c] === 'path' && !walkable.has(`${c},${r}`)) grid[r][c] = 'grass';
+      }
+    }
+  });
+
+  // ...and a driveway's last stub of dirt poking out beside the pavement,
+  // with no other dirt next to it, goes back to grass too.
+  const isDirt = (c, r) => grid[r]?.[c] === 'path' && !walkable.has(`${c},${r}`);
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (!isDirt(c, r)) continue;
+      const dirtNeighbours = [[0, -1], [0, 1], [-1, 0], [1, 0]].filter(([dc, dr]) => isDirt(c + dc, r + dr)).length;
+      if (dirtNeighbours === 0) grid[r][c] = 'grass';
+    }
+  }
+
   const nearAnyHouse = (c, r) =>
-    HOUSES.some((h) => Math.abs(h.col - c) <= 3 && Math.abs(h.row - r) <= 3);
+    [...HOUSES, WORKSHOP].some((h) => Math.abs(h.col - c) <= 3 && Math.abs(h.row - r) <= 3) ||
+    (Math.abs(NOTICE_BOARD.col - c) <= 1 && Math.abs(NOTICE_BOARD.row - r) <= 1);
 
   // Trees are composed multi-tile sprites (canopy + trunk, see TREES below)
   // rendered as overlays like houses/NPCs, not a tile-grid cell type — a
@@ -464,10 +540,7 @@ export const WALKABLE = built.walkable;
 // — a horizontal post+rail panel — can be rotated 90deg for the vertical
 // runs instead of just being stacked sideways.
 function yardFence(h) {
-  const left = h.col - 3;
-  const right = h.col + 3;
-  const top = h.row - 2;
-  const bottom = h.row + 3;
+  const { left, right, top, bottom } = yardBounds(h);
   const posts = [];
 
   for (let c = left; c <= right; c++) {
@@ -479,8 +552,16 @@ function yardFence(h) {
     posts.push({ col: right, row: r, orientation: 'v' });
   }
 
-  return posts;
+  // The road runs right past some yards (Experience's corner sits on it),
+  // so the fence leaves a gap wherever it would stand on the road rather
+  // than blocking it.
+  return posts.filter((p) => !isRoadTile(p.col, p.row));
 }
+
+const isRoadTile = (c, r) => {
+  const type = TILE_GRID[r]?.[c];
+  return !!type && type.startsWith('path') && !type.startsWith('path-edge');
+};
 
 export const FENCES = HOUSES.filter((h) => h.kind !== 'landmark').flatMap((h) =>
   yardFence(h).map((post, i) => ({
@@ -490,6 +571,53 @@ export const FENCES = HOUSES.filter((h) => h.kind !== 'landmark').flatMap((h) =>
     orientation: post.orientation,
   })),
 );
+
+// Only the paved road is walkable, so every dirt road is closed off where
+// it meets the pavement. The dirt roads join the road on a diagonal, so a
+// mouth is a staircase of tile edges, not one straight line: a barricade
+// runs along every pavement/dirt edge instead. Each edge is keyed by the
+// grid line it lies on ('h' = between two rows, 'v' = between two
+// columns) and which side the dirt is on, collinear neighbours merge into
+// one run, and runs longer than three tiles split into even pieces so no
+// single sawhorse gets absurdly long.
+function buildBarriers() {
+  const isDirt = (c, r) => isRoadTile(c, r) && !WALKABLE.has(`${c},${r}`);
+  const lines = new Map();
+  const addEdge = (orientation, line, side, pos) => {
+    const key = `${orientation},${line},${side}`;
+    if (!lines.has(key)) lines.set(key, { orientation, line, side, cells: [] });
+    lines.get(key).cells.push(pos);
+  };
+  WALKABLE.forEach((key) => {
+    const [c, r] = key.split(',').map(Number);
+    if (isDirt(c, r - 1)) addEdge('h', r, -1, c);
+    if (isDirt(c, r + 1)) addEdge('h', r + 1, 1, c);
+    if (isDirt(c - 1, r)) addEdge('v', c, -1, r);
+    if (isDirt(c + 1, r)) addEdge('v', c + 1, 1, r);
+  });
+
+  const out = [];
+  lines.forEach(({ orientation, line, side, cells }) => {
+    cells.sort((a, b) => a - b);
+    const runs = [];
+    cells.forEach((p) => {
+      const run = runs[runs.length - 1];
+      if (run && p === run.start + run.length) run.length++;
+      else runs.push({ start: p, length: 1 });
+    });
+    runs.forEach(({ start, length }) => {
+      const pieces = Math.ceil(length / 3);
+      for (let i = 0; i < pieces; i++) {
+        const from = start + Math.round((length * i) / pieces);
+        const to = start + Math.round((length * (i + 1)) / pieces);
+        out.push({ id: `barrier-${orientation}-${line}-${from}`, orientation, line, side, start: from, length: to - from });
+      }
+    });
+  });
+  return out;
+}
+
+export const BARRIERS = buildBarriers();
 
 // Lamp posts strung along the real path — same perpendicular-offset framing
 // as the tree/flower lining in buildTileGrid, just sparser (every ~14 tiles,
@@ -535,6 +663,7 @@ export const LAMPS = buildLamps();
 const HOUSE_SPRITE_SIZE = {
   'house-01': [58, 73],
   'house-02': [56, 56],
+  'workshop-shed': [64, 60],
   'house-03': [62, 69],
   'house-04': [94, 67],
   'house-05': [73, 80],
@@ -714,6 +843,9 @@ const LIVE_TREE_ANCHORS = [
   ...SPORTS.map((s) => ({ col: s.col + s.gap / 2, row: s.row, radius: 4 + s.gap / 2 })),
   ...PICNICS.map((p) => ({ col: p.col, row: p.row, radius: 4 })),
   ...LAMPS.map((l) => ({ col: l.col, row: l.row, radius: 2 })),
+  ...SIGNS.map((s) => ({ col: s.col, row: s.row, radius: 2 })),
+  { col: NOTICE_BOARD.col, row: NOTICE_BOARD.row, radius: 2 },
+  { col: WORKSHOP.col, row: WORKSHOP.row, radius: 4 },
 ];
 
 function needsLiveTree(tree) {

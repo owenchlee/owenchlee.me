@@ -3,6 +3,23 @@ import { WAYPOINTS_PX, HOUSES, DECOR_HOUSES, WATER_PATCHES, TILE_SIZE, WORLD_W, 
 
 const pathPoints = WAYPOINTS_PX.map((p) => `${p.x},${p.y}`).join(' ');
 
+// The area inside .minimap's 3px border (App.css: 100x126, border-box),
+// and the scale/offset the SVG's `slice` fit puts the world at inside it,
+// so the player dot (an HTML element over the SVG) lands on the same spot
+// the map draws.
+const MAP_W = 94;
+const MAP_H = 120;
+const SCALE = Math.max(MAP_W / WORLD_W, MAP_H / WORLD_H);
+const OFFSET_X = (MAP_W - WORLD_W * SCALE) / 2;
+const OFFSET_Y = (MAP_H - WORLD_H * SCALE) / 2;
+
+// World px -> px inside the minimap box.
+export function minimapPoint(x, y) {
+  return { x: OFFSET_X + x * SCALE, y: OFFSET_Y + y * SCALE };
+}
+
+const START_DOT = minimapPoint(WAYPOINTS_PX[0].x, WAYPOINTS_PX[0].y);
+
 // Fixed HUD, rendered once at the app root so it stays visible over the
 // overworld and every section takeover alike — the persistent thread that
 // ties the whole scroll experience together as one connected space. Reads
@@ -61,8 +78,15 @@ const Minimap = forwardRef(function Minimap(_props, playerDotRef) {
             <circle cx={h.col * TILE_SIZE} cy={h.row * TILE_SIZE} r={24} className="minimap-marker-core" />
           </g>
         ))}
-        <circle ref={playerDotRef} cx={WAYPOINTS_PX[0].x} cy={WAYPOINTS_PX[0].y} r={60} className="minimap-player" />
       </svg>
+      {/* An HTML dot moved with transform, not an SVG circle: animating or
+          moving anything inside the SVG repaints the whole map every frame,
+          while this runs on the compositor. */}
+      <div
+        ref={playerDotRef}
+        className="minimap-player"
+        style={{ transform: `translate(${START_DOT.x}px, ${START_DOT.y}px)` }}
+      />
     </div>
   );
 });

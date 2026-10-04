@@ -5,15 +5,20 @@ import {
   WORLD_W,
   WORLD_H,
   TILE_GRID,
+  WATER_PATCHES,
   HOUSES,
   DECOR_HOUSES,
   FENCES,
+  BARRIERS,
   LAMPS,
   NPCS,
   CRITTERS,
   PET_WALKERS,
   SPORTS,
   PICNICS,
+  SIGNS,
+  NOTICE_BOARD,
+  WORKSHOP,
   LIVE_TREES,
   WAYPOINTS_PX,
   WAYPOINT_FRACTIONS,
@@ -29,18 +34,29 @@ import {
 import { ProjectsPanel, ExperiencePanel, HobbiesPanel, ContactPanel } from './sections';
 import { INTRO, RESUME_URL } from './content';
 import { Highlighted } from './Highlighted';
-import Minimap from './Minimap';
+import Minimap, { minimapPoint } from './Minimap';
 import SectionNav from './SectionNav';
 import MusicPlayer from './MusicPlayer';
 import GroundCanvas from './GroundCanvas';
 import QuickView from './QuickView';
 import { BadgeCase, BadgeToast } from './Badges';
 import { earnBadge, installLinkTracking } from './achievements';
+import DialogueBox from './DialogueBox';
+import { openDialogue, advanceDialogue, closeDialogue, getDialogue } from './dialogue';
+import FishingBox from './FishingBox';
+import { startFishing, fishingAction, stopFishing, getFishing } from './fishing';
+import Workshop from './Workshop';
+import { useSecrets, isWorkshopOpen, installKonami, findSecret } from './secrets';
+import { playStep, playDoor } from './sfx';
+import { SEASON, treeVariant, useSeasonTreeUrls } from './season';
+import SeasonFx from './SeasonFx';
+import { ParticleBurst } from './Badges';
 // Swap for Plausible/Fathom/GA4 here if preferred — this is a zero-config
 // default, not a hard architectural commitment.
 import { Analytics } from '@vercel/analytics/react';
 import house01 from './assets/houses/house-01.png';
 import house02 from './assets/houses/house-02.png';
+import workshopShed from './assets/houses/workshop-shed.png';
 import house03 from './assets/houses/house-03.png';
 import house04 from './assets/houses/house-04.png';
 import house05 from './assets/houses/house-05.png';
@@ -66,8 +82,6 @@ import petDogA from './assets/pet-dog-a.png';
 import petDogB from './assets/pet-dog-b.png';
 import sportsBall from './assets/sports-ball.png';
 import picnicScene from './assets/picnic-scene.png';
-import npcSitA from './assets/npc-sit-a.png';
-import npcSitB from './assets/npc-sit-b.png';
 import treeRoundSprite from './assets/tree-round-lpc.png';
 import treePineSprite from './assets/tree-pine-lpc.png';
 import charDownIdle from './assets/char/char-down-idle.png';
@@ -89,18 +103,34 @@ const CHAR_SPRITES = {
 const NPC_SPRITES = { a: npcASprite, b: npcBSprite, c: npcCSprite };
 const CRITTER_SPRITES = { rat: critterRatSprite, bird: critterBirdSprite };
 const PET_SPRITES = { a: petDogA, b: petDogB };
-const SIT_SPRITES = { a: npcSitA, b: npcSitB };
 const TREE_SPRITES = { round: treeRoundSprite, pine: treePineSprite };
 
-// The ponds' tiles are the only animated part of the ground, so they're the
-// only tiles still rendered as live elements (over GroundCanvas's still
-// copy of them) — a few dozen shimmering divs instead of the whole grid.
-const WATER_TILES = TILE_GRID.flatMap((row, r) =>
-  row.flatMap((type, c) => (type === 'water' ? [{ col: c, row: r }] : [])),
-);
+// The ponds are the only animated part of the ground, so each one is a
+// live element, slotted under GroundCanvas's chunks (which leave the water
+// clear) so trees on the bank still overhang it. A pond's clip-path is
+// built from its actual water tiles (not just its rectangle) so it keeps
+// the nicked corners and any path that cuts across it stays dry.
+const PONDS = WATER_PATCHES.map((p) => {
+  let d = '';
+  for (let r = p.row; r < p.row + p.h; r++) {
+    for (let c = p.col; c < p.col + p.w; c++) {
+      if (TILE_GRID[r]?.[c] !== 'water') continue;
+      d += `M${(c - p.col) * TILE_SIZE} ${(r - p.row) * TILE_SIZE}h${TILE_SIZE}v${TILE_SIZE}h-${TILE_SIZE}z`;
+    }
+  }
+  return {
+    id: `pond-${p.col}-${p.row}`,
+    left: p.col * TILE_SIZE,
+    top: p.row * TILE_SIZE,
+    width: p.w * TILE_SIZE,
+    height: p.h * TILE_SIZE,
+    clipPath: `path('${d}')`,
+  };
+});
 const HOUSE_SPRITES = {
   'house-01': house01,
   'house-02': house02,
+  'workshop-shed': workshopShed,
   'house-03': house03,
   'house-04': house04,
   'house-05': house05,
@@ -213,6 +243,34 @@ function houseDoorPx(house) {
   return { x: x + TILE_SIZE / 2, y: y + TILE_SIZE / 2 };
 }
 
+// Deep links: owenchlee.me/#projects (etc.) opens straight into that
+// room, and the hash follows whichever room is open, so a room can be
+// shared as a link.
+const HOUSE_IDS = new Set(HOUSES.map((h) => h.id));
+
+function houseFromHash() {
+  const id = window.location.hash.slice(1);
+  return HOUSE_IDS.has(id) ? id : null;
+}
+
+function isWaterAt(world) {
+  const c = Math.floor(world.x / TILE_SIZE);
+  const r = Math.floor(world.y / TILE_SIZE);
+  return TILE_GRID[r]?.[c] === 'water';
+}
+
+// Until the welcome sign has been read once, it carries a bouncing "!"
+// and the HUD points at it, so a first-time visitor knows where to start.
+const WELCOME_KEY = 'welcome-read-v1';
+
+function readWelcomeSeen() {
+  try {
+    return localStorage.getItem(WELCOME_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
 function nearbyHouseId(progress) {
   const near = HOUSES.find(
     (h) => Math.abs(progress - WAYPOINT_FRACTIONS[h.waypointIndex]) * TOTAL_PATH_LENGTH <= NEAR_HOUSE_PX,
@@ -241,6 +299,7 @@ function App() {
   const worldRef = useRef(null);
   const boxCenterRef = useRef({ cx: 0, cy: 0 });
   const minimapDotRef = useRef(null);
+  const groundRef = useRef(null);
   const characterImgRef = useRef(null);
   const facingRef = useRef({ direction: 'down', mirror: false });
   const houseElRefs = useRef({});
@@ -290,6 +349,42 @@ function App() {
   // someone who landed here first.
   const [isMobileLanding] = useState(() => window.matchMedia('(max-width: 900px)').matches);
   const [quickView, setQuickView] = useState(isMobileLanding);
+  const [welcomeSeen, setWelcomeSeen] = useState(readWelcomeSeen);
+  const [workshopOpen, setWorkshopOpen] = useState(false);
+  // Timestamp of the last secret found (0 = none showing), doubling as the
+  // confetti's key so a second find replays it.
+  const [secretBurst, setSecretBurst] = useState(0);
+  const secrets = useSecrets();
+  const workshopUnlocked = isWorkshopOpen(secrets);
+  const seasonTrees = useSeasonTreeUrls(treeRoundSprite, treePineSprite);
+
+  function talkTo(id) {
+    stopFishing();
+    if (getDialogue()?.id === id) {
+      advanceDialogue();
+      return;
+    }
+    openDialogue(id);
+    if (id === 'sign-welcome' && !welcomeSeen) {
+      setWelcomeSeen(true);
+      try {
+        localStorage.setItem(WELCOME_KEY, '1');
+      } catch {
+        // Non-fatal: the hint just shows again next visit.
+      }
+    }
+  }
+
+  function enterWorkshop() {
+    closeDialogue();
+    stopFishing();
+    if (!isWorkshopOpen()) {
+      openDialogue('workshop-locked');
+      return;
+    }
+    if (findSecret('workshop')) setSecretBurst(Date.now());
+    setWorkshopOpen(true);
+  }
 
   function setWalkTarget(progress) {
     targetProgressRef.current = clamp01(progress);
@@ -345,6 +440,8 @@ function App() {
   }
 
   function goToHouse(id) {
+    closeDialogue();
+    stopFishing();
     const house = HOUSES.find((h) => h.id === id);
     if (houseIdRef.current === id) {
       // Already in (or walking in/out of) this one — just head inside.
@@ -433,7 +530,26 @@ function App() {
     if (!boxRef.current || !isWorldInput(e)) return;
     hideGhost();
     playTapRipple(e.clientX, e.clientY);
+    // Tapping someone (or a sign) talks to them instead of walking; tapping
+    // them again moves the conversation on. Tapping anywhere else ends it.
+    if (e.target.closest?.('[data-workshop]')) {
+      enterWorkshop();
+      return;
+    }
+    const talkEl = e.target.closest?.('[data-talk-id]');
+    if (talkEl) {
+      talkTo(talkEl.dataset.talkId);
+      return;
+    }
+    closeDialogue();
     const world = toWorld(e.clientX, e.clientY);
+    // Tapping a pond casts a line (or strikes, once something's biting).
+    if (isWaterAt(world)) {
+      if (getFishing()) fishingAction();
+      else startFishing();
+      return;
+    }
+    stopFishing();
     const house = houseAt(e.target, world);
     pressRef.current = { x: e.clientX, y: e.clientY, dragging: false };
     stageRef.current?.setPointerCapture?.(e.pointerId);
@@ -459,11 +575,13 @@ function App() {
     // committing to it.
     const ghost = destGhostRef.current;
     if (!ghost || e.pointerType !== 'mouse') return;
-    if (!isWorldInput(e)) {
+    const world = toWorld(e.clientX, e.clientY);
+    const overWater = isWorldInput(e) && isWaterAt(world);
+    boxRef.current.classList.toggle('over-water', overWater);
+    if (!isWorldInput(e) || overWater || e.target.closest?.('[data-talk-id], [data-workshop]')) {
       hideGhost();
       return;
     }
-    const world = toWorld(e.clientX, e.clientY);
     const house = houseAt(e.target, world);
     const point = house ? houseGatePx(house) : getWorldPosition(nearestProgressOnPath(world.x, world.y));
     ghost.style.left = `${point.x}px`;
@@ -535,6 +653,83 @@ function App() {
 
   useEffect(() => installLinkTracking(), []);
 
+  useEffect(
+    () =>
+      installKonami(() => {
+        stopFishing();
+        openDialogue('secret-konami');
+        setSecretBurst(Date.now());
+      }),
+    [],
+  );
+
+  // The confetti for finding a secret, cleared once it has played out.
+  useEffect(() => {
+    if (!secretBurst) return undefined;
+    const id = setTimeout(() => setSecretBurst(0), 2000);
+    return () => clearTimeout(id);
+  }, [secretBurst]);
+
+  // Season-specific CSS (the snowy ground color under unpainted chunks).
+  useEffect(() => {
+    document.documentElement.dataset.season = SEASON;
+  }, []);
+
+  // Arriving on a room's link starts the visitor already inside it (no
+  // walk from the spawn point), as if they'd just stepped through the door.
+  useEffect(() => {
+    const id = houseFromHash();
+    if (!id || isMobileLanding) return;
+    const progress = houseProgress(id);
+    progressRef.current = progress;
+    targetProgressRef.current = progress;
+    houseIdRef.current = id;
+    houseTRef.current = 1;
+    houseTargetRef.current = 1;
+    kickRef.current();
+  }, [isMobileLanding]);
+
+  // replaceState rather than pushState, so walking in and out of rooms
+  // doesn't fill the back button with history entries. Skips the first
+  // run so an incoming #room link isn't wiped before the room opens.
+  const lastHashHouseRef = useRef(activeHouse);
+  useEffect(() => {
+    if (lastHashHouseRef.current === activeHouse) return;
+    lastHashHouseRef.current = activeHouse;
+    const { pathname, search } = window.location;
+    window.history.replaceState(null, '', activeHouse ? `#${activeHouse}` : pathname + search);
+  }, [activeHouse]);
+
+  // Editing the hash by hand (or following an in-page #room link) walks
+  // there, and clearing it walks back out.
+  useEffect(() => {
+    if (quickView) return undefined;
+    const onHashChange = () => {
+      const id = houseFromHash();
+      if (id) goToHouse(id);
+      else if (houseTargetRef.current === 1) leaveHouse();
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, [quickView]);
+
+  // Ambient loops (patrolling NPCs, critters, the ball, pond ripples) are
+  // paused while they're off screen, so the compositor isn't ticking a
+  // dozen animations nobody can see. The margin starts them again a little
+  // before they scroll into view.
+  useEffect(() => {
+    const els = worldRef.current?.querySelectorAll('.ambient');
+    if (!els?.length) return undefined;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => entry.target.classList.toggle('is-offscreen', !entry.isIntersecting));
+      },
+      { rootMargin: '160px' },
+    );
+    els.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
   // Read once + subscribe: everything that consumes this ref lives inside
   // the animation loop, so a plain mutable ref (not state) avoids
   // re-running/re-rendering anything when the OS-level setting changes.
@@ -589,6 +784,7 @@ function App() {
     let lastMirror = null;
     let routeShown = false;
     let walkPhase = 0;
+    let lastStepFrame = null;
 
     // Only touches the <img> when the frame or facing actually changes, not
     // every animation frame.
@@ -612,10 +808,13 @@ function App() {
       walkPhase = 0;
     }
 
+    // .is-shown gates the dots' march animation, so it isn't left running
+    // (and repainting every frame) on an empty line between walks.
     function hideRoute() {
       if (!routeShown) return;
       routeRef.current?.setAttribute('points', '');
       routeShadowRef.current?.setAttribute('points', '');
+      routeRef.current?.ownerSVGElement?.classList.remove('is-shown');
       routeShown = false;
     }
 
@@ -636,6 +835,7 @@ function App() {
       const attr = points.map((pt) => `${pt.x.toFixed(1)},${pt.y.toFixed(1)}`).join(' ');
       routeRef.current?.setAttribute('points', attr);
       routeShadowRef.current?.setAttribute('points', attr);
+      if (!routeShown) routeRef.current?.ownerSVGElement?.classList.add('is-shown');
       routeShown = true;
     }
 
@@ -723,6 +923,7 @@ function App() {
       if (worldRef.current) {
         worldRef.current.style.transform = `translate3d(${cx - x}px, ${cy - y}px, 0)`;
       }
+      groundRef.current?.setView(x, y, cx, cy);
 
       if (lightingRef.current) {
         lightingRef.current.style.backgroundColor = getLightingTint(progress);
@@ -739,8 +940,8 @@ function App() {
       }
 
       if (minimapDotRef.current) {
-        minimapDotRef.current.setAttribute('cx', x);
-        minimapDotRef.current.setAttribute('cy', y);
+        const dot = minimapPoint(x, y);
+        minimapDotRef.current.style.transform = `translate(${dot.x}px, ${dot.y}px)`;
       }
 
       // The opening nameplate + CTA belong to the spawn point: they fade as
@@ -765,9 +966,13 @@ function App() {
       let houseMoved = false;
       if (houseT !== houseTarget) {
         const step = reducedMotion ? 1 : dt / HOUSE_ENTER_MS;
+        const prevHouseT = houseT;
         houseT = houseTarget > houseT ? Math.min(houseTarget, houseT + step) : Math.max(houseTarget, houseT - step);
         houseTRef.current = houseT;
         houseMoved = true;
+        // The door sound plays as the character reaches the doorstep, going
+        // in or coming back out.
+        if (prevHouseT < HOUSE_IRIS_START !== houseT < HOUSE_IRIS_START) playDoor(houseT > prevHouseT);
       }
       if (houseT === 0 && houseTarget === 0 && houseIdRef.current) {
         houseIdRef.current = null;
@@ -845,6 +1050,10 @@ function App() {
         walkPhase += (dt * speed) / (WALK_FRAME_MS * WALK_SPEED);
         const frameName = WALK_CYCLE[Math.floor(walkPhase) % WALK_CYCLE.length];
         setSprite(facing.direction, frameName, facing.mirror);
+        if (frameName !== lastStepFrame) {
+          lastStepFrame = frameName;
+          if (frameName !== 'idle') playStep();
+        }
       }
 
       if (pathMoved || houseMoved) {
@@ -903,6 +1112,11 @@ function App() {
           >
             See My Projects →
           </button>
+          {!welcomeSeen && (
+            <p className="hud-start-hint">
+              New here? Tap the <span className="hud-start-bang">!</span> sign →
+            </p>
+          )}
           <p className="hud-scroll-hint">
             or tap anywhere to walk · tap a house to go in ·{' '}
             <a href={RESUME_URL} target="_blank" rel="noopener noreferrer" className="hud-resume-link">
@@ -917,19 +1131,16 @@ function App() {
             ref={worldRef}
             style={{ width: WORLD_W, height: WORLD_H }}
           >
-            <GroundCanvas />
-
-            {WATER_TILES.map(({ col, row }) => (
-              <div
-                key={`water-${col}-${row}`}
-                className="water-tile"
-                style={{
-                  left: col * TILE_SIZE,
-                  top: row * TILE_SIZE,
-                  animationDelay: `${((row * 7 + col * 13) % 5) * -0.4}s`,
-                }}
-              />
-            ))}
+            <GroundCanvas ref={groundRef}>
+              {PONDS.map(({ id, ...style }) => (
+                <div key={id} className="water-pond ambient" style={style}>
+                  {/* A bobber floating mid-pond (and now and then a fish
+                      leaping) is the hint that the water can be fished. */}
+                  <span className="pond-bobber" />
+                  <span className="pond-fish" />
+                </div>
+              ))}
+            </GroundCanvas>
 
             {FENCES.map((post) => {
               const { x, y } = tileToPx(post.col, post.row);
@@ -939,6 +1150,38 @@ function App() {
                   className={`fence-post fence-post--${post.orientation}`}
                   style={{ left: x, top: y }}
                 />
+              );
+            })}
+
+            {BARRIERS.map((b) => {
+              // Each barricade stands just on the dirt side of the
+              // pavement edge it closes off (see buildBarriers).
+              const edge = b.line * TILE_SIZE;
+              const span = b.length * TILE_SIZE;
+              const from = b.start * TILE_SIZE;
+              const style =
+                b.orientation === 'h'
+                  ? {
+                      left: from + span / 2,
+                      top: edge + (b.side > 0 ? 20 : -2),
+                      width: span - 4,
+                      zIndex: zFromGroundY(edge + (b.side > 0 ? 20 : -2)),
+                    }
+                  : {
+                      left: edge + b.side * 7,
+                      top: from + 2,
+                      height: span - 4,
+                      zIndex: zFromGroundY(from + span),
+                    };
+              return (
+                <div
+                  key={b.id}
+                  className={`barricade barricade--${b.orientation} talkable`}
+                  data-talk-id="barricade"
+                  style={style}
+                >
+                  <span className="barricade-board" />
+                </div>
               );
             })}
 
@@ -1003,10 +1246,11 @@ function App() {
             {LIVE_TREES.map((tree, i) => {
               const { x, y } = tileToPx(tree.col, tree.row);
               const groundY = y + TILE_SIZE;
+              const versions = seasonTrees?.[tree.variant];
               return (
                 <img
                   key={`tree-${i}`}
-                  src={TREE_SPRITES[tree.variant]}
+                  src={versions ? versions[treeVariant(tree, versions.length)] : TREE_SPRITES[tree.variant]}
                   className="tree"
                   style={{ left: x + TILE_SIZE / 2, top: groundY, zIndex: zFromGroundY(groundY) }}
                   alt=""
@@ -1019,7 +1263,8 @@ function App() {
               return (
                 <div
                   key={npc.id}
-                  className={`npc npc--${npc.axis}`}
+                  className={`npc npc--${npc.axis} ambient talkable`}
+                  data-talk-id={npc.id}
                   style={{
                     left: x,
                     top: y,
@@ -1030,6 +1275,7 @@ function App() {
                 >
                   <div className="npc-shadow" />
                   <img src={NPC_SPRITES[npc.sprite]} className="npc-sprite" alt="" />
+                  <span className="talk-hint" aria-hidden="true" />
                 </div>
               );
             })}
@@ -1039,7 +1285,7 @@ function App() {
               return (
                 <div
                   key={critter.id}
-                  className={`critter critter--${critter.axis}`}
+                  className={`critter critter--${critter.axis} ambient`}
                   style={{
                     left: x,
                     top: y,
@@ -1058,7 +1304,8 @@ function App() {
               return (
                 <div
                   key={pet.id}
-                  className={`npc npc--${pet.axis}`}
+                  className={`npc npc--${pet.axis} ambient talkable`}
+                  data-talk-id={pet.id}
                   style={{
                     left: x,
                     top: y,
@@ -1071,6 +1318,7 @@ function App() {
                   <img src={NPC_SPRITES[pet.npcSprite]} className="npc-sprite" alt="" />
                   <div className="pet-leash" />
                   <img src={PET_SPRITES[pet.dogSprite]} className="pet-dog" alt="" />
+                  <span className="talk-hint" aria-hidden="true" />
                 </div>
               );
             })}
@@ -1092,7 +1340,7 @@ function App() {
                   </div>
                   <img
                     src={sportsBall}
-                    className="sports-ball"
+                    className="sports-ball ambient"
                     style={{
                       left: p1.x + 14,
                       top: p1.y + 18,
@@ -1108,13 +1356,69 @@ function App() {
             {PICNICS.map((p) => {
               const { x, y } = tileToPx(p.col, p.row);
               return (
-                <div key={p.id} className="picnic-scene" style={{ left: x, top: y, zIndex: zFromGroundY(y + 24) }}>
+                <div key={p.id} className="picnic-scene" style={{ left: x, top: y, zIndex: zFromGroundY(y + 78) }}>
                   <img src={picnicScene} className="picnic-blanket" alt="" />
-                  <img src={SIT_SPRITES[p.sitterA]} className="picnic-sitter picnic-sitter--a" alt="" />
-                  <img src={SIT_SPRITES[p.sitterB]} className="picnic-sitter picnic-sitter--b" alt="" />
                 </div>
               );
             })}
+
+            {SIGNS.map((sign) => {
+              const { x, y } = tileToPx(sign.col, sign.row);
+              const isWelcome = sign.id === 'sign-welcome';
+              return (
+                <div
+                  key={sign.id}
+                  className={`signpost talkable ${isWelcome ? 'signpost--welcome' : ''} ${
+                    isWelcome && !welcomeSeen ? 'is-unread' : ''
+                  }`}
+                  data-talk-id={sign.id}
+                  style={{ left: x, top: y, zIndex: zFromGroundY(y + TILE_SIZE) }}
+                >
+                  <span className="signpost-post" />
+                  <span className="signpost-board" />
+                  {isWelcome && !welcomeSeen && (
+                    <span className="signpost-alert" aria-hidden="true">
+                      !
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+
+            {(() => {
+              const { x, y } = tileToPx(NOTICE_BOARD.col, NOTICE_BOARD.row);
+              return (
+                <div
+                  className="notice-board talkable"
+                  data-talk-id={NOTICE_BOARD.id}
+                  style={{ left: x, top: y, zIndex: zFromGroundY(y + TILE_SIZE) }}
+                >
+                  <span className="notice-board-face">
+                    <span className="notice-board-title">NOW</span>
+                  </span>
+                  <span className="talk-hint" aria-hidden="true" />
+                </div>
+              );
+            })()}
+
+            {(() => {
+              const { x, y } = tileToPx(WORKSHOP.col, WORKSHOP.row);
+              const footprint = getHouseFootprintWidth(WORKSHOP.sprite, DECOR_SPRITE_H);
+              return (
+                <div
+                  className={`decor-house-wrap workshop ${workshopUnlocked ? 'is-open' : 'is-locked'}`}
+                  data-workshop=""
+                  style={{ left: x, top: y, '--footprint-w': `${footprint}px`, zIndex: zFromGroundY(y + 70) }}
+                >
+                  <div className="building-shadow" />
+                  <div className="building-foundation" />
+                  <img src={HOUSE_SPRITES[WORKSHOP.sprite]} className="decor-house" alt="" />
+                  {/* It's a secret: no lit windows, no label, no glow. Once
+                      unlocked, the boards just come off the door. */}
+                  {!workshopUnlocked && <span className="workshop-boards" aria-hidden="true" />}
+                </div>
+              );
+            })()}
 
             <svg className="route-preview" width={WORLD_W} height={WORLD_H} aria-hidden="true">
               <polyline ref={routeShadowRef} className="route-preview-shadow" points="" />
@@ -1128,6 +1432,8 @@ function App() {
               <div className="dest-marker-arrow" />
             </div>
           </div>
+
+          {!activeHouse && <SeasonFx />}
 
           <div className="lighting-overlay" ref={lightingRef} aria-hidden="true" />
 
@@ -1190,13 +1496,25 @@ function App() {
       <button
         type="button"
         className="quick-view-toggle"
-        onClick={() => setQuickView(true)}
+        onClick={() => {
+          closeDialogue();
+          stopFishing();
+          setQuickView(true);
+        }}
         aria-pressed={quickView}
       >
         Quick View
       </button>
 
       {quickView && <QuickView onClose={() => setQuickView(false)} isMobileLanding={isMobileLanding} />}
+
+      <DialogueBox />
+
+      <FishingBox />
+
+      {workshopOpen && <Workshop onClose={() => setWorkshopOpen(false)} />}
+
+      {secretBurst > 0 && <ParticleBurst key={secretBurst} />}
 
       <BadgeToast />
 

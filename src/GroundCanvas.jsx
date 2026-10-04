@@ -1,13 +1,13 @@
-import { useEffect, useRef } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { TILE_SIZE, COLS, ROWS, WORLD_W, WORLD_H, TILE_GRID, BAKED_TREES, WALKABLE, hash } from './tileMap';
 import pavementUrl from './assets/pavement.png';
 import grassUrl from './assets/grass.png';
 import dirtUrl from './assets/dirt-lpc.png';
 import dirtEdgeUrl from './assets/dirt-edge-lpc.png';
-import waterUrl from './assets/water-lpc.png';
 import plantUrl from './assets/plant.png';
 import treeRoundUrl from './assets/tree-round-lpc.png';
 import treePineUrl from './assets/tree-pine-lpc.png';
+import { seasonGround, seasonTreeSprites, treeVariant } from './season';
 
 // The whole static ground — every grass/path/flower/water tile plus the
 // thousands of trees that don't need live depth sorting (BAKED_TREES, see
@@ -18,9 +18,8 @@ import treePineUrl from './assets/tree-pine-lpc.png';
 // budget: measured in headless Chrome, the walk ran at ~9fps, and because
 // each frame's step is time-based that read as the character crawling. One
 // pre-painted bitmap that the camera just translates is effectively free
-// to move. Water keeps its shimmer via a handful of live tiles App.jsx
-// renders on top (see WATER_TILES there); this canvas only paints their
-// still base so nothing flashes while those load.
+// to move. The ponds are live elements under the canvas instead (see
+// `children` below), so they keep their shimmer.
 
 // Rendered tree width — matches .tree in App.css (height follows the
 // sprite's own aspect ratio, same as height:auto there).
@@ -65,8 +64,8 @@ function brightnessMatrix(v) {
 // filters do) to a copy of `img`.
 function tinted(img, matrices) {
   const canvas = document.createElement('canvas');
-  canvas.width = img.naturalWidth;
-  canvas.height = img.naturalHeight;
+  canvas.width = img.naturalWidth || img.width;
+  canvas.height = img.naturalHeight || img.height;
   const ctx = canvas.getContext('2d');
   ctx.drawImage(img, 0, 0);
   const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -107,24 +106,22 @@ const EDGE_DIR = {
 };
 
 const isWalkable = (c, r) => WALKABLE.has(`${c},${r}`);
-const isPathType = (c, r) => {
-  const type = TILE_GRID[r]?.[c];
-  return !!type && type.startsWith('path') && !type.startsWith('path-edge');
-};
 
-// Pavement is bordered by a dark curb wherever it meets grass, so the
-// walkable route reads as a built road; where a dirt spur branches off it
-// stays open so the spur still visibly joins the road.
+// Pavement is bordered by a dark curb wherever it meets anything else,
+// dirt included, so the walkable road reads as one built surface and the
+// dirt tracks (fenced off at the curb, see BARRIERS in tileMap.js) as
+// somewhere you can't go.
 const CURB = '#5a5246';
 const CURB_LIGHT = '#e6dfcd';
 
-function drawCurbs(ctx) {
+function drawCurbs(ctx, range) {
   const T = TILE_SIZE;
   WALKABLE.forEach((key) => {
     const [c, r] = key.split(',').map(Number);
+    if (c < range.c0 || c > range.c1 || r < range.r0 || r > range.r1) return;
     const x = c * T;
     const y = r * T;
-    const open = (dc, dr) => isWalkable(c + dc, r + dr) || isPathType(c + dc, r + dr);
+    const open = (dc, dr) => isWalkable(c + dc, r + dr);
     if (!open(0, -1)) {
       ctx.fillStyle = CURB;
       ctx.fillRect(x, y, T, 3);
@@ -156,9 +153,14 @@ function drawCurbs(ctx) {
 // phase-locked to the world's tile grid (FOREST_OFFSET is a whole number
 // of periods), so a tree out there sits on the same 32px grid as the
 // border trees inside the map.
+//
+// How far it reaches past the map: the camera stays centered on the path
+// (x 1280-1920), so even a 5K-wide window only sees ~1300px past an edge.
+// It used to reach 3072px, which made .world's layer ~9000x9900px and gave
+// the browser a lot of offscreen forest to rasterize and keep around.
 const FOREST_PERIOD = 16;
 const FOREST_DENSITY = 0.9; // same fill as BORDER_TREE_DENSITY in tileMap.js
-const FOREST_OFFSET = FOREST_PERIOD * TILE_SIZE * 6;
+const FOREST_OFFSET = FOREST_PERIOD * TILE_SIZE * 3;
 // The ground canvas also paints this many tiles of that same forest past
 // each map edge, so canopies along the edge aren't sliced off by the
 // canvas boundary and the hand-off into the backdrop is pixel-identical.
@@ -190,17 +192,22 @@ function forestTrees(c0, c1, r0, r1, skipMap) {
 
 // Back-to-front (north to south) so nearer canopies overlap farther
 // ones, same painter's order the live trees get from their z-index.
-function drawTrees(ctx, img, trees) {
+const byRowThenCol = (a, b) => a.row - b.row || a.col - b.col;
+
+// `bounds` (world px) skips trees whose sprite can't reach the area being
+// painted. Trees that cross a chunk edge get drawn into both chunks, in
+// the same global order, so the two halves line up exactly.
+function drawTrees(ctx, img, sortedTrees, bounds) {
   const T = TILE_SIZE;
-  [...trees]
-    .sort((a, b) => a.row - b.row || a.col - b.col)
-    .forEach((tree) => {
-      const sprite = tree.variant === 'pine' ? img.treePine : img.treeRound;
-      const h = (TREE_W * sprite.naturalHeight) / sprite.naturalWidth;
-      const cx = tree.col * T + T / 2;
-      const groundY = tree.row * T + T;
-      ctx.drawImage(sprite, cx - TREE_W / 2, groundY - h, TREE_W, h);
-    });
+  sortedTrees.forEach((tree) => {
+    const versions = tree.variant === 'pine' ? img.trees.pine : img.trees.round;
+    const sprite = versions[treeVariant(tree, versions.length)];
+    const h = (TREE_W * sprite.height) / sprite.width;
+    const left = tree.col * T + T / 2 - TREE_W / 2;
+    const top = tree.row * T + T - h;
+    if (bounds && (left > bounds.x1 || left + TREE_W < bounds.x0 || top > bounds.y1 || top + h < bounds.y0)) return;
+    ctx.drawImage(sprite, left, top, TREE_W, h);
+  });
 }
 
 // Tree sprites stand ~2.6 tiles tall and overhang their tile ~12px a
@@ -221,34 +228,43 @@ function paintForestTile(img, forestFloor) {
   }
   // Include the wrapped neighbours so canopies crossing the tile's edges
   // continue on the opposite side — that's what makes it seamless.
-  drawTrees(ctx, img, forestTrees(-1, FOREST_PERIOD, -1, FOREST_PERIOD + TREE_REACH_ROWS, false));
+  const trees = forestTrees(-1, FOREST_PERIOD, -1, FOREST_PERIOD + TREE_REACH_ROWS, false).sort(byRowThenCol);
+  drawTrees(ctx, img, trees, null);
   return canvas;
 }
 
-function paintGround(ctx, img, grassVariants) {
+// Map trees and the outside forest share one painter's pass so they
+// overlap each other correctly across the map edge.
+const GROUND_TREES = [
+  ...BAKED_TREES,
+  ...forestTrees(-PAD - 1, COLS + PAD, -PAD - 1, ROWS + PAD + TREE_REACH_ROWS, true),
+].sort(byRowThenCol);
+
+// Paints the ground tiles in an inclusive tile range (which may run into
+// the padding ring outside the map), then every tree that reaches it.
+function paintGround(ctx, img, grassVariants, range) {
   const T = TILE_SIZE;
   // Flower sprite at 55% of the tile, centered over grass.
   const plantSize = T * 0.55;
 
-  // Forest floor under the padding ring around the map.
-  for (let r = -PAD; r < ROWS + PAD; r++) {
-    for (let c = -PAD; c < COLS + PAD; c++) {
-      if (c >= 0 && c < COLS && r >= 0 && r < ROWS) continue;
-      ctx.drawImage(grassVariants.forest, c * T, r * T, T, T);
-    }
-  }
-
-  TILE_GRID.forEach((row, r) => {
-    row.forEach((type, c) => {
+  for (let r = range.r0; r <= range.r1; r++) {
+    for (let c = range.c0; c <= range.c1; c++) {
       const x = c * T;
       const y = r * T;
+      if (c < 0 || c >= COLS || r < 0 || r >= ROWS) {
+        // Forest floor under the padding ring around the map.
+        ctx.drawImage(grassVariants.forest, x, y, T, T);
+        continue;
+      }
+      const type = TILE_GRID[r][c];
       if (grassVariants[type]) {
         ctx.drawImage(grassVariants[type], x, y, T, T);
       } else if (type === 'flower') {
         ctx.drawImage(img.grass, x, y, T, T);
         ctx.drawImage(img.plant, x + (T - plantSize) / 2, y + (T - plantSize) / 2, plantSize, plantSize);
       } else if (type === 'water') {
-        ctx.drawImage(img.water, x, y, T, T);
+        // Left clear: the live pond sits underneath the chunks (see the
+        // JSX below), so trees painted next here overhang the water.
       } else if (type in EDGE_ROTATION && isWalkable(c + EDGE_DIR[type][0], r + EDGE_DIR[type][1])) {
         // Grass beside pavement stays clean — the curb is the border.
         ctx.drawImage(img.grass, x, y, T, T);
@@ -267,55 +283,158 @@ function paintGround(ctx, img, grassVariants) {
         // Every other type is a path piece sharing the one dirt texture.
         ctx.drawImage(img.dirt, x, y, T, T);
       }
-    });
+    }
+  }
+  drawCurbs(ctx, range);
+  drawTrees(ctx, img, GROUND_TREES, {
+    x0: range.c0 * T,
+    y0: range.r0 * T,
+    x1: (range.c1 + 1) * T,
+    y1: (range.r1 + 1) * T,
   });
-  drawCurbs(ctx);
-
-  // Map trees and the outside forest share one painter's pass so they
-  // overlap each other correctly across the map edge.
-  const outside = forestTrees(-PAD - 1, COLS + PAD, -PAD - 1, ROWS + PAD + TREE_REACH_ROWS, true);
-  drawTrees(ctx, img, [...BAKED_TREES, ...outside]);
 }
 
-function GroundCanvas() {
-  const canvasRef = useRef(null);
+// --- Chunks ---
+// The painted area (map + padding ring) is ~3100x3900px. As one canvas
+// that's ~49MB of pixels before the browser's own GPU and tile copies,
+// measured at ~135MB of process memory in headless Chrome. Instead it's
+// cut into CHUNK_PX squares, and only the ones near the camera hold a
+// bitmap: chunks get painted as they come within PAINT_MARGIN of the
+// screen and freed (resized to 0x0) once they're past FREE_MARGIN. The gap
+// between the two margins stops a chunk from being painted and freed
+// over and over by a visitor pacing back and forth across one edge.
+const CHUNK_PX = 512;
+const CHUNK_TILES = CHUNK_PX / TILE_SIZE;
+const PAINT_MARGIN = 256;
+const FREE_MARGIN = 640;
+const GROUND_W = WORLD_W + 2 * PAD_PX;
+const GROUND_H = WORLD_H + 2 * PAD_PX;
+const CHUNK_COLS = Math.ceil(GROUND_W / CHUNK_PX);
+const CHUNK_ROWS = Math.ceil(GROUND_H / CHUNK_PX);
+
+const CHUNKS = Array.from({ length: CHUNK_COLS * CHUNK_ROWS }, (_, i) => {
+  const cx = i % CHUNK_COLS;
+  const cy = Math.floor(i / CHUNK_COLS);
+  // World px of the chunk's top-left (the ring starts at -PAD_PX).
+  const x = cx * CHUNK_PX - PAD_PX;
+  const y = cy * CHUNK_PX - PAD_PX;
+  return {
+    cx,
+    cy,
+    x,
+    y,
+    w: Math.min(CHUNK_PX, GROUND_W - cx * CHUNK_PX),
+    h: Math.min(CHUNK_PX, GROUND_H - cy * CHUNK_PX),
+    range: {
+      c0: cx * CHUNK_TILES - PAD,
+      r0: cy * CHUNK_TILES - PAD,
+      c1: Math.min(COLS + PAD, (cx + 1) * CHUNK_TILES - PAD) - 1,
+      r1: Math.min(ROWS + PAD, (cy + 1) * CHUNK_TILES - PAD) - 1,
+    },
+  };
+});
+
+function chunkSpan(view, margin) {
+  const clampC = (v) => Math.min(CHUNK_COLS - 1, Math.max(0, v));
+  const clampR = (v) => Math.min(CHUNK_ROWS - 1, Math.max(0, v));
+  return {
+    c0: clampC(Math.floor((view.x - view.halfW - margin + PAD_PX) / CHUNK_PX)),
+    c1: clampC(Math.floor((view.x + view.halfW + margin + PAD_PX) / CHUNK_PX)),
+    r0: clampR(Math.floor((view.y - view.halfH - margin + PAD_PX) / CHUNK_PX)),
+    r1: clampR(Math.floor((view.y + view.halfH + margin + PAD_PX) / CHUNK_PX)),
+  };
+}
+
+const inSpan = (chunk, s) => chunk.cx >= s.c0 && chunk.cx <= s.c1 && chunk.cy >= s.r0 && chunk.cy <= s.r1;
+
+// `ref` exposes setView(x, y, halfW, halfH): the camera's world position
+// and half the stage size, called by App.jsx's draw loop whenever the
+// camera moves or the stage resizes.
+// `children` (the ponds) render between the flat grass and the chunks: the
+// chunks leave their water tiles transparent, so the water shows through
+// while every tree in the canvas still draws over it, the way a canopy
+// standing on the bank should.
+const GroundCanvas = forwardRef(function GroundCanvas({ children }, ref) {
+  const chunkRefs = useRef([]);
   const backdropRef = useRef(null);
+  // Sprites + tinted grass once loaded, which chunks currently hold a
+  // bitmap, the last view, and the last spans (to skip no-op updates).
+  const stateRef = useRef({ assets: null, painted: new Set(), view: null, spanKey: '' });
+
+  function syncChunks() {
+    const s = stateRef.current;
+    if (!s.assets || !s.view) return;
+    const paint = chunkSpan(s.view, PAINT_MARGIN);
+    const keep = chunkSpan(s.view, FREE_MARGIN);
+    const key = `${paint.c0},${paint.c1},${paint.r0},${paint.r1}|${keep.c0},${keep.c1},${keep.r0},${keep.r1}`;
+    if (key === s.spanKey) return;
+    s.spanKey = key;
+    CHUNKS.forEach((chunk, i) => {
+      const canvas = chunkRefs.current[i];
+      if (!canvas) return;
+      const isPainted = s.painted.has(i);
+      if (!isPainted && inSpan(chunk, paint)) {
+        canvas.width = chunk.w;
+        canvas.height = chunk.h;
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+        ctx.translate(-chunk.x, -chunk.y);
+        paintGround(ctx, s.assets.img, s.assets.grassVariants, chunk.range);
+        s.painted.add(i);
+      } else if (isPainted && !inSpan(chunk, keep)) {
+        canvas.width = 0;
+        canvas.height = 0;
+        s.painted.delete(i);
+      }
+    });
+  }
+
+  useImperativeHandle(ref, () => ({
+    setView(x, y, halfW, halfH) {
+      stateRef.current.view = { x, y, halfW, halfH };
+      syncChunks();
+    },
+  }));
 
   useEffect(() => {
     let cancelled = false;
+    let backdropUrl = null;
     Promise.all([
       loadImage(grassUrl),
       loadImage(dirtUrl),
       loadImage(dirtEdgeUrl),
-      loadImage(waterUrl),
       loadImage(plantUrl),
       loadImage(treeRoundUrl),
       loadImage(treePineUrl),
       loadImage(pavementUrl),
-    ]).then(([grass, dirt, dirtEdge, water, plant, treeRound, treePine, pavement]) => {
-      const canvas = canvasRef.current;
-      if (cancelled || !canvas) return;
-      const img = { grass, dirt, dirtEdge, water, plant, treeRound, treePine, pavement };
+    ]).then(([grassImg, dirtImg, dirtEdgeImg, plantImg, treeRound, treePine, pavement]) => {
+      if (cancelled) return;
+      const grass = seasonGround(grassImg, 'grass');
+      const dirt = seasonGround(dirtImg, 'dirt');
+      const dirtEdge = seasonGround(dirtEdgeImg, 'grass');
+      const plant = seasonGround(plantImg, 'plant');
+      const trees = seasonTreeSprites(treeRound, treePine);
+      const img = { grass, dirt, dirtEdge, plant, trees, pavement };
       const grassVariants = {
         grass,
         'grass-b': tinted(grass, [hueRotateMatrix(-6), brightnessMatrix(0.94)]),
         'grass-c': tinted(grass, [hueRotateMatrix(6), brightnessMatrix(1.05)]),
         forest: tinted(grass, [brightnessMatrix(0.5), saturateMatrix(0.85)]),
       };
+      stateRef.current.assets = { img, grassVariants };
+      syncChunks();
 
-      const ctx = canvas.getContext('2d');
-      ctx.imageSmoothingEnabled = false;
-      ctx.translate(PAD_PX, PAD_PX);
-      paintGround(ctx, img, grassVariants);
-      canvas.classList.add('painted');
-
-      if (backdropRef.current) {
-        const tile = paintForestTile(img, grassVariants.forest);
-        backdropRef.current.style.backgroundImage = `url(${tile.toDataURL()})`;
-      }
+      // A blob URL rather than toDataURL(), which would keep a few hundred
+      // KB of base64 text alive in the style for the life of the page.
+      paintForestTile(img, grassVariants.forest).toBlob((blob) => {
+        if (cancelled || !blob || !backdropRef.current) return;
+        backdropUrl = URL.createObjectURL(blob);
+        backdropRef.current.style.backgroundImage = `url(${backdropUrl})`;
+      });
     });
     return () => {
       cancelled = true;
+      if (backdropUrl) URL.revokeObjectURL(backdropUrl);
     };
   }, []);
 
@@ -333,16 +452,25 @@ function GroundCanvas() {
           backgroundSize: `${FOREST_PERIOD * TILE_SIZE}px`,
         }}
       />
-      <canvas
-        ref={canvasRef}
-        className="ground-canvas"
-        width={WORLD_W + 2 * PAD_PX}
-        height={WORLD_H + 2 * PAD_PX}
-        style={{ left: -PAD_PX, top: -PAD_PX }}
-        aria-hidden="true"
-      />
+      {/* Flat grass under the map so a chunk that hasn't painted yet never
+          shows the forest backdrop through the middle of town. */}
+      <div className="ground-base" style={{ width: WORLD_W, height: WORLD_H }} aria-hidden="true" />
+      {children}
+      {CHUNKS.map((chunk, i) => (
+        <canvas
+          key={i}
+          ref={(el) => {
+            chunkRefs.current[i] = el;
+          }}
+          className="ground-chunk"
+          width={0}
+          height={0}
+          style={{ left: chunk.x, top: chunk.y }}
+          aria-hidden="true"
+        />
+      ))}
     </>
   );
-}
+});
 
 export default GroundCanvas;

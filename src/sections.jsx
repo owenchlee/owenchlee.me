@@ -80,9 +80,10 @@ export function useRowVideoPlayback() {
   };
 }
 
-// Shared by ProjectsPanel and QuickView — falls back to a colored placeholder box when
-// neither `video` nor `image` is set yet (see content.js), so a section can
-// be filled in one entry at a time without any card looking broken.
+// Shared by ProjectsPanel and QuickView — falls back to a colored box with
+// the project's name when neither `video` nor `image` is set yet (see
+// content.js), so a section can be filled in one entry at a time without
+// any card looking broken.
 export function CardThumb({ video, image, color, alt, registerVideo }) {
   const videoRef = useRef(null);
 
@@ -92,17 +93,23 @@ export function CardThumb({ video, image, color, alt, registerVideo }) {
   }, [video, registerVideo]);
 
   if (video) {
+    // preload="none" + a still poster: nothing downloads or holds a decoder
+    // until the row is actually on screen and play() is called. With
+    // "metadata", all seven clips buffered on page load even though they sit
+    // in a closed room. Posters are a frame from each clip, generated next
+    // to it as <name>-poster.webp.
     return (
       <div className="project-thumb project-thumb--image">
         <video
           ref={videoRef}
           src={video}
+          poster={video.replace(/\.mp4$/, '-poster.webp')}
           className="project-thumb-img"
           controls
           muted
           loop
           playsInline
-          preload="metadata"
+          preload="none"
         />
       </div>
     );
@@ -116,21 +123,65 @@ export function CardThumb({ video, image, color, alt, registerVideo }) {
   }
   return (
     <div className="project-thumb" style={{ background: color }}>
-      <span>Image placeholder</span>
+      <span>{alt}</span>
     </div>
   );
 }
 
+// The tech tags shared by two or more projects, most used first: the
+// filter row at the top of the Projects room. Tags only one project uses
+// still filter when tapped on its card.
+const FILTER_TAGS = (() => {
+  const counts = new Map();
+  PROJECTS.forEach((p) => p.tech?.forEach((t) => counts.set(t, (counts.get(t) ?? 0) + 1)));
+  return [...counts]
+    .filter(([, n]) => n >= 2)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([t]) => t);
+})();
+
 export const ProjectsPanel = forwardRef(function ProjectsPanel({ active }, ref) {
   const registerVideo = useRowVideoPlayback();
+  // Tap a tech chip (on a card or in the row up top) to show only the
+  // projects that use it; tap it again, or "All", to clear.
+  const [tag, setTag] = useState(null);
+  const shown = tag ? PROJECTS.filter((p) => p.tech?.includes(tag)) : PROJECTS;
+  const toggleTag = (t) => setTag((cur) => (cur === t ? null : t));
+  const filterTags = tag && !FILTER_TAGS.includes(tag) ? [...FILTER_TAGS, tag] : FILTER_TAGS;
   return (
     <div ref={ref} className={`section-panel section-panel--projects ${active ? 'visible' : ''}`}>
       <div className="section-panel-inner">
         <div className="section-floor section-floor--stone" />
         <div className="section-content projects-content">
           <h2 className="projects-heading">Projects</h2>
+          <div className="project-filter" role="group" aria-label="Filter projects by technology">
+            <button
+              type="button"
+              className={`tech-chip tech-chip--button ${tag ? '' : 'is-active'}`}
+              aria-pressed={!tag}
+              onClick={() => setTag(null)}
+            >
+              All ({PROJECTS.length})
+            </button>
+            {filterTags.map((t) => (
+              <button
+                key={t}
+                type="button"
+                className={`tech-chip tech-chip--button ${tag === t ? 'is-active' : ''}`}
+                aria-pressed={tag === t}
+                onClick={() => toggleTag(t)}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+          {tag && (
+            <p className="project-filter-status" aria-live="polite">
+              {shown.length} {shown.length === 1 ? 'project uses' : 'projects use'} {tag}.
+            </p>
+          )}
           <div className="projects-grid">
-            {PROJECTS.map((p) => (
+            {shown.map((p) => (
               <article key={p.name} className="project-card">
                 <CardThumb video={p.video} image={p.image} color={p.color} alt={p.name} registerVideo={registerVideo} />
                 <div className="project-meta">
@@ -155,7 +206,16 @@ export const ProjectsPanel = forwardRef(function ProjectsPanel({ active }, ref) 
                 {p.tech?.length > 0 && (
                   <ul className="project-tech">
                     {p.tech.map((t) => (
-                      <li key={t} className="tech-chip">{t}</li>
+                      <li key={t}>
+                        <button
+                          type="button"
+                          className={`tech-chip tech-chip--button ${tag === t ? 'is-active' : ''}`}
+                          aria-pressed={tag === t}
+                          onClick={() => toggleTag(t)}
+                        >
+                          {t}
+                        </button>
+                      </li>
                     ))}
                   </ul>
                 )}
@@ -168,88 +228,129 @@ export const ProjectsPanel = forwardRef(function ProjectsPanel({ active }, ref) 
   );
 });
 
-// Résumé-style panel: Education, Work & Leadership, and Skills, sourced from
-// the same content.js data QuickView renders (see EDUCATION/EXPERIENCE/
-// SKILLS there) so the game world and the plain-view fallback never drift
-// out of sync. Reuses .project-card/.project-tech/.tech-chip from
-// ProjectsPanel above rather than inventing a parallel card language, since
-// a résumé entry is really just a project card with bullets instead of a
-// single prose paragraph.
+// Experience is the town's Adventurers' Guild: each role is a quest notice
+// pinned to the quest board, stamped ONGOING or COMPLETE from its dates,
+// with its headline result as the reward. Tapping one unrolls the full
+// notice (org, dates, bullets) over the board. Education hangs beside it as
+// training scrolls, skills are the inventory, and the counter on the floor
+// holds the guild membership card and the full résumé ledger. Sourced from
+// the same content.js data QuickView renders (EDUCATION/EXPERIENCE/SKILLS),
+// so the room and the plain view never drift apart.
+const isOngoing = (dates) => /present/i.test(dates);
+
 export const ExperiencePanel = forwardRef(function ExperiencePanel({ active }, ref) {
+  const [openQuest, setOpenQuest] = useState(null);
+  const quest = openQuest != null ? EXPERIENCE[openQuest] : null;
+
   return (
     <div ref={ref} className={`section-panel section-panel--experience ${active ? 'visible' : ''}`}>
       <div className="section-panel-inner">
-        <div className="section-floor section-floor--stone" />
-        <div className="section-content projects-content">
-          <h2 className="projects-heading">Experience</h2>
+        <div className="section-content guild-content">
+          <div className="guild">
+            <div className="guild-wall">
+              <div className="guild-sign-row">
+                <span className="guild-torch" aria-hidden="true" />
+                <h2 className="guild-sign">Adventurers&apos; Guild</h2>
+                <span className="guild-torch" aria-hidden="true" />
+              </div>
 
-          <div className="experience-group">
-            <h3 className="experience-group-heading">Education</h3>
-            <div className="experience-cards">
-              {EDUCATION.map((e) => (
-                <article key={e.program} className="project-card">
-                  <div className="project-meta">
-                    <h3>{e.program}</h3>
-                    <span className="project-date">{e.dates}</span>
+              <div className="guild-boards">
+                <section className="guild-board guild-board--training" aria-labelledby="guild-training">
+                  <h3 id="guild-training" className="guild-board-title">Training</h3>
+                  {EDUCATION.map((e) => (
+                    <div key={e.program} className="guild-scroll">
+                      <strong>{e.program}</strong>
+                      <span>{e.school}</span>
+                      <span className="guild-scroll-dates">{e.dates}</span>
+                      {e.notes?.length > 0 && (
+                        <ul>
+                          {e.notes.map((n) => (
+                            <li key={n}>{n}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ))}
+                </section>
+
+                <section className="guild-board guild-board--quests" aria-labelledby="guild-quests">
+                  <h3 id="guild-quests" className="guild-board-title">Quest Board</h3>
+                  <div className="guild-quests">
+                    {EXPERIENCE.map((e, i) => {
+                      const ongoing = isOngoing(e.dates);
+                      return (
+                        <button
+                          key={`${e.role}-${e.org}`}
+                          type="button"
+                          className="guild-quest"
+                          style={{ '--tilt': `${[-1.5, 1, 1.5, -1][i % 4]}deg` }}
+                          onClick={() => setOpenQuest(i)}
+                        >
+                          <span className="guild-quest-role">{e.role}</span>
+                          <span className="guild-quest-org">{e.org}</span>
+                          <span className="guild-quest-reward">Reward: {e.reward}</span>
+                          <span className={`guild-stamp ${ongoing ? 'guild-stamp--ongoing' : ''}`}>
+                            {ongoing ? 'Ongoing' : 'Complete'}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
-                  <p className="experience-org">
-                    {e.school}
-                    {e.location ? ` — ${e.location}` : ''}
-                  </p>
-                  {e.notes?.length > 0 && (
-                    <ul className="experience-bullets">
-                      {e.notes.map((n) => (
-                        <li key={n}>{n}</li>
-                      ))}
-                    </ul>
+
+                  {quest && (
+                    <div className="guild-quest-open" role="dialog" aria-label={`${quest.role}, ${quest.org}`}>
+                      <button type="button" className="hobby-detail-close" onClick={() => setOpenQuest(null)} aria-label="Close">
+                        ✕
+                      </button>
+                      <span className="guild-quest-role">{quest.role}</span>
+                      <span className="guild-quest-org">
+                        {quest.org}
+                        {quest.location ? ` · ${quest.location}` : ''}
+                      </span>
+                      <span className="guild-scroll-dates">{quest.dates}</span>
+                      <ul>
+                        {quest.bullets.map((b) => (
+                          <li key={b}>{b}</li>
+                        ))}
+                      </ul>
+                      <span className={`guild-stamp ${isOngoing(quest.dates) ? 'guild-stamp--ongoing' : ''}`}>
+                        {isOngoing(quest.dates) ? 'Ongoing' : 'Complete'}
+                      </span>
+                    </div>
                   )}
-                </article>
-              ))}
-            </div>
-          </div>
+                </section>
 
-          <div className="experience-group">
-            <h3 className="experience-group-heading">Work &amp; Leadership</h3>
-            <div className="experience-cards">
-              {EXPERIENCE.map((e) => (
-                <article key={`${e.role}-${e.org}`} className="project-card">
-                  <div className="project-meta">
-                    <h3>{e.role}</h3>
-                    <span className="project-date">{e.dates}</span>
-                  </div>
-                  <p className="experience-org">
-                    {e.org}
-                    {e.location ? ` — ${e.location}` : ''}
-                  </p>
-                  <ul className="experience-bullets">
-                    {e.bullets.map((b) => (
-                      <li key={b}>{b}</li>
-                    ))}
-                  </ul>
-                </article>
-              ))}
+                <section className="guild-board guild-board--inventory" aria-labelledby="guild-inventory">
+                  <h3 id="guild-inventory" className="guild-board-title">Inventory</h3>
+                  {SKILLS.map((s) => (
+                    <div key={s.category} className="guild-inventory-group">
+                      <span className="guild-inventory-label">{s.category}</span>
+                      <ul className="project-tech">
+                        {s.items.map((it) => (
+                          <li key={it} className="tech-chip">
+                            {it}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </section>
+              </div>
             </div>
-          </div>
 
-          <div className="experience-group">
-            <h3 className="experience-group-heading">Skills</h3>
-            <div className="skills-list">
-              {SKILLS.map((s) => (
-                <div key={s.category} className="skills-category">
-                  <span className="skills-category-label">{s.category}</span>
-                  <ul className="project-tech">
-                    {s.items.map((it) => (
-                      <li key={it} className="tech-chip">{it}</li>
-                    ))}
-                  </ul>
+            <div className="guild-floor">
+              <div className="guild-counter">
+                <div className="guild-card">
+                  <span className="guild-card-title">Guild Member</span>
+                  <span>Owen Lee</span>
+                  <span>Member since 2022 · SYDE &apos;31</span>
                 </div>
-              ))}
+                <a href={RESUME_URL} target="_blank" rel="noreferrer" className="guild-ledger">
+                  Guild Ledger: full résumé (PDF) ↗
+                </a>
+              </div>
             </div>
           </div>
-
-          <a href={RESUME_URL} target="_blank" rel="noreferrer" className="experience-resume-link">
-            View Full Résumé (PDF) ↗
-          </a>
         </div>
       </div>
     </div>
@@ -267,6 +368,25 @@ export const ExperiencePanel = forwardRef(function ExperiencePanel({ active }, r
 // with book-stack filler cubbies so the case never ends in a gap.
 const HOBBY_COLS = 3;
 
+// The window shows the visitor's actual time of day (their local clock,
+// not the world's scroll-driven lighting): dawn, day, dusk or night, each
+// with its own sky and something that drifts past now and then.
+function getSkyPhase(hour) {
+  if (hour >= 5 && hour < 8) return 'dawn';
+  if (hour >= 8 && hour < 17) return 'day';
+  if (hour >= 17 && hour < 20) return 'dusk';
+  return 'night';
+}
+
+function useSkyPhase() {
+  const [phase, setPhase] = useState(() => getSkyPhase(new Date().getHours()));
+  useEffect(() => {
+    const id = window.setInterval(() => setPhase(getSkyPhase(new Date().getHours())), 60 * 1000);
+    return () => window.clearInterval(id);
+  }, []);
+  return phase;
+}
+
 function BookStack({ variant }) {
   return (
     <div className={`shelf-cubby shelf-cubby--books shelf-cubby--books-${variant}`} aria-hidden="true">
@@ -281,6 +401,7 @@ function BookStack({ variant }) {
 
 export const HobbiesPanel = forwardRef(function HobbiesPanel({ active }, ref) {
   const [selected, setSelected] = useState(null);
+  const skyPhase = useSkyPhase();
 
   const selectedHobby = selected != null ? HOBBIES[selected] : null;
   const fillerCount = (HOBBY_COLS - (HOBBIES.length % HOBBY_COLS)) % HOBBY_COLS;
@@ -289,9 +410,16 @@ export const HobbiesPanel = forwardRef(function HobbiesPanel({ active }, ref) {
     <div ref={ref} className={`section-panel section-panel--hobbies ${active ? 'visible' : ''}`}>
       <div className="section-panel-inner">
         <div className="section-content hobbies-content">
-          <div className="room">
+          <div className={`room room--${skyPhase}`}>
             <div className="room-wall" aria-hidden="true">
               <div className="room-window">
+                <div className="room-window-sky">
+                  <span className="room-window-orb" />
+                  <span className="room-window-cloud" />
+                  <span className="room-window-bird" />
+                  <span className="room-window-bird room-window-bird--2" />
+                  <span className="room-window-shooting-star" />
+                </div>
                 <span className="room-window-curtain room-window-curtain--l" />
                 <span className="room-window-curtain room-window-curtain--r" />
               </div>
