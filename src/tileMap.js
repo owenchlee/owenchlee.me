@@ -23,15 +23,14 @@ const WAYPOINTS_TILE = [
 
 // Purely cosmetic: a short path stub painted past Contact (see buildTileGrid)
 // so the route doesn't dead-end abruptly right at the last house. Kept out
-// of WAYPOINTS_TILE itself — that array drives scroll length (TRACK_HEIGHT),
-// camera keyframes, and every reveal/waypointFraction calculation below, so
-// folding the tail into it would add scrollable distance after the Contact
-// panel is fully open with nothing left to reveal, letting the page keep
-// scrolling past the "end" of the site.
+// of WAYPOINTS_TILE itself — that array defines the walkable route
+// (progress 0-1, tap-to-move projection, waypointFraction), so folding the
+// tail into it would let the character walk on past the Contact house to
+// a spot with nothing there.
 const PATH_TAIL_TILE = { col: 64, row: 93 };
 
 // waypointIndex ties each house to the WAYPOINTS_TILE entry it sits next to,
-// so scroll progress (not screen position) can drive which house is "active"
+// so path progress (not screen position) can drive which house is "active"
 // — screen position breaks down once the path folds back on itself (the
 // down-left leg puts Hobbies at a *smaller* col than Contact even though it
 // comes earlier on the path).
@@ -179,10 +178,19 @@ export const WATER_PATCHES = [
 // band gets a dense treeline (like the forest bordering a Pokémon town)
 // instead of the sparse scatter used everywhere else.
 const BORDER_MARGIN = 9;
+// Tree fill inside that band. Trees are 56px sprites on a 32px grid, so a
+// lower roll left visible grass between canopies. Near-full fill plus a
+// darker 'forest' floor tile under the band means any remaining gap reads
+// as shade under the trees rather than open field.
+const BORDER_TREE_DENSITY = 0.9;
+// A few tiles just inside the band get a thinner scatter so the forest
+// fades into town instead of stopping at a hard straight line.
+const BORDER_TAPER = 3;
+const BORDER_TAPER_DENSITY = 0.35;
 
 // Small deterministic hash so decoration scatter is stable across reloads
 // without needing to store a big random table.
-function hash(col, row) {
+export function hash(col, row) {
   const n = Math.sin(col * 127.1 + row * 311.7) * 43758.5453;
   return n - Math.floor(n);
 }
@@ -212,11 +220,21 @@ function buildTileGrid() {
 
   WATER_PATCHES.forEach((patch) => paintPond(grid, patch));
 
+  // Cells the character can actually walk on (the route itself plus the
+  // walkways up to the four checkpoint houses). GroundCanvas paves these;
+  // everything else painted as path stays dirt, so it's obvious at a glance
+  // which roads lead somewhere.
+  const walkable = new Set();
+  let markWalkable = false;
+
   const paintPath = (c, r) => {
     [[0, 0], [1, 0], [0, 1], [-1, 0]].forEach(([dc, dr]) => {
       const cc = c + dc;
       const rr = r + dr;
-      if (rr >= 0 && rr < ROWS && cc >= 0 && cc < COLS) grid[rr][cc] = 'path';
+      if (rr >= 0 && rr < ROWS && cc >= 0 && cc < COLS) {
+        grid[rr][cc] = 'path';
+        if (markWalkable) walkable.add(`${cc},${rr}`);
+      }
     });
   };
 
@@ -230,9 +248,12 @@ function buildTileGrid() {
     }
   };
 
+  markWalkable = true;
   for (let i = 0; i < WAYPOINTS_TILE.length - 1; i++) {
     paintSegment(WAYPOINTS_TILE[i], WAYPOINTS_TILE[i + 1]);
   }
+  HOUSES.forEach((h) => paintSegment({ col: h.col, row: h.row + 3 }, nearestWaypoint(h.col, h.row)));
+  markWalkable = false;
   paintSegment(WAYPOINTS_TILE[WAYPOINTS_TILE.length - 1], PATH_TAIL_TILE);
 
   // Decorative side streets — same painter, but these tiles never feed into
@@ -242,7 +263,9 @@ function buildTileGrid() {
   // Every building — the 4 real checkpoints and all decorative houses —
   // gets a walkway from its entrance (the fence gap, h.row+3) to the
   // nearest actual path vertex, so nothing sits isolated in open grass.
-  [...HOUSES, ...DECOR_HOUSES].forEach((h) => {
+  // (The checkpoint houses' walkways were already painted above, as
+  // walkable.)
+  DECOR_HOUSES.forEach((h) => {
     const anchor = nearestWaypoint(h.col, h.row);
     paintSegment({ col: h.col, row: h.row + 3 }, anchor);
   });
@@ -281,6 +304,16 @@ function buildTileGrid() {
     }
   }
 
+  // The band still gets trees, though. It used to stay treeless so nothing
+  // sat behind the nameplate, but the nameplate is a solid plaque layered
+  // above the world (trees can't cover its text) and it fades out as soon
+  // as the character walks off — after which a bare strip read as an empty
+  // green hole at the top of every view along the first leg of the route.
+  // With its driveways erased above, nearPath no longer spaces trees off
+  // the decor houses up here, so those are checked directly.
+  const nearDecorHouse = (c, r) =>
+    DECOR_HOUSES.some((h) => c >= h.col - 2 && c <= h.col + 3 && r >= h.row - 3 && r <= h.row + 3);
+
   // Route framing: low fence/tree lining along both sides of the *real*
   // path only (not the decorative spurs), at a sparse interval, like a GBA
   // route being visually channeled rather than open field on both sides.
@@ -305,10 +338,7 @@ function buildTileGrid() {
         if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return;
         if (grid[r][c] !== 'grass') return;
         if (nearAnyHouse(c, r)) return;
-        // Rows 10-29 sit behind the HUD nameplate text (see spawn clearing
-        // above) — trees there would occlude it, so this band always falls
-        // back to flowers instead.
-        if (r > 29 && hash(c, r) < 0.5) addTree(c, r);
+        if (hash(c, r) < 0.5) addTree(c, r);
         else grid[r][c] = 'flower';
       });
     }
@@ -384,15 +414,23 @@ function buildTileGrid() {
       if (nearAnyHouse(c, r)) continue;
       if (treeReserved.has(`${c},${r}`)) continue;
 
-      const onBorder = c < BORDER_MARGIN || c >= COLS - BORDER_MARGIN || r < BORDER_MARGIN || r >= ROWS - BORDER_MARGIN;
+      const edgeDist = Math.min(c, COLS - 1 - c, r, ROWS - 1 - r);
       const roll = hash(c, r);
 
-      if (onBorder) {
-        if (roll < 0.55) addTree(c, r);
+      if (edgeDist < BORDER_MARGIN) {
+        grid[r][c] = 'forest';
+        if (roll < BORDER_TREE_DENSITY) addTree(c, r);
         continue;
       }
 
-      if (roll < 0.14 && !nearPath(c, r) && r > 29) {
+      const treeOk = !nearPath(c, r) && !(r <= 29 && nearDecorHouse(c, r));
+      const inTaper = edgeDist < BORDER_MARGIN + BORDER_TAPER && treeOk;
+      if (inTaper && roll < BORDER_TAPER_DENSITY) {
+        addTree(c, r);
+        continue;
+      }
+
+      if (roll < 0.14 && treeOk) {
         addTree(c, r);
       } else if (roll < 0.26) {
         grid[r][c] = 'flower';
@@ -403,12 +441,20 @@ function buildTileGrid() {
     }
   }
 
-  return { grid, trees };
+  // Drop any walkable cells a later pass turned back into grass.
+  const walkableCells = new Set(
+    [...walkable].filter((key) => {
+      const [c, r] = key.split(',').map(Number);
+      return grid[r][c].startsWith('path') && !grid[r][c].startsWith('path-edge');
+    }),
+  );
+  return { grid, trees, walkable: walkableCells };
 }
 
 const built = buildTileGrid();
 export const TILE_GRID = built.grid;
 export const TREES = built.trees;
+export const WALKABLE = built.walkable;
 
 // A fenced yard perimeter around each checkpoint building — purely
 // decorative. Leaves a gap in the bottom edge, centered on the building, as
@@ -556,67 +602,48 @@ export function getWorldPosition(progress) {
   return WAYPOINTS_PX[WAYPOINTS_PX.length - 1];
 }
 
-// --- House reveal curve ---
-// Section panels used to snap open/closed on a binary distance check, paired
-// with a fixed-duration CSS transition — the reveal pace had zero relation
-// to how fast the user was actually scrolling, which is what read as
-// abrupt/disconnected ("boom, next page"). Instead, reveal is a continuous
-// 0-1 function of scroll progress: a flat "fully open" plateau (so the panel
-// is comfortably interactive, not a single instantaneous point) plus eased
-// shoulders on either side (so it grows/shrinks in lockstep with scroll
-// speed rather than on its own timer).
-export const HOUSE_OPEN_PLATEAU = 0.03;
-export const HOUSE_REVEAL_SHOULDER = 0.035;
-
-export function getHouseReveal(progress, waypointFraction, { reducedMotion = false } = {}) {
-  const d = Math.abs(progress - waypointFraction);
-  if (reducedMotion) return d <= HOUSE_OPEN_PLATEAU ? 1 : 0;
-  if (d <= HOUSE_OPEN_PLATEAU) return 1;
-  const s = d - HOUSE_OPEN_PLATEAU;
-  if (s >= HOUSE_REVEAL_SHOULDER) return 0;
-  const t = 1 - s / HOUSE_REVEAL_SHOULDER;
-  return t * t * (3 - 2 * t); // smoothstep
-}
-
-// Character walk-to-the-door amount (0-1), a pure function of scroll
-// progress like getHouseReveal above — no independent timer, no
-// requestAnimationFrame loop, nothing that plays on its own once triggered.
-// An earlier version played a fixed-duration CSS animation once a threshold
-// was crossed, so the character kept walking for a full ~2s even after the
-// user had completely stopped scrolling — every other reveal-driven visual
-// in this file is tied straight to scroll position, and this one needs to
-// be too: every bit of scroll should move something, and nothing should
-// move without a bit of scroll. Reuses almost all of HOUSE_REVEAL_SHOULDER
-// (linear, not smoothstepped — smoothstep flattens near both ends, which
-// compresses most of the visible change into a sliver of the actual scroll
-// distance) so there's still a wide, clearly visible band to walk through.
-const CHARACTER_WALK_FRACTION = 0.92;
-
-export function getCharacterWalkT(progress, waypointFraction, { reducedMotion = false } = {}) {
-  const d = Math.abs(progress - waypointFraction);
-  if (reducedMotion) return d <= HOUSE_OPEN_PLATEAU ? 1 : 0;
-  if (d <= HOUSE_OPEN_PLATEAU) return 1;
-  const s = d - HOUSE_OPEN_PLATEAU;
-  const band = HOUSE_REVEAL_SHOULDER * CHARACTER_WALK_FRACTION;
-  if (s >= band) return 0;
-  return 1 - s / band; // linear — constant rate across the whole band
-}
-
-// Adjacent houses' reveal bands must never overlap, or two panels could be
-// simultaneously non-zero — verified here at module load (dev only) rather
-// than just in a comment, so it can't silently regress if a waypoint moves.
-if (import.meta.env.DEV) {
-  const band = 2 * (HOUSE_OPEN_PLATEAU + HOUSE_REVEAL_SHOULDER);
-  const fractions = HOUSES.map((h) => WAYPOINT_FRACTIONS[h.waypointIndex]).sort((a, b) => a - b);
-  for (let i = 0; i < fractions.length - 1; i++) {
-    const gap = fractions[i + 1] - fractions[i];
-    if (gap < band) {
-      console.warn(
-        `[tileMap] House reveal bands overlap: gap ${gap.toFixed(3)} between waypoint fractions ` +
-          `${fractions[i].toFixed(3)} and ${fractions[i + 1].toFixed(3)} is smaller than band width ${band.toFixed(3)}.`,
-      );
+// World-space polyline along the path from progress `from` to progress
+// `to` (either direction): both endpoints plus every waypoint corner in
+// between, in walking order. Drives the dotted route preview.
+export function pathPointsBetween(from, to) {
+  const points = [getWorldPosition(from)];
+  if (to > from) {
+    WAYPOINT_FRACTIONS.forEach((f, i) => {
+      if (f > from && f < to) points.push(WAYPOINTS_PX[i]);
+    });
+  } else {
+    for (let i = WAYPOINT_FRACTIONS.length - 1; i >= 0; i--) {
+      const f = WAYPOINT_FRACTIONS[i];
+      if (f < from && f > to) points.push(WAYPOINTS_PX[i]);
     }
   }
+  points.push(getWorldPosition(to));
+  return points;
+}
+
+// Tap-to-move: projects a world-space point onto the route and returns the
+// progress (0-1) of the closest point on it, so tapping anywhere walks the
+// character along the path to wherever is nearest the tap rather than
+// cutting across grass, trees or houses.
+export function nearestProgressOnPath(x, y) {
+  let best = { d2: Infinity, progress: 0 };
+  for (let i = 0; i < WAYPOINTS_PX.length - 1; i++) {
+    const a = WAYPOINTS_PX[i];
+    const b = WAYPOINTS_PX[i + 1];
+    const abx = b.x - a.x;
+    const aby = b.y - a.y;
+    const lenSq = abx * abx + aby * aby;
+    const t = lenSq === 0 ? 0 : Math.min(1, Math.max(0, ((x - a.x) * abx + (y - a.y) * aby) / lenSq));
+    const px = a.x + abx * t;
+    const py = a.y + aby * t;
+    const d2 = (x - px) ** 2 + (y - py) ** 2;
+    if (d2 < best.d2) {
+      const start = WAYPOINT_FRACTIONS[i];
+      const end = WAYPOINT_FRACTIONS[i + 1];
+      best = { d2, progress: start + (end - start) * t };
+    }
+  }
+  return best.progress;
 }
 
 // --- Lighting cycle ---
@@ -670,3 +697,30 @@ export function getNightAmount(progress) {
   }
   return SKY_STOPS[SKY_STOPS.length - 1].night;
 }
+
+// --- Baked vs. live trees ---
+// Thousands of <img> trees panning under the camera were a big share of the
+// per-frame paint cost, so most of them are painted once into the ground
+// canvas (see GroundCanvas.jsx) instead. A baked tree always sits beneath
+// every DOM sprite, though, so any tree near something that needs real
+// depth sorting against it — a building, a patrolling NPC, a lamp — stays a
+// live, z-sorted <img> so things can still walk behind it.
+const LIVE_TREE_ANCHORS = [
+  ...HOUSES.map((h) => ({ col: h.col, row: h.row, radius: 5 })),
+  ...DECOR_HOUSES.map((h) => ({ col: h.col, row: h.row, radius: 4 })),
+  ...NPCS.map((n) => ({ col: n.col, row: n.row, radius: 4 })),
+  ...CRITTERS.map((c) => ({ col: c.col, row: c.row, radius: 4 })),
+  ...PET_WALKERS.map((p) => ({ col: p.col, row: p.row, radius: 4 })),
+  ...SPORTS.map((s) => ({ col: s.col + s.gap / 2, row: s.row, radius: 4 + s.gap / 2 })),
+  ...PICNICS.map((p) => ({ col: p.col, row: p.row, radius: 4 })),
+  ...LAMPS.map((l) => ({ col: l.col, row: l.row, radius: 2 })),
+];
+
+function needsLiveTree(tree) {
+  return LIVE_TREE_ANCHORS.some(
+    (a) => Math.abs(tree.col - a.col) <= a.radius && Math.abs(tree.row - a.row) <= a.radius,
+  );
+}
+
+export const LIVE_TREES = TREES.filter(needsLiveTree);
+export const BAKED_TREES = TREES.filter((t) => !needsLiveTree(t));

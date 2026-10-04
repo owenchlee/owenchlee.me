@@ -2,6 +2,7 @@ import { forwardRef, useEffect, useRef, useState } from 'react';
 import { PROJECTS, HOBBIES, CONTACT, EDUCATION, EXPERIENCE, SKILLS, RESUME_URL, SECRET_NOTE } from './content';
 import { markHobbySeen, useAchievements } from './achievements';
 import petDogA from './assets/pet-dog-a.png';
+import owenPortrait from './assets/owen-portrait.jpg';
 
 // Shared across every CardThumb in a panel so playback tracks by row, not by
 // individual card — a single IntersectionObserver tracks each video's
@@ -490,11 +491,16 @@ export const ContactPanel = forwardRef(function ContactPanel({ active }, ref) {
       <div className="section-panel-inner">
         <div className="section-floor section-floor--wood" />
         <div className="section-content contact-content">
-          {/* The NPC reacts once the visitor is Champion (all 8 badges, see
-              achievements.js): "?" becomes a star, and the secret note
-              below unlocks. */}
+          {/* Owen's own photo as the "NPC" you're talking to. Once the
+              visitor is Champion (all 8 badges, see achievements.js) a star
+              pops onto the frame, and the secret note below unlocks. */}
           <div className={`npc-portrait ${championAt ? 'npc-portrait--champion' : ''}`}>
-            {championAt ? '★' : '?'}
+            <img src={owenPortrait} alt="Owen Lee" />
+            {championAt && (
+              <span className="npc-portrait-star" aria-hidden="true">
+                ★
+              </span>
+            )}
           </div>
           <div className="dialogue-box">
             <p className="dialogue-text">{CONTACT.message}</p>
