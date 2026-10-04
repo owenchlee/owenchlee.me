@@ -2,8 +2,6 @@ import { Fragment, useEffect, useRef, useState } from 'react';
 import './App.css';
 import {
   TILE_SIZE,
-  COLS,
-  ROWS,
   WORLD_W,
   WORLD_H,
   TILE_GRID,
@@ -16,15 +14,15 @@ import {
   PET_WALKERS,
   SPORTS,
   PICNICS,
-  TREES,
+  LIVE_TREES,
   WAYPOINTS_PX,
   WAYPOINT_FRACTIONS,
   TOTAL_PATH_LENGTH,
   tileToPx,
   getWorldPosition,
   getHouseFootprintWidth,
-  getHouseReveal,
-  getCharacterWalkT,
+  nearestProgressOnPath,
+  pathPointsBetween,
   getLightingTint,
   getNightAmount,
 } from './tileMap';
@@ -34,6 +32,7 @@ import { Highlighted } from './Highlighted';
 import Minimap from './Minimap';
 import SectionNav from './SectionNav';
 import MusicPlayer from './MusicPlayer';
+import GroundCanvas from './GroundCanvas';
 import QuickView from './QuickView';
 import { BadgeCase, BadgeToast } from './Badges';
 import { earnBadge, installLinkTracking } from './achievements';
@@ -92,6 +91,13 @@ const CRITTER_SPRITES = { rat: critterRatSprite, bird: critterBirdSprite };
 const PET_SPRITES = { a: petDogA, b: petDogB };
 const SIT_SPRITES = { a: npcSitA, b: npcSitB };
 const TREE_SPRITES = { round: treeRoundSprite, pine: treePineSprite };
+
+// The ponds' tiles are the only animated part of the ground, so they're the
+// only tiles still rendered as live elements (over GroundCanvas's still
+// copy of them) — a few dozen shimmering divs instead of the whole grid.
+const WATER_TILES = TILE_GRID.flatMap((row, r) =>
+  row.flatMap((type, c) => (type === 'water' ? [{ col: c, row: r }] : [])),
+);
 const HOUSE_SPRITES = {
   'house-01': house01,
   'house-02': house02,
@@ -113,9 +119,49 @@ const HOUSE_SPRITES = {
   'house-19': house19,
 };
 
-// Scroll distance scales with the actual path length so pacing stays
-// consistent if the path shape changes.
-const TRACK_HEIGHT = Math.round(TOTAL_PATH_LENGTH * 2.4);
+// Top walking pace along the path, in world px per second — converted to
+// progress via TOTAL_PATH_LENGTH so pacing stays consistent if the path
+// shape changes. Roughly a Pokémon "running shoes" pace for this tile size.
+const WALK_SPEED = 340;
+// Long trips (a SectionNav jump across the map, a tap far down the route)
+// speed up so no single walk takes longer than this — a brisk jog rather
+// than making the visitor wait out the whole route at walking pace.
+const MAX_TRIP_S = 2.4;
+// Speed ramps up over the first few frames and eases off into the stop
+// (px/s²) instead of snapping between standing and full speed, which reads
+// as sliding. The stop never slows below WALK_MIN_SPEED so the last few
+// pixels don't creep.
+const WALK_ACCEL = 2600;
+const WALK_DECEL = 2000;
+const WALK_MIN_SPEED = 70;
+// Classic 4-beat top-down walk cycle: step, stand, other step, stand.
+const WALK_CYCLE = ['walk-a', 'idle', 'walk-b', 'idle'];
+// Time each walk-cycle frame is held at WALK_SPEED; scales with actual
+// speed so the feet keep up on a jog and don't flail when easing to a stop.
+const WALK_FRAME_MS = 95;
+
+// Time from standing on the path outside a house to its panel fully open
+// (and the same again walking back out). houseT runs 0-1 over this: the
+// first HOUSE_WALK_PORTION of it is the gate -> door walk, and the panel's
+// iris opens over the tail starting at HOUSE_IRIS_START, overlapping the
+// last bit of the walk so stepping through the door and the room opening
+// read as one motion.
+const HOUSE_ENTER_MS = 1300;
+const HOUSE_WALK_PORTION = 0.7;
+const HOUSE_IRIS_START = 0.6;
+
+// How close (world px along the path) the character has to be standing to
+// a house's waypoint for that house to count as "right here" — highlights
+// its label as a tap/Enter prompt and lets Enter step inside.
+const NEAR_HOUSE_PX = 40;
+
+// Arrow-key step, in world px along the path, per keydown (auto-repeat
+// while held keeps extending the target, so holding a key walks).
+const KEY_STEP_PX = 96;
+
+// Once a press has moved further than this it's a drag, which steers the
+// character toward wherever the pointer currently is.
+const DRAG_SLOP_PX = 8;
 
 // Rendered sprite heights for checkpoint and decor buildings — kept in sync
 // with .house-sprite/.decor-house in App.css, and used to size each
@@ -123,34 +169,55 @@ const TRACK_HEIGHT = Math.round(TOTAL_PATH_LENGTH * 2.4);
 const HOUSE_SPRITE_H = 104;
 const DECOR_SPRITE_H = 88;
 
-// Fraction of getCharacterWalkT's 0-1 range spent on the first leg (path to
-// the yard's fence gate) before switching to the second leg (gate to the
-// door) — see the pose math in the scroll effect below. Purely a scroll-
-// driven split, not a timed one: at t=WALK_LEG1_END the character is exactly
-// at the gate, however fast or slow the user got there.
+// Within the walk portion of houseT (see HOUSE_WALK_PORTION), the fraction
+// spent on the first leg (path to the yard's fence gate) before switching
+// to the second leg (gate to the door).
 const WALK_LEG1_END = 0.55;
 // Within the second leg, the fraction of *that* leg's own progress where the
 // character starts shrinking/fading — kept late so most of the walk plays at
 // full size (reads as "walk to the door") and only the last bit at the door
-// itself shrinks away (reads as "step inside"), instead of shrinking
-// continuously across the whole distance.
+// itself shrinks away (reads as "step inside").
 const WALK_SHRINK_START = 0.7;
-// Within leg 1 (see WALK_LEG1_END), the fraction of *that* leg's own
-// progress before the sprite commits to facing the gate instead of the
-// ambient path direction. posX/posY (the character's actual on-screen
-// position) already ease smoothly from 0 the moment maxWalkT ticks above
-// zero, but a sprite's facing is a discrete state (down/up/side + mirror) —
-// snapping it to point at the gate at that same instant reads as "he's
-// already beelining for the door" despite the body having barely nudged off
-// the path. Waiting until the position shift itself is visible before
-// committing the facing keeps the two in sync.
-const WALK_FACING_START = 0.2;
 
-function computeProgress(trackEl) {
-  const rect = trackEl.getBoundingClientRect();
-  const viewportH = window.innerHeight;
-  const scrollable = rect.height - viewportH;
-  return scrollable <= 0 ? 0 : Math.min(1, Math.max(0, -rect.top / scrollable));
+function clamp01(v) {
+  return Math.min(1, Math.max(0, v));
+}
+
+function smoothstep(t) {
+  return t * t * (3 - 2 * t);
+}
+
+// Which way the character should face to cover a given (dx, dy) leg —
+// side + mirrored if that leg is mostly horizontal, else up/down.
+function directionFromDelta(dx, dy) {
+  if (Math.abs(dx) > Math.abs(dy)) return { direction: 'side', mirror: dx < 0 };
+  return { direction: dy < 0 ? 'up' : 'down', mirror: false };
+}
+
+function houseProgress(id) {
+  const house = HOUSES.find((h) => h.id === id);
+  return WAYPOINT_FRACTIONS[house.waypointIndex];
+}
+
+// The center of the gap in a house's front fence (yardFence in tileMap.js
+// leaves out the post at h.col on the bottom row) — where the destination
+// marker sits when a house is the target, and the first leg of the walk in.
+function houseGatePx(house) {
+  const { x, y } = tileToPx(house.col, house.row + 3);
+  return { x: x + TILE_SIZE / 2, y: y + TILE_SIZE / 2 };
+}
+
+// The doorstep: straight up from the gate to the building's base.
+function houseDoorPx(house) {
+  const { x, y } = tileToPx(house.col, house.row + 2);
+  return { x: x + TILE_SIZE / 2, y: y + TILE_SIZE / 2 };
+}
+
+function nearbyHouseId(progress) {
+  const near = HOUSES.find(
+    (h) => Math.abs(progress - WAYPOINT_FRACTIONS[h.waypointIndex]) * TOTAL_PATH_LENGTH <= NEAR_HOUSE_PX,
+  );
+  return near ? near.id : null;
 }
 
 // Painter's algorithm for the overworld: every decorative sprite inside
@@ -169,35 +236,277 @@ function zFromGroundY(groundY) {
 }
 
 function App() {
-  const trackRef = useRef(null);
+  const stageRef = useRef(null);
   const boxRef = useRef(null);
   const worldRef = useRef(null);
   const boxCenterRef = useRef({ cx: 0, cy: 0 });
   const minimapDotRef = useRef(null);
   const characterImgRef = useRef(null);
-  const prevPosRef = useRef(null);
-  const walkFrameRef = useRef('walk-a');
-  const lastToggleRef = useRef(0);
   const facingRef = useRef({ direction: 'down', mirror: false });
-  const idleTimeoutRef = useRef(null);
-  const walkPoseRef = useRef({ x: 0, y: 0, scale: 1, opacity: 1 });
   const houseElRefs = useRef({});
   const panelRefs = useRef({});
   const lastRevealRef = useRef({});
   const lightingRef = useRef(null);
   const characterWrapRef = useRef(null);
+  const tapRippleRef = useRef(null);
+  const destMarkerRef = useRef(null);
+  const destGhostRef = useRef(null);
+  const routeRef = useRef(null);
+  const routeShadowRef = useRef(null);
   const reducedMotionRef = useRef(false);
+  // Movement state. `progress` (0-1 along the path) is the single value the
+  // camera, lighting, night sky and minimap all key off — advanced toward
+  // `targetProgress` a little each animation frame. `houseT` (0-1) is how
+  // far into the house in `houseIdRef` the character is: walking from the
+  // path to the door, then the panel opening. The character only walks the
+  // path while fully outside (houseT === 0), so tapping elsewhere while
+  // inside first walks back out, then heads there.
+  const progressRef = useRef(0);
+  const targetProgressRef = useRef(0);
+  const houseTRef = useRef(0);
+  const houseTargetRef = useRef(0);
+  const houseIdRef = useRef(null);
+  const pendingHouseRef = useRef(null);
+  const tripSpeedRef = useRef(WALK_SPEED);
+  const velocityRef = useRef(0);
+  const kickRef = useRef(() => {});
+  // The active press: where it started, and whether it has turned into a
+  // steering drag yet.
+  const pressRef = useRef(null);
+  // Where the destination marker currently points: 'path' (a spot on the
+  // route), 'house' (a house's gate) or null when hidden.
+  const destKindRef = useRef(null);
   const [activeHouse, setActiveHouse] = useState(null);
-  // The scrolling world is tuned for a desktop-sized stage-box and gets
-  // tight/overlapping on phones, so small screens land straight on Quick
-  // View (a plain layout of the same content) instead of the game camera.
-  // Checked once on mount, not on resize — this is about the device the
-  // page loaded on, not a live viewport-width reaction. Also passed to
-  // QuickView so its close button can read correctly either way: "back to
-  // site" for someone who opened it from the world, "explore the
-  // interactive world" for someone who landed here first.
+  // Standing at the start of the path (outside any house) — lights up the
+  // Intro entry in SectionNav.
+  const [atSpawn, setAtSpawn] = useState(true);
+  // The world is tuned for a desktop-sized stage-box and gets tight/
+  // overlapping on phones, so small screens land straight on Quick View (a
+  // plain layout of the same content) instead of the game camera. Checked
+  // once on mount, not on resize — this is about the device the page loaded
+  // on, not a live viewport-width reaction. Also passed to QuickView so its
+  // close button can read correctly either way: "back to site" for someone
+  // who opened it from the world, "explore the interactive world" for
+  // someone who landed here first.
   const [isMobileLanding] = useState(() => window.matchMedia('(max-width: 900px)').matches);
   const [quickView, setQuickView] = useState(isMobileLanding);
+
+  function setWalkTarget(progress) {
+    targetProgressRef.current = clamp01(progress);
+    const tripPx = Math.abs(targetProgressRef.current - progressRef.current) * TOTAL_PATH_LENGTH;
+    tripSpeedRef.current = Math.max(WALK_SPEED, tripPx / MAX_TRIP_S);
+  }
+
+  // Destination marker: a pulsing tile plus a bouncing arrow on the spot the
+  // character is heading to, which stays up for the whole walk (the RPG
+  // Maker "destination sprite" convention) and pops when they arrive. A
+  // house target tints it in that house's color, parks the tile on the
+  // gate and floats the arrow up over the roof (`arrowLift` px higher), so
+  // it reads as "into this building" and never sits on the sprite itself.
+  function showDestination(x, y, color, arrowLift = 0, houseId = null) {
+    const marker = destMarkerRef.current;
+    if (!marker) return;
+    setTargetedHouse(houseId);
+    marker.classList.toggle('house-target', Boolean(houseId));
+    marker.style.left = `${x}px`;
+    marker.style.top = `${y}px`;
+    marker.style.setProperty('--marker-color', color || 'var(--pal-cream)');
+    marker.style.setProperty('--arrow-lift', `${arrowLift}px`);
+    if (!marker.classList.contains('active') || marker.classList.contains('arrive')) {
+      marker.classList.remove('arrive', 'active');
+      // Reflow so the drop-in animation replays for a fresh destination.
+      void marker.offsetWidth;
+      marker.classList.add('active');
+    }
+  }
+
+  // The house being walked to glows and shows its colored label (instead of
+  // a ground tile that would cover that label).
+  function setTargetedHouse(id) {
+    HOUSES.forEach((h) => houseElRefs.current[h.id]?.classList.toggle('targeted', h.id === id));
+  }
+
+  function goToProgress(progress, { marker = true } = {}) {
+    pendingHouseRef.current = null;
+    setWalkTarget(progress);
+    if (houseTRef.current > 0) houseTargetRef.current = 0;
+    if (marker) {
+      const { x, y } = getWorldPosition(targetProgressRef.current);
+      destKindRef.current = 'path';
+      showDestination(x, y);
+    } else if (destKindRef.current) {
+      // Keyboard steps don't get a marker — clear any left over from an
+      // earlier tap so it doesn't point at a spot no longer being walked to.
+      destKindRef.current = null;
+      destMarkerRef.current?.classList.remove('active', 'arrive');
+      setTargetedHouse(null);
+    }
+    kickRef.current();
+  }
+
+  function goToHouse(id) {
+    const house = HOUSES.find((h) => h.id === id);
+    if (houseIdRef.current === id) {
+      // Already in (or walking in/out of) this one — just head inside.
+      pendingHouseRef.current = null;
+      houseTargetRef.current = 1;
+    } else {
+      pendingHouseRef.current = id;
+      setWalkTarget(houseProgress(id));
+      if (houseTRef.current > 0) houseTargetRef.current = 0;
+    }
+    const gate = houseGatePx(house);
+    // The sprite's top edge: .house is a 74px box at the house tile with the
+    // sprite overflowing upward from its bottom.
+    const roofY = tileToPx(house.col, house.row).y + 74 - HOUSE_SPRITE_H;
+    destKindRef.current = 'house';
+    showDestination(gate.x, gate.y, house.color, gate.y - roofY - 20, house.id);
+    kickRef.current();
+  }
+
+  function leaveHouse() {
+    pendingHouseRef.current = null;
+    houseTargetRef.current = 0;
+    kickRef.current();
+  }
+
+  function playTapRipple(clientX, clientY) {
+    const ripple = tapRippleRef.current;
+    const box = boxRef.current;
+    if (!ripple || !box) return;
+    const rect = box.getBoundingClientRect();
+    ripple.style.left = `${clientX - rect.left}px`;
+    ripple.style.top = `${clientY - rect.top}px`;
+    ripple.classList.remove('show');
+    void ripple.offsetWidth;
+    ripple.classList.add('show');
+  }
+
+  // Screen point -> world point, through the camera (which is always
+  // centered on the character's spot on the path).
+  function toWorld(clientX, clientY) {
+    const rect = boxRef.current.getBoundingClientRect();
+    const cam = getWorldPosition(progressRef.current);
+    const { cx, cy } = boxCenterRef.current;
+    return { x: clientX - rect.left - cx + cam.x, y: clientY - rect.top - cy + cam.y };
+  }
+
+  // Generous hit area around each checkpoint (the building plus its yard
+  // down to the gate), so tapping near a house counts, not just its exact
+  // sprite pixels.
+  function houseAt(target, world) {
+    const houseEl = target.closest?.('[data-house-id]');
+    if (houseEl) return HOUSES.find((h) => h.id === houseEl.dataset.houseId);
+    return HOUSES.find((h) => {
+      // .house is a 56x74 box at (x, y) with the sprite centered on it and
+      // overflowing upward; the hit box spans the sprite's real width plus
+      // some slack, from its roof down through the yard to the gate.
+      const { x, y } = tileToPx(h.col, h.row);
+      const halfW = getHouseFootprintWidth(h.sprite, HOUSE_SPRITE_H) / 2 + 16;
+      const cx = x + 28;
+      return (
+        world.x >= cx - halfW &&
+        world.x <= cx + halfW &&
+        world.y >= y + 74 - HOUSE_SPRITE_H - 12 &&
+        world.y <= y + 4 * TILE_SIZE
+      );
+    });
+  }
+
+  function isWorldInput(e) {
+    if (e.target.closest?.('button, a, .section-panel.visible, .hud-textbox')) return false;
+    // A room is open — the world underneath isn't interactive.
+    return !(houseTRef.current >= 1 && houseTargetRef.current === 1);
+  }
+
+  function hideGhost() {
+    destGhostRef.current?.classList.remove('show');
+  }
+
+  // Press anywhere on the stage: the character sets off immediately (on
+  // press, not release, so it feels instant) toward the nearest point on the
+  // path, or into a house if the press lands on or around one. Holding and
+  // dragging steers — the target follows the pointer along the path.
+  // Buttons, links, the HUD plaque and open rooms keep their own clicks.
+  function onStagePointerDown(e) {
+    if (!e.isPrimary || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    if (!boxRef.current || !isWorldInput(e)) return;
+    hideGhost();
+    playTapRipple(e.clientX, e.clientY);
+    const world = toWorld(e.clientX, e.clientY);
+    const house = houseAt(e.target, world);
+    pressRef.current = { x: e.clientX, y: e.clientY, dragging: false };
+    stageRef.current?.setPointerCapture?.(e.pointerId);
+    if (house) {
+      goToHouse(house.id);
+      return;
+    }
+    goToProgress(nearestProgressOnPath(world.x, world.y));
+  }
+
+  function onStagePointerMove(e) {
+    if (!e.isPrimary || !boxRef.current) return;
+    const press = pressRef.current;
+    if (press) {
+      if (!press.dragging && Math.hypot(e.clientX - press.x, e.clientY - press.y) < DRAG_SLOP_PX) return;
+      press.dragging = true;
+      const world = toWorld(e.clientX, e.clientY);
+      goToProgress(nearestProgressOnPath(world.x, world.y));
+      return;
+    }
+    // Mouse hover preview: a faint marker on the spot a click would send
+    // the character, so the snap-to-path behavior is visible before
+    // committing to it.
+    const ghost = destGhostRef.current;
+    if (!ghost || e.pointerType !== 'mouse') return;
+    if (!isWorldInput(e)) {
+      hideGhost();
+      return;
+    }
+    const world = toWorld(e.clientX, e.clientY);
+    const house = houseAt(e.target, world);
+    const point = house ? houseGatePx(house) : getWorldPosition(nearestProgressOnPath(world.x, world.y));
+    ghost.style.left = `${point.x}px`;
+    ghost.style.top = `${point.y}px`;
+    ghost.style.setProperty('--marker-color', house ? house.color : 'var(--pal-cream)');
+    ghost.classList.add('show');
+  }
+
+  function onStagePointerUp(e) {
+    if (!e.isPrimary) return;
+    pressRef.current = null;
+  }
+
+  // Escape leaves the current house; arrow keys / WASD walk the path; Enter
+  // steps into whichever house the character is standing at. While inside,
+  // the arrows are left alone so they scroll the open panel natively.
+  useEffect(() => {
+    if (quickView) return undefined;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (houseTargetRef.current === 1 || houseTRef.current > 0) leaveHouse();
+        return;
+      }
+      if (e.target.closest?.('input, textarea, select, button, a')) return;
+      if (houseTRef.current > 0) return;
+      const step = KEY_STEP_PX / TOTAL_PATH_LENGTH;
+      if (['ArrowRight', 'ArrowDown', 'd', 's'].includes(e.key)) {
+        e.preventDefault();
+        goToProgress(targetProgressRef.current + step, { marker: false });
+      } else if (['ArrowLeft', 'ArrowUp', 'a', 'w'].includes(e.key)) {
+        e.preventDefault();
+        goToProgress(targetProgressRef.current - step, { marker: false });
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        const id = nearbyHouseId(progressRef.current);
+        if (id) {
+          e.preventDefault();
+          goToHouse(id);
+        }
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [quickView]);
 
   // Escape closes Quick View, matching its own visible "Back to site"
   // button — only listens while the overlay is actually open.
@@ -210,102 +519,24 @@ function App() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [quickView]);
 
-  // A house's badge is earned by actually stopping inside it, not by
-  // scrolling straight through — activeHouse flips on for any frame the
-  // reveal hits 1, so a brisk flick past a house would otherwise count as a
-  // visit. A short dwell also lets a SectionNav jump count, since that
-  // lands and stays.
+  // Stepping inside is a deliberate tap now (walking past no longer opens
+  // anything), so the house's badge is earned the moment its panel opens.
+  // Focus moves into the panel so the wheel, arrow keys and screen readers
+  // all land in the room's content straight away.
   useEffect(() => {
-    if (!activeHouse) return undefined;
-    const id = setTimeout(() => earnBadge(activeHouse), 900);
-    return () => clearTimeout(id);
+    if (!activeHouse) return;
+    earnBadge(activeHouse);
+    const panelEl = panelRefs.current[activeHouse];
+    if (panelEl) {
+      panelEl.setAttribute('tabindex', '-1');
+      panelEl.focus({ preventScroll: true });
+    }
   }, [activeHouse]);
 
   useEffect(() => installLinkTracking(), []);
 
-  // While a house is fully open, its .section-panel sits on top of the
-  // world (position:absolute inset:0 inside the sticky .stage-box) and is
-  // itself independently scrollable — so without this, the same wheel
-  // gesture could land on either the panel's own scrollbar or the page's
-  // native one depending on exactly where the content happened to be
-  // scrolled, and the only way to tell which was "in control" was to watch
-  // which scrollbar thumb on the right edge actually moved. Redirecting
-  // every wheel tick straight to the open panel's scrollTop instead — and
-  // blocking the page scroll that drives the world-walk — makes it
-  // unambiguous: with a section open, the wheel always browses that
-  // section first. (SectionNav is also always available as an instant
-  // jump.) Once the panel is already scrolled to the edge in the direction
-  // the wheel is still pushing, the tick is redirected to window.scrollBy
-  // instead — that's what hands control back to the page scroll so
-  // continuing to scroll down (or up) walks the character back out of the
-  // house and on toward the next one, rather than trapping the visitor
-  // inside whichever section they scrolled into. This can't just be a matter
-  // of letting the native event through unprevented: .section-panel's
-  // scrollable ancestor chain dead-ends at .stage-box (overflow:hidden, by
-  // design — it's sticky-positioned and isn't the element the page actually
-  // scrolls), so there's no DOM path for the browser's own scroll-chaining
-  // to ever reach `window`, and the tick would just be swallowed. Skipped
-  // while Quick View's own overlay is open so its independent scroll isn't
-  // hijacked.
-  useEffect(() => {
-    if (!activeHouse) return undefined;
-    function redirectDelta(deltaY) {
-      const panelEl = panelRefs.current[activeHouse];
-      if (!panelEl) return;
-      const atTop = panelEl.scrollTop <= 0;
-      const atBottom = panelEl.scrollTop + panelEl.clientHeight >= panelEl.scrollHeight - 1;
-      if ((deltaY < 0 && atTop) || (deltaY > 0 && atBottom)) {
-        window.scrollBy(0, deltaY);
-        return;
-      }
-      panelEl.scrollTop += deltaY;
-    }
-    function onWheel(e) {
-      if (e.target.closest('.quick-view')) return;
-      e.preventDefault();
-      redirectDelta(e.deltaY);
-    }
-    // Touch equivalent of onWheel above: touch devices never fire 'wheel',
-    // so without this a swipe that reaches the open panel's scroll edge has
-    // nowhere to go — native touch-scroll chaining dead-ends at
-    // .stage-box's overflow:hidden exactly like the wheel case did.
-    let lastTouchY = null;
-    function onTouchStart(e) {
-      if (e.target.closest('.quick-view')) return;
-      lastTouchY = e.touches[0].clientY;
-    }
-    function onTouchMove(e) {
-      if (e.target.closest('.quick-view') || lastTouchY == null) return;
-      const currentY = e.touches[0].clientY;
-      const deltaY = lastTouchY - currentY;
-      lastTouchY = currentY;
-      e.preventDefault();
-      redirectDelta(deltaY);
-    }
-    function onTouchEnd() {
-      lastTouchY = null;
-    }
-    window.addEventListener('wheel', onWheel, { passive: false });
-    window.addEventListener('touchstart', onTouchStart, { passive: true });
-    window.addEventListener('touchmove', onTouchMove, { passive: false });
-    window.addEventListener('touchend', onTouchEnd, { passive: true });
-    return () => {
-      window.removeEventListener('wheel', onWheel);
-      window.removeEventListener('touchstart', onTouchStart);
-      window.removeEventListener('touchmove', onTouchMove);
-      window.removeEventListener('touchend', onTouchEnd);
-    };
-  }, [activeHouse]);
-
-  // Which way the character should face to cover a given (dx, dy) leg —
-  // side + mirrored if that leg is mostly horizontal, else up/down.
-  function directionFromDelta(dx, dy) {
-    if (Math.abs(dx) > Math.abs(dy)) return { direction: 'side', mirror: dx < 0 };
-    return { direction: dy < 0 ? 'up' : 'down', mirror: false };
-  }
-
-  // Read once + subscribe: everything that consumes this ref lives inside a
-  // scroll-driven update() loop, so a plain mutable ref (not state) avoids
+  // Read once + subscribe: everything that consumes this ref lives inside
+  // the animation loop, so a plain mutable ref (not state) avoids
   // re-running/re-rendering anything when the OS-level setting changes.
   useEffect(() => {
     const mql = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -317,19 +548,10 @@ function App() {
     return () => mql.removeEventListener('change', onChange);
   }, []);
 
-  const [usesCss] = useState(() => {
-    const supports =
-      typeof CSS !== 'undefined' &&
-      CSS.supports &&
-      CSS.supports('view-timeline-name', '--test');
-    const forceFallback = new URLSearchParams(window.location.search).has('fallback');
-    return Boolean(supports) && !forceFallback;
-  });
-
   // Track the box's own pixel size so the camera can center on it without
-  // ever animating layout-triggering properties (left/top) on scroll — only
+  // ever animating layout-triggering properties (left/top) — only
   // `transform`, which the browser can composite on the GPU. The box is
-  // measured once per resize, not per scroll frame.
+  // measured once per resize, not per frame.
   useEffect(() => {
     const box = boxRef.current;
     if (!box) return undefined;
@@ -339,6 +561,7 @@ function App() {
       boxCenterRef.current = { cx: width / 2, cy: height / 2 };
       box.style.setProperty('--cx', `${width / 2}px`);
       box.style.setProperty('--cy', `${height / 2}px`);
+      kickRef.current();
     };
 
     updateCenter();
@@ -347,191 +570,147 @@ function App() {
     return () => observer.disconnect();
   }, []);
 
-  // CSS scroll-timeline path: inject keyframes generated from the same
-  // waypoints the JS fallback uses, so both mechanisms move identically.
-  // Strict top-down orthogonal projection — plain 2D translate, no
-  // perspective/rotateX/skew. Animates `transform` only (compositor-driven,
-  // no layout/paint per frame).
+  // The whole scene — camera, house glow + panel iris, the walk to the door,
+  // lighting, night sky, minimap dot, walk-cycle frames — is drawn from
+  // `progress` and `houseT` by one requestAnimationFrame loop. It only runs
+  // while something is actually moving (kick() restarts it on a tap, key,
+  // nav click or resize) and parks on the idle sprite once everything
+  // settles. Every visual is written straight to the DOM via transforms/CSS
+  // custom properties, never through React state; `activeHouse` state is
+  // only for the few hard on/off things (panel pointer-events, the label
+  // color swap, the Leave button, the house badge).
   useEffect(() => {
-    if (!usesCss) return undefined;
-
-    const stops = WAYPOINT_FRACTIONS.map((frac, i) => {
-      const { x, y } = WAYPOINTS_PX[i];
-      return `${(frac * 100).toFixed(3)}% { transform: translate3d(calc(var(--cx) - ${x}px), calc(var(--cy) - ${y}px), 0); }`;
-    }).join('\n');
-
-    const styleEl = document.createElement('style');
-    styleEl.textContent = `
-      @keyframes worldCamera {
-        ${stops}
-      }
-      .stage-track {
-        view-timeline-name: --journey;
-        view-timeline-axis: block;
-      }
-      .world.css-driven {
-        animation-name: worldCamera;
-        animation-timeline: --journey;
-        animation-range: contain 0% contain 100%;
-        animation-fill-mode: both;
-        animation-timing-function: linear;
-      }
-    `;
-    document.head.appendChild(styleEl);
-    return () => styleEl.remove();
-  }, [usesCss]);
-
-  // JS fallback path: scroll + rAF-driven, using the same getWorldPosition().
-  // Also transform-only, so its performance profile matches the CSS path.
-  useEffect(() => {
-    if (usesCss) return undefined;
-
     let rafId = null;
-    const track = trackRef.current;
-    const world = worldRef.current;
+    let lastFrame = 0;
+    let lastOpenId = null;
+    let lastAtSpawn = true;
+    let lastNight = -1;
+    let lastSprite = null;
+    let lastMirror = null;
+    let routeShown = false;
+    let walkPhase = 0;
 
-    function update() {
-      rafId = null;
-      const progress = computeProgress(track);
-      const { x, y } = getWorldPosition(progress);
-      const { cx, cy } = boxCenterRef.current;
-      world.style.transform = `translate3d(${cx - x}px, ${cy - y}px, 0)`;
+    // Only touches the <img> when the frame or facing actually changes, not
+    // every animation frame.
+    function setSprite(direction, frameName, mirror) {
+      const img = characterImgRef.current;
+      if (!img) return;
+      const src = CHAR_SPRITES[direction][frameName];
+      if (src !== lastSprite) {
+        img.src = src;
+        lastSprite = src;
+      }
+      if (mirror !== lastMirror) {
+        img.style.transform = mirror ? 'scaleX(-1)' : 'none';
+        lastMirror = mirror;
+      }
     }
 
-    function onScroll() {
-      if (rafId == null) rafId = requestAnimationFrame(update);
+    function setIdleSprite() {
+      const { direction, mirror } = facingRef.current;
+      setSprite(direction, 'idle', mirror);
+      walkPhase = 0;
     }
 
-    update();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll);
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onScroll);
-      if (rafId) cancelAnimationFrame(rafId);
-    };
-  }, [usesCss]);
+    function hideRoute() {
+      if (!routeShown) return;
+      routeRef.current?.setAttribute('points', '');
+      routeShadowRef.current?.setAttribute('points', '');
+      routeShown = false;
+    }
 
-  // House activation + minimap dot: both driven by scroll progress (not
-  // screen position). Screen-position-based detection (e.g.
-  // IntersectionObserver watching where a house lands on screen) breaks once
-  // the path folds back on itself — the down-left leg to Hobbies puts it at
-  // a smaller col than Contact even though it comes earlier, so its
-  // projected depth could cross the trigger band first. Progress is one-dimensional
-  // and always monotonic, so it can't misfire like that regardless of path
-  // shape. This same progress value also positions the minimap's player dot,
-  // so that HUD stays in sync with the game world in both camera modes.
-  //
-  // Each house's reveal (0-1, from getHouseReveal) is written straight to
-  // its house element and section panel via CSS custom properties every
-  // tick — never through React state — so the panel's clip-path/opacity and
-  // the house's scale/glow track actual scroll speed instead of snapping on
-  // a boolean and then playing out on their own fixed-duration timer. State
-  // (`activeHouse`) is only used for the few things that must be a hard
-  // on/off: pointer-events on the panel and the label's color swap.
-  useEffect(() => {
-    const track = trackRef.current;
-    if (!track) return undefined;
+    // Dotted route from the character to the destination along the path —
+    // drawn from the destination end so the dots stay planted on the
+    // ground while the tail shortens behind the character, instead of
+    // crawling along as the line's start point moves.
+    function drawRoute(progress) {
+      const target = targetProgressRef.current;
+      const pendingHouse = pendingHouseRef.current ? HOUSES.find((h) => h.id === pendingHouseRef.current) : null;
+      const remainingPx = Math.abs(target - progress) * TOTAL_PATH_LENGTH;
+      if (!destKindRef.current || (remainingPx < 24 && !pendingHouse)) {
+        hideRoute();
+        return;
+      }
+      const points = pathPointsBetween(target, progress);
+      if (pendingHouse) points.unshift(houseGatePx(pendingHouse));
+      const attr = points.map((pt) => `${pt.x.toFixed(1)},${pt.y.toFixed(1)}`).join(' ');
+      routeRef.current?.setAttribute('points', attr);
+      routeShadowRef.current?.setAttribute('points', attr);
+      routeShown = true;
+    }
 
-    let rafId = null;
+    function arriveMarker() {
+      const marker = destMarkerRef.current;
+      if (!destKindRef.current || !marker) return;
+      destKindRef.current = null;
+      marker.classList.add('arrive');
+      HOUSES.forEach((h) => houseElRefs.current[h.id]?.classList.remove('targeted'));
+      hideRoute();
+    }
 
-    function update() {
-      rafId = null;
-      const progress = computeProgress(track);
-      const reducedMotion = reducedMotionRef.current;
+    function draw(progress, houseT, pathMoved) {
+      const houseId = houseIdRef.current;
+      const house = houseId ? HOUSES.find((h) => h.id === houseId) : null;
+      const walkT = clamp01(houseT / HOUSE_WALK_PORTION);
+      const reveal = smoothstep(clamp01((houseT - HOUSE_IRIS_START) / (1 - HOUSE_IRIS_START)));
+      const nearId = houseT === 0 && !pathMoved ? nearbyHouseId(progress) : null;
 
-      let fullyOpenId = null;
-      let maxWalkT = 0;
-      let walkGate = null;
-      let walkDoor = null;
       HOUSES.forEach((h) => {
-        const waypointFraction = WAYPOINT_FRACTIONS[h.waypointIndex];
-        const reveal = getHouseReveal(progress, waypointFraction, { reducedMotion });
-        if (reveal >= 1) fullyOpenId = h.id;
-
-        const walkT = getCharacterWalkT(progress, waypointFraction, { reducedMotion });
-        if (walkT > maxWalkT) {
-          maxWalkT = walkT;
-          const waypointPx = WAYPOINTS_PX[h.waypointIndex];
-          const gatePx = tileToPx(h.col, h.row + 3);
-          const doorPx = tileToPx(h.col, h.row + 2);
-          walkGate = { x: gatePx.x - waypointPx.x, y: gatePx.y - waypointPx.y };
-          walkDoor = { x: doorPx.x - waypointPx.x, y: doorPx.y - waypointPx.y };
-        }
-
-        if (lastRevealRef.current[h.id] === reveal) return;
-        lastRevealRef.current[h.id] = reveal;
-
-        houseElRefs.current[h.id]?.style.setProperty('--house-reveal', reveal);
-        // The panel's iris opens at 50% 50% — screen-center, i.e. wherever
-        // the character/camera currently is, not wherever the house's
-        // sprite happens to sit on screen. Early in the shoulder (small
-        // reveal), the house itself is still visually far off, but the
-        // panel's low-opacity text was already legible right at the
-        // character's position, reading as "already inside" a building
-        // that's nowhere near them yet. Squaring the (already-smoothstepped)
-        // reveal keeps panel opacity near-zero through the outer half of the
-        // approach and saves the visible ramp for the inner half, without
-        // touching the in-world house glow (--house-reveal above), the band
-        // width, or the arrival/exit symmetry.
-        panelRefs.current[h.id]?.style.setProperty('--reveal', reveal * reveal);
+        const inside = h.id === houseId;
+        houseElRefs.current[h.id]?.classList.toggle('near', h.id === nearId);
+        const houseReveal = inside ? walkT : 0;
+        const panelReveal = inside ? reveal : 0;
+        const last = lastRevealRef.current[h.id];
+        if (last && last.house === houseReveal && last.panel === panelReveal) return;
+        lastRevealRef.current[h.id] = { house: houseReveal, panel: panelReveal };
+        houseElRefs.current[h.id]?.style.setProperty('--house-reveal', houseReveal);
+        // Squared so the panel's text stays near-invisible until the iris
+        // is well open, rather than floating legibly over the yard while
+        // the character is still walking up to the door.
+        panelRefs.current[h.id]?.style.setProperty('--reveal', panelReveal * panelReveal);
       });
 
-      setActiveHouse((current) => (current === fullyOpenId ? current : fullyOpenId));
+      const openId = houseT >= 1 && houseTargetRef.current === 1 ? houseId : null;
+      if (openId !== lastOpenId) {
+        lastOpenId = openId;
+        setActiveHouse(openId);
+      }
+      const atSpawnNow = progress <= 0.01 && houseT === 0;
+      if (atSpawnNow !== lastAtSpawn) {
+        lastAtSpawn = atSpawnNow;
+        setAtSpawn(atSpawnNow);
+      }
       if (progress >= 0.99) earnBadge('pathfinder');
 
-      // Character walk-to-the-door pose: a pure function of maxWalkT (itself
-      // a pure function of scroll progress — see getCharacterWalkT), two legs
-      // — path -> gate -> door, see WALK_LEG1_END — recomputed from scratch
-      // every scroll tick. The *target* pose is never a timer or an animation
-      // that plays once triggered: every bit of scroll moves the target by
-      // exactly that much. But a single native scroll event can jump progress
-      // clean across the whole reveal band (a brisk flick easily covers it
-      // in under one frame), which used to make the character teleport
-      // straight from "on the path" to "at the door" with no visible walk in
-      // between. The *rendered* pose below eases toward that target a few
-      // frames at a time so the walk is visible even under a big jump, while
-      // still settling in well under 300ms — nowhere near the fixed-duration
-      // "keeps walking 2s after you stopped scrolling" animation this was
-      // built to replace. Scrolling back out runs the same math with a
-      // shrinking maxWalkT, so the walk-out is the walk-in in reverse.
+      // Path -> gate -> door walk, relative to the house's own waypoint
+      // (where the character is standing whenever houseT > 0).
       let walkFacing = null;
-      let walkTarget;
-      if (maxWalkT > 0 && walkGate && walkDoor) {
-        let posX;
-        let posY;
+      let pose = { x: 0, y: 0, scale: 1, opacity: 1 };
+      if (house && walkT > 0) {
+        const waypointPx = WAYPOINTS_PX[house.waypointIndex];
+        const gatePx = houseGatePx(house);
+        const doorPx = houseDoorPx(house);
+        const gate = { x: gatePx.x - waypointPx.x, y: gatePx.y - waypointPx.y };
+        const door = { x: doorPx.x - waypointPx.x, y: doorPx.y - waypointPx.y };
+        // Walking back out plays the same legs in reverse, so face the
+        // opposite way.
+        const sign = houseTargetRef.current === 1 ? 1 : -1;
+        let x;
+        let y;
         let doorLegT = 0;
-        if (maxWalkT <= WALK_LEG1_END) {
-          const legT = maxWalkT / WALK_LEG1_END;
-          posX = walkGate.x * legT;
-          posY = walkGate.y * legT;
-          if (legT >= WALK_FACING_START) {
-            walkFacing = directionFromDelta(walkGate.x, walkGate.y);
-          }
+        if (walkT <= WALK_LEG1_END) {
+          const legT = walkT / WALK_LEG1_END;
+          x = gate.x * legT;
+          y = gate.y * legT;
+          walkFacing = directionFromDelta(gate.x * sign, gate.y * sign);
         } else {
-          doorLegT = (maxWalkT - WALK_LEG1_END) / (1 - WALK_LEG1_END);
-          posX = walkGate.x + (walkDoor.x - walkGate.x) * doorLegT;
-          posY = walkGate.y + (walkDoor.y - walkGate.y) * doorLegT;
-          walkFacing = directionFromDelta(walkDoor.x - walkGate.x, walkDoor.y - walkGate.y);
+          doorLegT = (walkT - WALK_LEG1_END) / (1 - WALK_LEG1_END);
+          x = gate.x + (door.x - gate.x) * doorLegT;
+          y = gate.y + (door.y - gate.y) * doorLegT;
+          walkFacing = directionFromDelta((door.x - gate.x) * sign, (door.y - gate.y) * sign);
         }
         const shrinkT = doorLegT < WALK_SHRINK_START ? 0 : (doorLegT - WALK_SHRINK_START) / (1 - WALK_SHRINK_START);
-        walkTarget = { x: posX, y: posY, scale: 1 - shrinkT * 0.7, opacity: 1 - shrinkT };
-      } else {
-        walkTarget = { x: 0, y: 0, scale: 1, opacity: 1 };
-      }
-
-      const pose = walkPoseRef.current;
-      if (reducedMotion) {
-        pose.x = walkTarget.x;
-        pose.y = walkTarget.y;
-        pose.scale = walkTarget.scale;
-        pose.opacity = walkTarget.opacity;
-      } else {
-        const WALK_EASE = 0.35;
-        pose.x += (walkTarget.x - pose.x) * WALK_EASE;
-        pose.y += (walkTarget.y - pose.y) * WALK_EASE;
-        pose.scale += (walkTarget.scale - pose.scale) * WALK_EASE;
-        pose.opacity += (walkTarget.opacity - pose.opacity) * WALK_EASE;
+        pose = { x, y, scale: 1 - shrinkT * 0.7, opacity: 1 - shrinkT };
       }
 
       if (characterWrapRef.current) {
@@ -539,16 +718,11 @@ function App() {
         characterWrapRef.current.style.opacity = String(pose.opacity);
       }
 
-      const walkSettled =
-        Math.abs(walkTarget.x - pose.x) < 0.5 &&
-        Math.abs(walkTarget.y - pose.y) < 0.5 &&
-        Math.abs(walkTarget.scale - pose.scale) < 0.004 &&
-        Math.abs(walkTarget.opacity - pose.opacity) < 0.004;
-      if (!walkSettled && rafId == null) {
-        rafId = requestAnimationFrame(update);
-      }
-
       const { x, y } = getWorldPosition(progress);
+      const { cx, cy } = boxCenterRef.current;
+      if (worldRef.current) {
+        worldRef.current.style.transform = `translate3d(${cx - x}px, ${cy - y}px, 0)`;
+      }
 
       if (lightingRef.current) {
         lightingRef.current.style.backgroundColor = getLightingTint(progress);
@@ -556,98 +730,153 @@ function App() {
 
       // Written on :root so any element in the scene — lamp posts, house
       // windows — can react to the same night amount via an inherited
-      // var(--night).
-      const nightAmount = getNightAmount(progress);
-      document.documentElement.style.setProperty('--night', nightAmount);
+      // var(--night). Rounded and only written when it changes: every write
+      // restyles the whole document, and sub-percent steps are invisible.
+      const night = Math.round(getNightAmount(progress) * 200) / 200;
+      if (night !== lastNight) {
+        lastNight = night;
+        document.documentElement.style.setProperty('--night', night);
+      }
 
       if (minimapDotRef.current) {
         minimapDotRef.current.setAttribute('cx', x);
         minimapDotRef.current.setAttribute('cy', y);
       }
 
-      // Character direction + walk-cycle frame. update() only ever runs in
-      // response to an actual scroll event, so every call here implies real
-      // movement — direction updates immediately every tick for
-      // responsiveness, but the walk-a/walk-b frame swap is paced to a
-      // human walking cadence (~140ms) rather than flickering at scroll
-      // event rate. When scrolling stops, no more scroll events fire, so a
-      // short timeout below falls the sprite back to its idle frame.
-      // walkFacing (computed above) overrides the normal path-direction
-      // facing while approaching/leaving a house, so the sprite faces the
-      // gate/door instead of whichever way the path itself happens to bend.
-      const prev = prevPosRef.current;
-      if (prev && characterImgRef.current) {
-        const dx = x - prev.x;
-        const dy = y - prev.y;
-        if (Math.abs(dx) > 0.02 || Math.abs(dy) > 0.02) {
-          let direction;
-          let mirror = false;
-          if (walkFacing) {
-            direction = walkFacing.direction;
-            mirror = walkFacing.mirror;
-          } else if (Math.abs(dy) >= Math.abs(dx)) {
-            direction = dy >= 0 ? 'down' : 'up';
+      // The opening nameplate + CTA belong to the spawn point: they fade as
+      // soon as the character sets off, and come back if they walk home.
+      stageRef.current?.classList.toggle('hud-away', progress > 0.01 || houseT > 0);
+
+      return walkFacing;
+    }
+
+    function frame(now) {
+      rafId = null;
+      // Real elapsed time (capped only against huge gaps like a background
+      // tab), so pace stays true even if a slow device drops frames —
+      // capping it tightly is what made the walk crawl on a slow frame rate.
+      const dt = lastFrame ? Math.min(250, now - lastFrame) : 16;
+      lastFrame = now;
+      const dtS = dt / 1000;
+      const reducedMotion = reducedMotionRef.current;
+
+      let houseT = houseTRef.current;
+      const houseTarget = houseTargetRef.current;
+      let houseMoved = false;
+      if (houseT !== houseTarget) {
+        const step = reducedMotion ? 1 : dt / HOUSE_ENTER_MS;
+        houseT = houseTarget > houseT ? Math.min(houseTarget, houseT + step) : Math.max(houseTarget, houseT - step);
+        houseTRef.current = houseT;
+        houseMoved = true;
+      }
+      if (houseT === 0 && houseTarget === 0 && houseIdRef.current) {
+        houseIdRef.current = null;
+        houseMoved = true;
+      }
+
+      const prevProgress = progressRef.current;
+      let progress = prevProgress;
+      let pathMoved = false;
+      if (houseT === 0) {
+        const target = targetProgressRef.current;
+        const remainingPx = Math.abs(target - progress) * TOTAL_PATH_LENGTH;
+        if (remainingPx > 0.05) {
+          if (reducedMotion) {
+            progress = target;
           } else {
-            direction = 'side';
-            mirror = dx < 0;
+            // Accelerate toward top speed, and ease off approaching the stop
+            // (v² = 2·a·d, the speed from which DECEL just stops in time).
+            const v = Math.max(
+              WALK_MIN_SPEED,
+              Math.min(
+                velocityRef.current + WALK_ACCEL * dtS,
+                tripSpeedRef.current,
+                Math.sqrt(2 * WALK_DECEL * remainingPx),
+              ),
+            );
+            velocityRef.current = v;
+            const stepPx = Math.min(remainingPx, v * dtS);
+            progress += (Math.sign(target - progress) * stepPx) / TOTAL_PATH_LENGTH;
+            if (stepPx >= remainingPx) progress = target;
           }
-          facingRef.current = { direction, mirror };
-
-          const now = performance.now();
-          if (now - lastToggleRef.current > 140) {
-            walkFrameRef.current = walkFrameRef.current === 'walk-a' ? 'walk-b' : 'walk-a';
-            lastToggleRef.current = now;
+          progressRef.current = progress;
+          pathMoved = true;
+        } else {
+          if (progress !== target) {
+            progress = target;
+            progressRef.current = progress;
           }
-
-          characterImgRef.current.src = CHAR_SPRITES[direction][walkFrameRef.current];
-          characterImgRef.current.style.transform = mirror ? 'scaleX(-1)' : 'none';
-
-          if (idleTimeoutRef.current) clearTimeout(idleTimeoutRef.current);
-          idleTimeoutRef.current = setTimeout(() => {
-            if (!characterImgRef.current) return;
-            const { direction: d, mirror: m } = facingRef.current;
-            characterImgRef.current.src = CHAR_SPRITES[d].idle;
-            characterImgRef.current.style.transform = m ? 'scaleX(-1)' : 'none';
-          }, 150);
+          velocityRef.current = 0;
+          if (pendingHouseRef.current) {
+            houseIdRef.current = pendingHouseRef.current;
+            pendingHouseRef.current = null;
+            houseTargetRef.current = 1;
+            houseMoved = true;
+          } else if (destKindRef.current === 'path') {
+            arriveMarker();
+          }
         }
       }
-      prevPosRef.current = { x, y };
+      // A house target's marker sits on the gate, so it pops the moment the
+      // character walks through it.
+      if (destKindRef.current === 'house' && houseTargetRef.current === 1 && houseT >= HOUSE_WALK_PORTION * WALK_LEG1_END) {
+        arriveMarker();
+      }
+
+      const walkFacing = draw(progress, houseT, pathMoved);
+      if (houseT === 0) drawRoute(progress);
+      else hideRoute();
+
+      // Walk cycle: facing follows the direction of travel (or the gate/door
+      // leg while walking up to a house), and the 4-beat cycle advances in
+      // step with distance covered rather than the frame rate, so the feet
+      // match the ground whether jogging, easing to a stop or on a slow
+      // device.
+      const walking = pathMoved || (houseMoved && walkFacing != null);
+      if (walking) {
+        let facing = walkFacing;
+        if (!facing) {
+          const a = getWorldPosition(prevProgress);
+          const b = getWorldPosition(progress);
+          facing = directionFromDelta(b.x - a.x, b.y - a.y);
+        }
+        facingRef.current = facing;
+        const speed = pathMoved ? Math.max(velocityRef.current, WALK_MIN_SPEED) : WALK_SPEED * 0.6;
+        walkPhase += (dt * speed) / (WALK_FRAME_MS * WALK_SPEED);
+        const frameName = WALK_CYCLE[Math.floor(walkPhase) % WALK_CYCLE.length];
+        setSprite(facing.direction, frameName, facing.mirror);
+      }
+
+      if (pathMoved || houseMoved) {
+        rafId = requestAnimationFrame(frame);
+      } else {
+        lastFrame = 0;
+        setIdleSprite();
+      }
     }
 
-    function onScroll() {
-      if (rafId == null) rafId = requestAnimationFrame(update);
-    }
-
-    update();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll);
+    kickRef.current = () => {
+      if (rafId == null) rafId = requestAnimationFrame(frame);
+    };
+    kickRef.current();
     return () => {
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onScroll);
+      kickRef.current = () => {};
       if (rafId) cancelAnimationFrame(rafId);
-      if (idleTimeoutRef.current) clearTimeout(idleTimeoutRef.current);
     };
   }, []);
-
-  // Lets both the corner nav (click a section) and any other future entry
-  // point jump straight to a waypoint without walking the route — computed
-  // from the track's live position rather than a cached one so it stays
-  // correct regardless of where the page is currently scrolled from.
-  function jumpToProgress(fraction) {
-    const track = trackRef.current;
-    if (!track) return;
-    const rect = track.getBoundingClientRect();
-    const scrollable = rect.height - window.innerHeight;
-    if (scrollable <= 0) return;
-    const trackTopInDocument = rect.top + window.scrollY;
-    const targetY = trackTopInDocument + fraction * scrollable;
-    window.scrollTo({ top: targetY, behavior: reducedMotionRef.current ? 'auto' : 'smooth' });
-  }
 
   return (
     <>
       <div aria-hidden={quickView || undefined} inert={quickView || undefined}>
-      <div className="stage-track" ref={trackRef} style={{ height: TRACK_HEIGHT }}>
+      <div
+        className="stage"
+        ref={stageRef}
+        onPointerDown={onStagePointerDown}
+        onPointerMove={onStagePointerMove}
+        onPointerUp={onStagePointerUp}
+        onPointerCancel={onStagePointerUp}
+        onPointerLeave={hideGhost}
+      >
         <header className="hud-nameplate">
           <div className="hud-textbox">
             <div className="hud-name">{INTRO.name}</div>
@@ -670,15 +899,12 @@ function App() {
           <button
             type="button"
             className="hud-cta"
-            onClick={() => {
-              const projectsHouse = HOUSES.find((h) => h.id === 'projects');
-              jumpToProgress(WAYPOINT_FRACTIONS[projectsHouse.waypointIndex]);
-            }}
+            onClick={() => goToHouse('projects')}
           >
             See My Projects →
           </button>
           <p className="hud-scroll-hint">
-            or scroll for the adventure ↓ ·{' '}
+            or tap anywhere to walk · tap a house to go in ·{' '}
             <a href={RESUME_URL} target="_blank" rel="noopener noreferrer" className="hud-resume-link">
               résumé (PDF)
             </a>
@@ -687,27 +913,23 @@ function App() {
 
         <div className="stage-box" ref={boxRef}>
           <div
-            className={`world ${usesCss ? 'css-driven' : ''}`}
+            className="world"
             ref={worldRef}
             style={{ width: WORLD_W, height: WORLD_H }}
           >
-            <div
-              className="tile-grid"
-              style={{
-                gridTemplateColumns: `repeat(${COLS}, ${TILE_SIZE}px)`,
-                gridTemplateRows: `repeat(${ROWS}, ${TILE_SIZE}px)`,
-              }}
-            >
-              {TILE_GRID.flatMap((row, r) =>
-                row.map((type, c) => (
-                  <div
-                    key={`${r}-${c}`}
-                    className={`tile tile-${type}`}
-                    style={type === 'water' ? { animationDelay: `${((r * 7 + c * 13) % 5) * -0.4}s` } : undefined}
-                  />
-                )),
-              )}
-            </div>
+            <GroundCanvas />
+
+            {WATER_TILES.map(({ col, row }) => (
+              <div
+                key={`water-${col}-${row}`}
+                className="water-tile"
+                style={{
+                  left: col * TILE_SIZE,
+                  top: row * TILE_SIZE,
+                  animationDelay: `${((row * 7 + col * 13) % 5) * -0.4}s`,
+                }}
+              />
+            ))}
 
             {FENCES.map((post) => {
               const { x, y } = tileToPx(post.col, post.row);
@@ -760,6 +982,7 @@ function App() {
                   className={`house house--${house.kind} house-${house.side} ${
                     activeHouse === house.id ? 'active' : ''
                   }`}
+                  data-house-id={house.id}
                   style={{
                     left: x,
                     top: y,
@@ -777,7 +1000,7 @@ function App() {
               );
             })}
 
-            {TREES.map((tree, i) => {
+            {LIVE_TREES.map((tree, i) => {
               const { x, y } = tileToPx(tree.col, tree.row);
               const groundY = y + TILE_SIZE;
               return (
@@ -892,9 +1115,23 @@ function App() {
                 </div>
               );
             })}
+
+            <svg className="route-preview" width={WORLD_W} height={WORLD_H} aria-hidden="true">
+              <polyline ref={routeShadowRef} className="route-preview-shadow" points="" />
+              <polyline ref={routeRef} className="route-preview-dots" points="" />
+            </svg>
+
+            <div className="dest-ghost" ref={destGhostRef} aria-hidden="true" />
+
+            <div className="dest-marker" ref={destMarkerRef} aria-hidden="true">
+              <div className="dest-marker-tile" />
+              <div className="dest-marker-arrow" />
+            </div>
           </div>
 
           <div className="lighting-overlay" ref={lightingRef} aria-hidden="true" />
+
+          <div className="tap-ripple" ref={tapRippleRef} aria-hidden="true" />
 
           <div className="character-wrap" ref={characterWrapRef}>
             <div className="character-shadow" />
@@ -931,10 +1168,20 @@ function App() {
             }}
             active={activeHouse === 'contact'}
           />
+
+          {activeHouse && (
+            <button type="button" className="leave-house" onClick={leaveHouse}>
+              ← Leave {HOUSES.find((h) => h.id === activeHouse).label}
+            </button>
+          )}
         </div>
       </div>
 
-      <SectionNav activeId={activeHouse} onJump={jumpToProgress} />
+      <SectionNav
+        activeId={activeHouse}
+        introActive={atSpawn}
+        onSelect={(id) => (id ? goToHouse(id) : goToProgress(0))}
+      />
       <Minimap ref={minimapDotRef} />
       <MusicPlayer />
       <BadgeCase />

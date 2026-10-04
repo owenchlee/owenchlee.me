@@ -1,8 +1,9 @@
 /* --- HUD nameplate ---
-   Sits directly over the top of the grass, not in a banner of its own: it's
-   an absolutely-positioned child of .stage-track (not .stage-box, which is
-   sticky) so it scrolls away normally with the page the moment the user
-   scrolls, instead of staying pinned like .minimap does. The actual text
+   Sits directly over the top of the grass, not in a banner of its own. It
+   belongs to the spawn point, not the HUD: App.jsx toggles .hud-away on
+   .stage as soon as the character walks off the start, fading it out (and
+   back in if they walk home), instead of staying pinned like .minimap
+   does. The actual text
    lives inside .hud-textbox, a solid dark plaque — plain text over the
    grass/tree tile pattern was fine for two short lines, but once this block
    grew to a full bullet list, the busy background kept eating into
@@ -21,11 +22,18 @@
   right: 16px;
   z-index: 6;
   text-align: center;
+  transition: opacity 0.35s ease;
+}
+
+.stage.hud-away .hud-nameplate,
+.stage.hud-away .hud-cta-block {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .hud-textbox {
   display: inline-block;
-  background: rgba(28, 23, 18, 0.68);
+  background: rgba(28, 23, 18, 0.84);
   border: 3px solid var(--pal-cream);
   box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.35);
   padding: clamp(20px, 3.6vh, 34px) clamp(30px, 4.8vw, 58px) clamp(18px, 3.2vh, 30px);
@@ -118,9 +126,8 @@
 
 /* Sits below the character's start position (see .character-wrap, centered
    at 50vh) rather than above it, so the sprite isn't hidden behind the CTA
-   the instant the page loads. Absolute-in-.stage-track like .hud-nameplate,
-   not fixed — it's part of the opening scene and should scroll away with it
-   once the player actually starts moving, not persist as a HUD. */
+   the instant the page loads. Fades with .hud-nameplate (see .hud-away) —
+   it's part of the opening scene, not a persistent HUD. */
 .hud-cta-block {
   position: absolute;
   left: 50%;
@@ -128,6 +135,7 @@
   transform: translateX(-50%);
   z-index: 6;
   text-align: center;
+  transition: opacity 0.35s ease;
 }
 
 .hud-cta {
@@ -182,18 +190,30 @@
 
 /* --- Stage --- */
 
-.stage-track {
+/* One screen, no page scroll: the character moves by tapping or dragging
+   (see onStagePointerDown/Move in App.jsx), not by scrolling a tall track.
+   touch-action: none hands every touch gesture on the world to those
+   handlers (no browser pan/zoom fighting a steering drag); open rooms are
+   their own scroll containers, so touch-scrolling inside them still works. */
+.stage {
   position: relative;
-}
-
-.stage-box {
-  position: sticky;
-  top: 0;
   height: 100vh;
   height: 100dvh;
-  width: 100%;
   overflow: hidden;
-  background: var(--pal-grass);
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* The forest past the map edge is .forest-backdrop inside .world (see
+   GroundCanvas.jsx), so it pans with the camera; this deep shade only
+   shows for the moment before it's painted. */
+.stage-box {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background-color: #0d3b2b;
+  cursor: pointer;
+  touch-action: none;
 }
 
 .world {
@@ -205,107 +225,36 @@
   transform: translate(calc(50% - 1280px), calc(50% - 960px));
 }
 
-.tile-grid {
-  display: grid;
+/* The whole static ground (tiles + most trees), painted once at load — see
+   GroundCanvas.jsx for why this replaced ~10,600 tile divs. Until the
+   sprites finish loading it shows flat grass rather than the forest
+   backdrop behind it. */
+.forest-backdrop {
+  position: absolute;
+  background-repeat: repeat;
   image-rendering: pixelated;
-  /* Whole-grid pulse rather than per-tile animation — animating ~10,600
-     individual tile nodes would mean thousands of concurrently-running CSS
-     animations, a real paint/perf risk. One element, one paint region, still
-     reads as the field gently breathing instead of a static texture. */
-  animation: grass-breathe 9s ease-in-out infinite;
+  pointer-events: none;
 }
 
-@keyframes grass-breathe {
-  0%,
-  100% {
-    filter: brightness(1);
-  }
-  50% {
-    filter: brightness(1.02);
-  }
+.ground-canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  image-rendering: pixelated;
+  background: var(--pal-grass);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .tile-grid {
-    animation: none;
-  }
-}
-
-
-.tile {
-  width: 100%;
-  height: 100%;
+/* Pond tiles are the only animated ground, so they stay live elements
+   layered over the canvas's still copy. animationDelay is set per tile
+   inline (App.jsx) from row/col so the ponds don't pulse in lockstep. */
+.water-tile {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  background-image: url('./assets/water-lpc.png');
   background-size: cover;
   image-rendering: pixelated;
-  /* The grid is COLS*ROWS (~10,600) individual tiles — see tileMap.js — so
-     laying out/painting every one of them on every scroll frame regardless
-     of whether it's anywhere near the camera is real, measurable cost on
-     lower-power mobile GPUs. content-visibility: auto skips style/layout/
-     paint entirely for whichever tiles aren't currently intersecting the
-     viewport (it correctly accounts for .world's pan transform, same as
-     IntersectionObserver), so only the handful actually on screen cost
-     anything at a given scroll position. Safe here specifically because
-     .tile has no children and both dimensions are already explicit
-     (100%/100% of its grid cell, not intrinsic), so there's no
-     contain-intrinsic-size sizing gap and nothing inside it to clip. */
-  content-visibility: auto;
-}
-
-.tile-grass {
-  background-image: url('./assets/grass.png');
-}
-/* Two subtle shade variants of the same grass tile, scattered with the same
-   deterministic hash used for tree/flower placement, so the field doesn't
-   read as one texture stamped edge to edge. */
-.tile-grass-b {
-  background-image: url('./assets/grass.png');
-  filter: hue-rotate(-6deg) brightness(0.94);
-}
-.tile-grass-c {
-  background-image: url('./assets/grass.png');
-  filter: hue-rotate(6deg) brightness(1.05);
-}
-/* Path fill — a real speckled dirt texture (see ASSET_CREDITS.md), not a
-   flat color swatch. Every "interior" path piece (plain fill, straight runs,
-   corners) shares the same seamless tileable crop: a curving dirt trail
-   doesn't need direction-specific line art the way the grass/path *edge*
-   actually does, so one texture covers all of them. */
-.tile-path,
-.tile-path-straight-h,
-.tile-path-straight-v,
-.tile-path-corner-ne,
-.tile-path-corner-es,
-.tile-path-corner-sw,
-.tile-path-corner-wn {
-  background-image: url('./assets/dirt-lpc.png');
-}
-
-/* Grass-to-dirt edge blend: dirt-edge-lpc.png is the real autotile edge
-   piece (dirt fading to transparent on its north side) layered directly over
-   grass.png, same "sprite + grass background" compositing already used for
-   trees/flowers — rotated per side the same way the old flat-color version
-   was, since it's still one piece authored for the north edge. */
-.tile-path-edge-n,
-.tile-path-edge-e,
-.tile-path-edge-s,
-.tile-path-edge-w {
-  background-image: url('./assets/dirt-edge-lpc.png'), url('./assets/grass.png');
-  background-size: cover, cover;
-}
-.tile-path-edge-e {
-  transform: rotate(90deg);
-}
-.tile-path-edge-s {
-  transform: rotate(180deg);
-}
-.tile-path-edge-w {
-  transform: rotate(270deg);
-}
-.tile-water {
-  background-image: url('./assets/water-lpc.png');
-  /* Only ~50-80 water tiles total across the ponds — cheap enough to animate
-     individually, unlike the grass field. animationDelay is set per-tile
-     inline (App.jsx) from row/col so the ponds don't pulse in lockstep. */
   animation: water-shimmer 3.2s ease-in-out infinite;
 }
 
@@ -322,15 +271,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tile-water {
+  .water-tile {
     animation: none;
   }
-}
-.tile-flower {
-  background-image: url('./assets/plant.png'), url('./assets/grass.png');
-  background-repeat: no-repeat, no-repeat;
-  background-position: center, center;
-  background-size: 55%, cover;
 }
 
 /* --- Trees ---
@@ -353,13 +296,6 @@
   transform: translate(-50%, -100%);
   image-rendering: pixelated;
   pointer-events: none;
-  /* Same off-screen culling as .tile above, and just as worth it here — the
-     scatter pass in tileMap.js plants thousands of these. contain-intrinsic-
-     size gives the (height: auto, intrinsic-aspect-ratio) box a placeholder
-     size while skipped, so nothing has to reflow the instant a tree scrolls
-     into view. */
-  content-visibility: auto;
-  contain-intrinsic-size: 56px 66px;
 }
 
 /* --- Lighting cycle ---
@@ -371,7 +307,7 @@
    and the character (z-index 10, see .character-wrap) so interiors are
    never tinted by outdoor lighting, while the player sprite itself still
    gets lit by it while outdoors. No CSS
-   transition — background-color is written every scroll tick already, same
+   transition — background-color is written every animation frame already, same
    reasoning as the house/panel reveal above. */
 .lighting-overlay {
   position: absolute;
@@ -393,17 +329,10 @@
    non-integer scale factors are the usual cause of "soft" pixel art. */
 
 /* transform/opacity are written directly (no class, no animation, no
-   transition) every scroll tick from App.jsx's walk-to-the-door pose math —
-   a pure function of scroll progress, same as --reveal/--house-reveal
-   elsewhere in this file. Two earlier versions (a value scrubbed by scroll
-   position through a *different* curve, then a fixed-duration CSS
-   @keyframes animation triggered once) both had the same problem from
-   opposite directions: the scrubbed version could be skipped clean over by
-   a single fast wheel notch, and the triggered animation kept playing for
-   a couple of real seconds even after the user had completely stopped
-   scrolling — every bit of scroll should move something, and nothing should
-   move without a bit of scroll, so it has to be a plain function of
-   scroll position with no independent timer at all. */
+   transition) every animation frame by App.jsx's walk-to-the-door pose
+   math — a pure function of houseT, same as --reveal/--house-reveal
+   elsewhere in this file, so the walk, the door shrink and the room's iris
+   can never drift out of step with each other. */
 .character-wrap {
   position: absolute;
   left: 50%;
@@ -463,13 +392,15 @@
   align-items: center;
   justify-content: flex-end;
   transform-origin: 50% 100%;
-  /* --house-reveal is written every scroll tick from getHouseReveal() in
-     App.jsx (0-1, continuous with scroll progress) — no CSS transition here,
-     since a timer competing with a value already being driven every frame is
-     exactly what used to make the panel/house reveal feel disconnected from
-     actual scroll speed. Scale grows as the character approaches, giving the
-     "arrival" cue a place to live on the world itself. */
+  /* --house-reveal (0-1) is written every animation frame by App.jsx's
+     draw loop while the character walks from the path up to this door — no
+     CSS transition here, since a timer competing with a value already being
+     driven every frame would lag behind the walk. Scale grows as the
+     character approaches, giving the "arrival" cue a place to live on the
+     world itself. */
   transform: scale(calc(1 + var(--house-reveal, 0) * 0.12));
+  /* Checkpoint houses are tap targets: tapping one walks there and in. */
+  cursor: pointer;
 }
 
 /* Each building is its own distinct sourced sprite (src/assets/houses/,
@@ -571,6 +502,326 @@
     drop-shadow(0 0 10px var(--house-color));
 }
 
+/* .near = the character is standing on the path right outside (App.jsx
+   toggles it once the walk settles), .hover = the pointer is on it. Both
+   are prompts to tap/Enter to go in, so the label takes the house color
+   and gently bobs. */
+.house.near .house-label,
+.house.targeted .house-label,
+.house:hover .house-label {
+  background: var(--house-color);
+  opacity: 1;
+}
+
+.house.near .house-label {
+  animation: house-label-bob 1s ease-in-out infinite;
+}
+
+.house.targeted .house-sprite,
+.house:hover .house-sprite {
+  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.35)) drop-shadow(0 0 6px var(--house-color));
+}
+
+@keyframes house-label-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .house.near .house-label {
+    animation: none;
+  }
+}
+
+/* --- Tap-to-move feedback ---
+   Three layers, each answering a different question:
+   - .tap-ripple: "did my tap register?" — instant, at the exact screen
+     point touched, even when the destination snaps elsewhere.
+   - .dest-marker: "where is he going?" — sits on the destination for the
+     whole walk and pops on arrival (RPG Maker's destination-sprite
+     convention), tinted in the house's color when a house is the target.
+   - .route-preview: "which way?" — dotted trail along the path from the
+     character to the destination, shrinking as they walk.
+   Plus .dest-ghost, a faint hover preview for mouse users. All pixel-style:
+   square edges and steps() timing, like the sprites around them. */
+
+.tap-ripple {
+  position: absolute;
+  width: 0;
+  height: 0;
+  z-index: 8;
+  pointer-events: none;
+}
+
+.tap-ripple::before,
+.tap-ripple::after {
+  content: '';
+  position: absolute;
+  left: -28px;
+  top: -28px;
+  width: 56px;
+  height: 56px;
+  border: 3px solid var(--pal-cream);
+  box-shadow: 0 0 0 2px var(--pal-ink), inset 0 0 0 2px var(--pal-ink);
+  border-radius: 50%;
+  opacity: 0;
+  box-sizing: border-box;
+}
+
+.tap-ripple.show::before {
+  animation: tap-ripple 0.45s steps(6) forwards;
+}
+
+.tap-ripple.show::after {
+  animation: tap-ripple 0.45s steps(6) 0.1s forwards;
+}
+
+@keyframes tap-ripple {
+  0% {
+    opacity: 1;
+    transform: scale(0.2);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.3);
+  }
+}
+
+/* Anchor point is the destination itself (left/top set in App.jsx, in
+   .world coordinates); children are laid out around it. The z-index clears
+   every depth-sorted sprite (those top out around the world's pixel
+   height) so a tree canopy never hides where you're going. */
+.dest-marker,
+.dest-ghost {
+  position: absolute;
+  width: 0;
+  height: 0;
+  z-index: 20000;
+  pointer-events: none;
+  --marker-color: var(--pal-cream);
+}
+
+.dest-marker {
+  visibility: hidden;
+}
+
+.dest-marker.active {
+  visibility: visible;
+}
+
+.dest-marker-tile {
+  position: absolute;
+  left: -26px;
+  top: -26px;
+  width: 52px;
+  height: 52px;
+  box-sizing: border-box;
+  border: 4px solid var(--marker-color);
+  box-shadow: 0 0 0 2px var(--pal-ink), inset 0 0 0 2px var(--pal-ink);
+  background: color-mix(in srgb, var(--marker-color) 28%, transparent);
+}
+
+/* A house target is marked by the house itself lighting up (.targeted)
+   plus the arrow over its roof — a tile on the gate would just cover the
+   house's label. */
+.dest-marker.house-target .dest-marker-tile {
+  display: none;
+}
+
+.dest-marker.active .dest-marker-tile {
+  animation: dest-tile-land 0.24s steps(3) both, dest-tile-pulse 0.9s steps(3) 0.24s infinite alternate;
+}
+
+/* Pixel down-arrow floating above the tile. The clip-path shape lives on
+   ::before so the ink outline (drop-shadows on the parent) isn't clipped
+   away with it. */
+.dest-marker-arrow {
+  position: absolute;
+  left: -18px;
+  /* --arrow-lift (px, set in App.jsx) raises it over a house's roof when a
+     house is the destination. */
+  top: calc(-84px - var(--arrow-lift, 0px));
+  width: 36px;
+  height: 36px;
+  filter: drop-shadow(2px 0 0 var(--pal-ink)) drop-shadow(-2px 0 0 var(--pal-ink))
+    drop-shadow(0 2px 0 var(--pal-ink)) drop-shadow(0 -2px 0 var(--pal-ink));
+}
+
+.dest-marker-arrow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /* Lightened so a darker house color still pops against trees and roofs. */
+  background: color-mix(in srgb, var(--marker-color) 65%, white);
+  clip-path: polygon(30% 0, 70% 0, 70% 45%, 100% 45%, 50% 100%, 0 45%, 30% 45%);
+}
+
+.dest-marker.active .dest-marker-arrow {
+  animation: dest-arrow-drop 0.24s steps(3) both, dest-arrow-bob 0.5s steps(3) 0.24s infinite alternate;
+}
+
+/* Arrival: the tile bursts outward and the arrow shoots up as both fade —
+   a clear "you're here" beat before the marker disappears. */
+.dest-marker.arrive .dest-marker-tile {
+  animation: dest-tile-pop 0.3s steps(4) forwards;
+}
+
+.dest-marker.arrive .dest-marker-arrow {
+  animation: dest-arrow-pop 0.3s steps(4) forwards;
+}
+
+.dest-marker.arrive {
+  animation: dest-hide 0s linear 0.3s forwards;
+}
+
+@keyframes dest-tile-land {
+  0% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes dest-tile-pulse {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(0.8);
+  }
+}
+
+@keyframes dest-arrow-drop {
+  0% {
+    transform: translateY(-24px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes dest-arrow-bob {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(10px);
+  }
+}
+
+@keyframes dest-tile-pop {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+@keyframes dest-arrow-pop {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+}
+
+@keyframes dest-hide {
+  to {
+    visibility: hidden;
+  }
+}
+
+.dest-ghost::before {
+  content: '';
+  position: absolute;
+  left: -16px;
+  top: -16px;
+  width: 32px;
+  height: 32px;
+  box-sizing: border-box;
+  border: 3px dashed var(--marker-color);
+  opacity: 0;
+  transition: opacity 0.12s steps(2);
+}
+
+.dest-ghost.show::before {
+  opacity: 0.7;
+}
+
+/* Sits just above the ground canvas and ponds but below every depth-sorted
+   sprite, so the trail reads as painted on the path. Square caps on a
+   zero-length dash draw each dot as a little pixel square. */
+.route-preview {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.route-preview polyline {
+  fill: none;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  stroke-dasharray: 0 20;
+}
+
+.route-preview-shadow {
+  stroke: var(--pal-ink);
+  stroke-width: 10;
+  opacity: 0.55;
+}
+
+.route-preview-dots {
+  stroke: var(--pal-cream);
+  stroke-width: 6;
+}
+
+/* The polyline runs destination -> character, so a growing offset marches
+   the dots toward the destination: the trail visibly flows the way the
+   character is headed. */
+.route-preview-shadow,
+.route-preview-dots {
+  animation: route-march 0.5s steps(5) infinite;
+}
+
+@keyframes route-march {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: 20;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tap-ripple.show::before,
+  .tap-ripple.show::after,
+  .dest-marker.active .dest-marker-tile,
+  .dest-marker.active .dest-marker-arrow,
+  .route-preview-shadow,
+  .route-preview-dots {
+    animation: none;
+  }
+}
+
 /* A warm window-glow on every building (real checkpoints and decor houses
    alike) — driven straight from var(--night), same inherited-from-:root
    value the lamp posts read (see App.jsx). Gives the dusk/
@@ -608,13 +859,6 @@
   background-image: url('./assets/fence-lpc.png');
   background-size: cover;
   image-rendering: pixelated;
-  /* Same off-screen culling as .tile/.tree — a leaf element with fully
-     explicit dimensions, so nothing to clip and no contain-intrinsic-size
-     gap. Not applied to .npc/.lamp-post/.house/.decor-house-wrap: those
-     intentionally render a child (pet-dog, lamp-glow, house-sprite) wider
-     than their own nominal box, and content-visibility's implied
-     contain:paint would hard-clip that overflow. */
-  content-visibility: auto;
 }
 
 .fence-post--v {
@@ -1336,12 +1580,10 @@
    Full-screen takeovers, not popups: each panel is framed as a location
    you've walked into (a tiled floor consistent with the overworld), not a
    separate page design. The iris reveal (circle expanding to fill the
-   screen) is driven directly by --reveal, a 0-1 value written every scroll
-   tick from getHouseReveal() in App.jsx — there's no CSS transition here on
-   purpose: a fixed-duration timer paired with a value already being updated
-   every frame is what used to make the reveal snap open/closed regardless
-   of how fast the user was actually scrolling. Because opacity/clip-path
-   are a pure function of --reveal, scrolling backward through a house plays
+   screen) is driven directly by --reveal, a 0-1 value written every frame by
+   App.jsx's draw loop as the character steps through the door — there's no
+   CSS transition here on purpose, since the loop is already animating it.
+   Because opacity/clip-path are a pure function of --reveal, leaving plays
    the exact same curve in reverse — exit is the entry, mirrored, for free. */
 
 .section-panel {
@@ -1352,16 +1594,44 @@
   opacity: var(--reveal);
   pointer-events: none;
   clip-path: circle(calc(var(--reveal) * 120%) at 50% 50%);
+  /* Inside a house, the wheel/touch/arrow keys just scroll the room's own
+     content natively — scrolling no longer walks the character, so there's
+     nothing for it to hand off to at the edges. Leaving is the explicit
+     .leave-house button (or Escape). */
   overflow: auto;
-  /* Deliberately no overscroll-behavior: contain here — the wheel handler in
-     App.jsx already redirects every tick to this panel's own scrollTop
-     while it's short of either edge, so containment isn't what keeps
-     browsing a tall panel (e.g. the project grid) from walking the
-     character. Once the panel *is* at an edge and the wheel is still
-     pushing the same direction, that handler deliberately lets the event
-     through unswallowed so it can chain to the document and continue the
-     world-scroll/walk to the next house — containing it here would block
-     exactly that handoff and trap the visitor inside the section. */
+  overscroll-behavior: contain;
+  cursor: auto;
+}
+
+/* Receives focus when the room opens (so the wheel and arrow keys scroll
+   it straight away) — focus is programmatic, not a user tab stop, so no
+   ring. */
+.section-panel:focus {
+  outline: none;
+}
+
+/* Walks the character back out of the open house. Sits above the panel
+   (z-index 9), bottom-center where a thumb or cursor naturally rests. */
+.leave-house {
+  position: absolute;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  z-index: 12;
+  background: var(--pal-cream);
+  color: var(--pal-ink);
+  border: 3px solid var(--pal-ink);
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  padding: 10px 16px;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 var(--pal-ink);
+}
+
+.leave-house:hover,
+.leave-house:focus-visible {
+  background: var(--pal-grass-light);
+  box-shadow: 5px 5px 0 var(--pal-ink);
 }
 
 /* Sizes to content, not just the viewport — .section-floor lives in here as
@@ -2408,15 +2678,18 @@
    room's bottom edge, so opening one never pushes the case (or the decor
    placed around it) sideways. */
 
+/* Pops up above the shelf (its bottom edge just clears the shelf's top
+   cap), not down on the rug — down there it collided with the badge toasts
+   and the Leave button along the bottom of the screen. */
 .hobby-detail {
   position: absolute;
   left: 50%;
-  bottom: calc(-1 * (var(--floor-h) - 44px) + 16px);
+  bottom: calc(100% - 96px + 20px);
   z-index: 4;
   width: min(620px, calc(100vw - 48px));
   opacity: 0;
   visibility: hidden;
-  transform: translate(-50%, 12px);
+  transform: translate(-50%, -12px);
   transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s;
 }
 
@@ -2487,17 +2760,38 @@
 }
 
 .npc-portrait {
-  width: 96px;
-  height: 96px;
+  position: relative;
+  width: 124px;
+  height: 124px;
   border-radius: 50%;
   background: var(--pal-path);
-  color: var(--pal-ink);
-  font-family: var(--font-pixel);
-  font-size: 32px;
+  border: 4px solid var(--pal-cream);
+  box-shadow: 0 0 0 4px var(--pal-ink), 6px 6px 0 4px rgba(0, 0, 0, 0.45);
+}
+
+.npc-portrait img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.npc-portrait-star {
+  position: absolute;
+  right: -6px;
+  bottom: -2px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 4px solid var(--pal-cream);
+  border-radius: 50%;
+  background: #ffe066;
+  border: 3px solid var(--pal-ink);
+  color: var(--pal-ink);
+  font-family: var(--font-pixel);
+  font-size: 18px;
 }
 
 .dialogue-box {
@@ -2888,8 +3182,7 @@
   }
 }
 
-.npc-portrait--champion {
-  background: #ffe066;
+.npc-portrait--champion .npc-portrait-star {
   animation: badgeNextBlink 1.2s steps(2) infinite;
 }
 
@@ -2956,7 +3249,7 @@
   .badge-toast,
   .badge-toast-frame .badge-icon,
   .badge-toast-next,
-  .npc-portrait--champion {
+  .npc-portrait--champion .npc-portrait-star {
     animation: none;
   }
   .badge-toast-glint {

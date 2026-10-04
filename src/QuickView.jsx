@@ -54,9 +54,9 @@ function CopyEmailButton({ email }) {
 }
 
 // A plain, static, fully keyboard/screen-reader-operable view of the same
-// content.js data the scroll-driven game world renders — for recruiters (or
-// anyone) who wants the facts fast, and for keyboard-only visitors, since
-// the scroll/walk experience itself isn't keyboard-operable. Reuses
+// content.js data the game world renders — for recruiters (or anyone) who
+// wants the facts fast, and for screen-reader visitors, since the walk
+// experience itself is visual-first. Reuses
 // INTRO/PROJECTS/HOBBIES/CONTACT directly rather than having App.jsx pass
 // them down, same pattern sections.jsx already uses. Styled in the same
 // pixel language as the world (tile backdrop, cream/ink cards, pixel-font

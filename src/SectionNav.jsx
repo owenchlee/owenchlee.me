@@ -1,20 +1,22 @@
-import { HOUSES, WAYPOINT_FRACTIONS } from './tileMap';
+import { HOUSES } from './tileMap';
 
 // Fixed HUD in the opposite corner from the minimap, listing the same 4
 // checkpoints as HOUSES so it can never drift out of sync with the actual
 // world. `activeId` (App.jsx's activeHouse state) drives which entry glows —
-// the same "fully open" signal that already lights up the in-world house
-// label, just surfaced here too. Clicking jumps the scroll position straight
-// to that house's waypoint fraction via onJump, so a visitor doesn't have to
-// walk the whole route to reach a section they already know they want.
-function SectionNav({ activeId, onJump }) {
+// the same "inside this house" signal that lights up the in-world house
+// label, just surfaced here too — and `introActive` lights Intro while the
+// character is standing at the start of the path. Clicking walks the character straight to
+// that house and in via onSelect (or back to the start for Intro), so a
+// visitor doesn't have to tap their way along the whole route to reach a
+// section they already know they want.
+function SectionNav({ activeId, introActive, onSelect }) {
   return (
-    <nav className="section-nav" aria-label="Jump to section">
+    <nav className="section-nav" aria-label="Go to section">
       <button
         type="button"
-        className={`section-nav-item ${activeId == null ? 'active' : ''}`}
+        className={`section-nav-item ${introActive ? 'active' : ''}`}
         style={{ '--section-color': '#e0714f' }}
-        onClick={() => onJump(0)}
+        onClick={() => onSelect(null)}
       >
         Intro
       </button>
@@ -24,7 +26,7 @@ function SectionNav({ activeId, onJump }) {
           type="button"
           className={`section-nav-item ${activeId === h.id ? 'active' : ''}`}
           style={{ '--section-color': h.color }}
-          onClick={() => onJump(WAYPOINT_FRACTIONS[h.waypointIndex])}
+          onClick={() => onSelect(h.id)}
         >
           {h.label}
         </button>
