@@ -47,6 +47,8 @@ import FishingBox from './FishingBox';
 import { startFishing, fishingAction, stopFishing, getFishing } from './fishing';
 import Workshop from './Workshop';
 import NowLog from './NowLog';
+import PackOpener from './PackOpener';
+import { usePackOpener, closePackOpener } from './packs';
 import { useSecrets, isWorkshopOpen, installKonami, findSecret } from './secrets';
 import { playStep, playDoor, playTalk, playKnock } from './sfx';
 import { SEASON, treeVariant, useSeasonTreeUrls } from './season';
@@ -353,6 +355,7 @@ function App() {
   const [welcomeSeen, setWelcomeSeen] = useState(readWelcomeSeen);
   const [workshopOpen, setWorkshopOpen] = useState(false);
   const [nowLogOpen, setNowLogOpen] = useState(false);
+  const packOpen = usePackOpener();
   // Timestamp of the last secret found (0 = none showing), doubling as the
   // confetti's key so a second find replays it.
   const [secretBurst, setSecretBurst] = useState(0);
@@ -1527,6 +1530,7 @@ function App() {
 
       {workshopOpen && <Workshop onClose={() => setWorkshopOpen(false)} />}
       {nowLogOpen && <NowLog onClose={() => setNowLogOpen(false)} />}
+      {packOpen && <PackOpener onClose={closePackOpener} />}
 
       {secretBurst > 0 && <ParticleBurst key={secretBurst} />}
 

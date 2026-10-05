@@ -335,13 +335,13 @@ export const WORKSHOP_PROJECTS = [
 // `pixels` is a 9x9 map in the same format as the badges.
 const FISH_PIXELS = ['.........', '..oooo...', '.ohhbbo.o', 'ohobbbsoo', 'ohbbbbsso', '.obbbsoso', '..ooooo.o', '.........', '.........'];
 export const FISH = [
-  { id: 'perch', name: 'Pixel Perch', color: '#e0b23c', weight: 10, pixels: FISH_PIXELS, fact: "The Ladder Game in the Projects lab runs on a real breadboard, all circuitry and no screen." },
+  { id: 'perch', name: 'Pixel Perch', color: '#e0b23c', weight: 10, pixels: FISH_PIXELS, fact: "The Ladder Game in the Projects arcade runs on a real breadboard, all circuitry and no screen." },
   { id: 'bass', name: 'Byte Bass', color: '#5b7a94', weight: 10, pixels: FISH_PIXELS, fact: 'FoodFindr has Claude read real Google reviews, then picks one spot and one dish for you.' },
   { id: 'guppy', name: 'Greenfoot Guppy', color: '#4da338', weight: 10, pixels: FISH_PIXELS, fact: 'Three of the projects are Greenfoot simulations: fire trucks, a whole supermarket, and chess crossed with Clash Royale.' },
   { id: 'koi', name: 'Karaoke Koi', color: '#e8877a', weight: 6, pixels: FISH_PIXELS, fact: 'Sing Score splits any song into vocals and instrumentals, then grades your singing against the melody.' },
   { id: 'goby', name: 'Gesture Goby', color: '#8ea9c9', weight: 6, pixels: FISH_PIXELS, fact: 'Thumb Detector lets you drive a computer with hand gestures, tracked live with MediaPipe.' },
   { id: 'boot', name: 'Old Boot', color: '#a67a54', weight: 5, pixels: ['..oooo...', '..obbo...', '..obbo...', '..ohbo...', '..ohbbooo', '.ohbbbbbo', '.obbbbbso', '.ooooooo.', '.........'], fact: 'Somebody must have walked the whole road in it.' },
-  { id: 'holo', name: 'Holo Carp', color: '#c88ce8', weight: 1.5, shiny: true, pixels: FISH_PIXELS, fact: "A shiny! About as rare as pulling a holo from a Pokémon pack." },
+  { id: 'holo', name: 'Holo Carp', color: '#c88ce8', weight: 4, shiny: true, pixels: FISH_PIXELS, fact: "A shiny! About as rare as pulling a holo from a Pokémon pack." },
 ];
 
 export const RUSTY_KEY = {

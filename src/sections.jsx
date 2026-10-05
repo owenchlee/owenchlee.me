@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useRef, useState } from 'react';
 import { PROJECTS, HOBBIES, CONTACT, EDUCATION, EXPERIENCE, SKILLS, RESUME_URL, SECRET_NOTE } from './content';
 import { markHobbySeen, useAchievements } from './achievements';
+import { openPackOpener } from './packs';
 import petDogA from './assets/pet-dog-a.png';
 import owenPortrait from './assets/owen-portrait.jpg';
 
@@ -576,7 +577,7 @@ export const HobbiesPanel = forwardRef(function HobbiesPanel({ active }, ref) {
               <div className="room-art room-art--b" />
               <div className="room-clock" />
             </div>
-            <div className="room-floor" aria-hidden="true">
+            <div className="room-floor">
               <div className="room-window-light" />
               <div className="room-rug" />
               <div className="room-lamp">
@@ -593,6 +594,14 @@ export const HobbiesPanel = forwardRef(function HobbiesPanel({ active }, ref) {
                 <span className="room-chair-arm room-chair-arm--l" />
                 <span className="room-chair-arm room-chair-arm--r" />
                 <span className="room-chair-seat" />
+                {/* The secret: a booster pack tucked under the cushion, one
+                    corner peeking out (see packs.js / PackOpener.jsx). */}
+                <button
+                  type="button"
+                  className="room-pack"
+                  onClick={openPackOpener}
+                  aria-label="Something shiny is tucked under the cushion"
+                />
               </div>
               <img src={petDogA} className="room-pet" alt="" />
             </div>

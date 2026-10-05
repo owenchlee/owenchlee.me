@@ -11,6 +11,7 @@ export const SECRETS = [
   { id: 'key', name: 'Rusty Key', hint: 'Something lost at the bottom of a pond.' },
   { id: 'workshop', name: 'Workshop', hint: 'Find a way into the old workshop.' },
   { id: 'shiny', name: 'Shiny Catch', hint: 'A very rare bite.' },
+  { id: 'rare', name: 'Secret Rare', hint: 'Someone left a booster pack lying around the house.' },
 ];
 
 const STORAGE_KEY = 'secrets-v1';

@@ -162,3 +162,18 @@ export function playBlip(voice = 1) {
   if (!ac) return;
   tone(ac, { freq: (520 + Math.random() * 40) * voice, dur: 0.035, vol: 0.022 });
 }
+
+// Booster pack: the foil tearing (a bright noise rip), and a soft swish for
+// each card flipped.
+export function playTear() {
+  const ac = audio();
+  if (!ac) return;
+  hiss(ac, { dur: 0.22, freq: 3200, q: 0.6, vol: 0.07 });
+  hiss(ac, { dur: 0.12, freq: 2200, q: 0.9, vol: 0.05, start: 0.12 });
+}
+
+export function playFlip() {
+  const ac = audio();
+  if (!ac) return;
+  hiss(ac, { dur: 0.08, freq: 1800, q: 1.2, vol: 0.045 });
+}
