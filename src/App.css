@@ -1532,6 +1532,19 @@
   cursor: pointer;
 }
 
+.music-guide {
+  transition:
+    opacity 0.2s ease,
+    translate 0.2s ease;
+}
+
+/* Out of the way while a room, a conversation or the fishing box is up. */
+.music-guide.is-away {
+  opacity: 0;
+  translate: -12px 0;
+  pointer-events: none;
+}
+
 .music-guide-sprite {
   display: block;
   width: 48px;
@@ -1564,6 +1577,7 @@
   background: var(--pal-cream);
   border: 3px solid var(--pal-ink);
   box-shadow: 3px 3px 0 #000;
+  pointer-events: none;
   animation: music-guide-nudge 2.4s ease-in-out infinite;
 }
 
@@ -7366,35 +7380,78 @@
   }
 }
 
-/* The five cards, face down, flipping one at a time. */
-.packs-row {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 16px;
-  perspective: 1200px;
+/* The five cards out of the pack: a face-up stack, front card on top.
+   Tapping it flicks it up and off onto the discard pile to the right. */
+.packs-table {
+  --cw: clamp(170px, 21vw, 250px);
+  position: relative;
+  width: calc(var(--cw) * 1.8);
+  height: calc(var(--cw) * 1.4 + 14px);
 }
 
-.packs-slot {
+.packs-stack {
+  position: absolute;
+  left: 0;
+  top: 0;
   width: var(--cw);
   height: calc(var(--cw) * 1.4);
+}
+
+.packs-card {
+  position: absolute;
+  inset: 0;
   padding: 0;
   background: none;
   border: 0;
   cursor: default;
+  /* Cards further back peek out below and to the side, so it reads as a
+     stack of five. */
+  translate: calc(var(--depth) * 3px) calc(var(--depth) * 3px);
+  transition: translate 0.2s ease;
 }
 
-.packs-slot.is-next {
+.packs-card.is-top {
   cursor: pointer;
-  animation: packs-ready 1.1s ease-in-out infinite;
 }
 
-/* The rare slot glows before the flip when something good is under it. */
-.packs-slot.tease-holo {
+.packs-card.is-top:hover {
+  translate: 0 -4px;
+}
+
+.packs-card.is-top:focus-visible {
+  outline: 3px solid #ffe066;
+  outline-offset: 6px;
+}
+
+.packs-card.is-gone {
+  pointer-events: none;
+  animation: packs-flick 0.45s ease-in-out forwards;
+}
+
+@keyframes packs-flick {
+  0% {
+    translate: 0 0;
+    rotate: 0deg;
+    scale: 1;
+  }
+  45% {
+    translate: 10% -55%;
+    rotate: -8deg;
+    scale: 0.9;
+  }
+  100% {
+    translate: calc(var(--cw) * 0.98) 12%;
+    rotate: var(--tilt);
+    scale: 0.6;
+  }
+}
+
+/* Suspense: the stack glows while the rare slot is the next card down. */
+.packs-stack.tease-holo {
   filter: drop-shadow(0 0 12px #8ec7ff) drop-shadow(0 0 22px #c8a4ff);
 }
 
-.packs-slot.tease-secret {
+.packs-stack.tease-secret {
   filter: drop-shadow(0 0 14px #ffe066) drop-shadow(0 0 30px #ffb43c);
   animation: packs-ready 0.5s ease-in-out infinite;
 }
@@ -7405,41 +7462,28 @@
   }
 }
 
-.packs-flipper {
-  position: relative;
-  display: block;
-  width: 100%;
-  height: 100%;
-  transform-style: preserve-3d;
-  transition: transform 0.5s ease;
+/* After the last card: the whole pull laid out in a row. */
+.packs-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
 }
 
-.packs-slot.is-up .packs-flipper {
-  transform: rotateY(180deg);
+.packs-summary-card {
+  animation: packs-deal 0.35s ease-out backwards;
 }
 
-.packs-face {
-  position: absolute;
-  inset: 0;
-  backface-visibility: hidden;
-}
+.packs-summary-card:nth-child(2) { animation-delay: 0.05s; }
+.packs-summary-card:nth-child(3) { animation-delay: 0.1s; }
+.packs-summary-card:nth-child(4) { animation-delay: 0.15s; }
+.packs-summary-card:nth-child(5) { animation-delay: 0.2s; }
 
-.packs-face--front {
-  transform: rotateY(180deg);
-}
-
-.card-back {
-  display: block;
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
-  background:
-    radial-gradient(circle, #ffe066 0 14%, var(--pal-ink) 14% 18%, transparent 18%),
-    repeating-linear-gradient(45deg, #2f5f86 0 10px, #284f70 10px 20px);
-  border: calc(var(--cw) * 0.05) solid #e0b23c;
-  outline: 3px solid var(--pal-ink);
-  border-radius: 8px;
-  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.4);
+@keyframes packs-deal {
+  from {
+    opacity: 0;
+    translate: 0 16px;
+  }
 }
 
 .packs-actions {
@@ -7646,9 +7690,20 @@
   border: 0;
 }
 
+.tcg--secret .tcg-art {
+  align-items: flex-start;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255, 224, 102, 0.55), transparent 45%),
+    repeating-conic-gradient(from 0deg at 50% 42%, #3a2614 0 10deg, #2a1a0e 10deg 20deg);
+}
+
 .tcg--secret .tcg-art img {
-  image-rendering: auto;
-  filter: sepia(0.35) saturate(1.2);
+  width: 66%;
+  height: auto;
+  margin-top: 24%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0.3em 0.3em 0 rgba(0, 0, 0, 0.45));
 }
 
 .tcg--secret .tcg-head,
@@ -7757,15 +7812,16 @@
 @media (prefers-reduced-motion: reduce) {
   .room-pack::after,
   .booster,
-  .packs-slot.is-next,
+  .packs-stack.tease-secret,
+  .packs-summary-card,
   .packs-secret-callout,
   .tcg--holo .tcg-art::after,
   .tcg--secret::after {
     animation: none;
   }
 
-  .packs-flipper {
-    transition: none;
+  .packs-card.is-gone {
+    animation-duration: 0.01s;
   }
 }
 

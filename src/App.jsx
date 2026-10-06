@@ -1505,7 +1505,7 @@ function App() {
         onSelect={(id) => (id ? goToHouse(id) : goToProgress(0))}
       />
       <Minimap ref={minimapDotRef} />
-      <MusicPlayer />
+      <MusicPlayer inRoom={Boolean(activeHouse)} />
       <BadgeCase />
       </div>
 

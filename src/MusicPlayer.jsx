@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { createMusicEngine, TRACK_LIST } from './music';
 import guideSprite from './assets/npc-c.png';
+import { useDialogue } from './dialogue';
+import { useFishing } from './fishing';
 
 // Bottom-left HUD — the one corner section-nav (top-left)/quick-view-toggle
 // (top-right)/minimap (bottom-right) leave free. Music never autostarts:
@@ -12,8 +14,12 @@ import guideSprite from './assets/npc-c.png';
 // A townsperson stands beside the player with a speech bubble pointing at
 // the disc until the visitor has played music once (remembered across
 // visits); tapping them toggles the music too, and they bob along while
-// it plays.
+// it plays. They're a town character, so they step away while the visitor
+// is inside a room, talking to someone or fishing (anything that puts UI
+// near the bottom of the screen), and the bubble itself only shows for the
+// first BUBBLE_MS of a visit and never catches clicks.
 const HINT_KEY = 'music-hint-done';
+const BUBBLE_MS = 15000;
 
 function readHintDone() {
   try {
@@ -23,14 +29,23 @@ function readHintDone() {
   }
 }
 
-function MusicPlayer() {
+function MusicPlayer({ inRoom = false }) {
   const engineRef = useRef(null);
   const [playing, setPlaying] = useState(false);
   const [trackId, setTrackId] = useState(TRACK_LIST[0].id);
   const [expanded, setExpanded] = useState(false);
   const [hintDone, setHintDone] = useState(readHintDone);
+  const [bubbleTimedOut, setBubbleTimedOut] = useState(false);
+  const talking = useDialogue() !== null;
+  const fishing = useFishing() !== null;
+  const guideAway = inRoom || talking || fishing;
 
   useEffect(() => () => engineRef.current?.destroy(), []);
+
+  useEffect(() => {
+    const t = setTimeout(() => setBubbleTimedOut(true), BUBBLE_MS);
+    return () => clearTimeout(t);
+  }, []);
 
   function ensureEngine() {
     if (!engineRef.current) engineRef.current = createMusicEngine();
@@ -100,12 +115,12 @@ function MusicPlayer() {
 
       <button
         type="button"
-        className={`music-guide ${playing ? 'is-dancing' : ''}`}
+        className={`music-guide ${playing ? 'is-dancing' : ''} ${guideAway ? 'is-away' : ''}`}
         onClick={togglePlay}
         aria-label={playing ? 'Pause music' : 'Play music'}
         tabIndex={-1}
       >
-        {!hintDone && (
+        {!hintDone && !bubbleTimedOut && (
           <span className="music-guide-bubble">
             Psst! Tap the disc for some music <span aria-hidden="true">♪</span>
           </span>

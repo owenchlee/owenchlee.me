@@ -15,9 +15,11 @@ import { playFlip, playJingle, playTear } from './sfx';
 
 // Opening the secret booster pack (see packs.js). First time, it's fans
 // only: one Pokémon trivia question, and a right answer unseals it for
-// good. Then tap the sealed pack to
-// tear it, then flip the five cards one at a time; the last is the rare
-// slot, and it glows before it's flipped when something good is under it.
+// good. Then tap the sealed pack to tear it, and the five cards come out
+// as a face-up stack, like a real pack: tap the front card to flick it off
+// onto the discard pile and see the one behind it. The last is the rare
+// slot, and the stack glows on the card before it when something good is
+// waiting underneath.
 // The binder tab shows every card in the set, with silhouettes for the
 // ones not pulled yet. Escape closes (capture phase, like the Workshop).
 const RARITY_MARK = { common: '●', uncommon: '◆', rare: '★', holo: '★', secret: '✦' };
@@ -128,7 +130,9 @@ function PackOpener({ onClose }) {
   const [view, setView] = useState('pack');
   const [phase, setPhase] = useState('sealed');
   const [cards, setCards] = useState([]);
-  const [flipped, setFlipped] = useState(0);
+  // Index of the card on the front of the stack; cards before it have been
+  // flicked onto the discard pile.
+  const [top, setTop] = useState(0);
   const closeRef = useRef(null);
   const tearTimer = useRef(null);
 
@@ -138,29 +142,31 @@ function PackOpener({ onClose }) {
     if (phase !== 'sealed') return;
     const pack = rollPack();
     setCards(pack);
-    setFlipped(0);
+    setTop(0);
     setPhase('tearing');
     playTear();
     tearTimer.current = setTimeout(() => setPhase('reveal'), 650);
   }, [phase]);
 
   const flipNext = useCallback(() => {
-    if (phase !== 'reveal' || flipped >= cards.length) return;
-    const card = cards[flipped];
-    const next = flipped + 1;
-    setFlipped(next);
-    if (card.rarity === 'secret') playJingle('secret');
-    else if (card.rarity === 'holo') playJingle('catch');
-    else playFlip();
+    if (phase !== 'reveal' || top >= cards.length) return;
+    const next = top + 1;
+    setTop(next);
+    playFlip();
+    // The card now on the front of the stack.
+    const shown = cards[next];
+    if (shown?.rarity === 'secret') playJingle('secret');
+    else if (shown?.rarity === 'holo') playJingle('catch');
     if (next === cards.length) {
       addToBinder(cards);
-      setPhase('done');
+      // Let the last card land on the pile before the summary.
+      tearTimer.current = setTimeout(() => setPhase('done'), 450);
     }
-  }, [phase, flipped, cards]);
+  }, [phase, top, cards]);
 
   function another() {
     setCards([]);
-    setFlipped(0);
+    setTop(0);
     setPhase('sealed');
     setView('pack');
   }
@@ -187,7 +193,7 @@ function PackOpener({ onClose }) {
 
   const owned = CARDS.filter((c) => binder[c.id]).length;
   const rareSlot = cards[cards.length - 1];
-  const tease = phase === 'reveal' && flipped === cards.length - 1 && rareSlot ? rareSlot.rarity : null;
+  const tease = phase === 'reveal' && top === cards.length - 2 && rareSlot ? rareSlot.rarity : null;
 
   return (
     <div className="packs-backdrop" onClick={onClose}>
@@ -238,36 +244,45 @@ function PackOpener({ onClose }) {
             )}
             {phase === 'sealed' && <p className="packs-hint">Tap the pack to tear it open.</p>}
 
-            {(phase === 'reveal' || phase === 'done') && (
+            {phase === 'reveal' && (
+              <>
+                <div className="packs-table">
+                  <div className={`packs-stack ${tease ? `tease-${tease}` : ''}`}>
+                    {cards.map((card, i) => {
+                      const gone = i < top;
+                      const isTop = i === top;
+                      return (
+                        <button
+                          key={`${card.id}-${i}`}
+                          type="button"
+                          className={`packs-card ${gone ? 'is-gone' : ''} ${isTop ? 'is-top' : ''}`}
+                          style={{ '--depth': i - top, '--tilt': `${((i * 37) % 11) - 5}deg`, zIndex: gone ? i : 20 - i }}
+                          onClick={isTop ? flipNext : undefined}
+                          tabIndex={isTop ? 0 : -1}
+                          aria-hidden={!isTop}
+                          aria-label={isTop ? `${card.name}, ${RARITY_LABEL[card.rarity]}. Tap for the next card.` : undefined}
+                        >
+                          <TradingCard card={card} />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <p className="packs-hint">
+                  Card {Math.min(top + 1, cards.length)} of {cards.length}. Tap it to flick it onto the pile.
+                </p>
+              </>
+            )}
+
+            {phase === 'done' && (
               <>
                 <div className="packs-row">
-                  {cards.map((card, i) => {
-                    const isUp = i < flipped;
-                    const isNext = i === flipped && phase === 'reveal';
-                    return (
-                      <button
-                        key={`${card.id}-${i}`}
-                        type="button"
-                        className={`packs-slot ${isUp ? 'is-up' : ''} ${isNext ? 'is-next' : ''} ${
-                          isNext && tease ? `tease-${tease}` : ''
-                        }`}
-                        onClick={isNext ? flipNext : undefined}
-                        disabled={!isNext}
-                        aria-label={isUp ? `${card.name}, ${RARITY_LABEL[card.rarity]}` : isNext ? 'Flip this card' : 'Face-down card'}
-                      >
-                        <span className="packs-flipper">
-                          <span className="packs-face packs-face--back" aria-hidden="true">
-                            <span className="card-back" />
-                          </span>
-                          <span className="packs-face packs-face--front">
-                            <TradingCard card={card} />
-                          </span>
-                        </span>
-                      </button>
-                    );
-                  })}
+                  {cards.map((card, i) => (
+                    <div key={`${card.id}-${i}`} className="packs-summary-card">
+                      <TradingCard card={card} />
+                    </div>
+                  ))}
                 </div>
-                {phase === 'reveal' && <p className="packs-hint">Tap the glowing card to flip it.</p>}
                 {phase === 'done' && (
                   <div className="packs-actions">
                     {cards.some((c) => c.rarity === 'secret') && (

@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { PROJECTS, HOBBIES } from './content';
 import { findSecret } from './secrets';
-import owenPortrait from './assets/owen-portrait.jpg';
+import owenSprite from './assets/char/char-down-idle.png';
 
 // The secret booster pack in the Hobbies room (tucked under the armchair
 // cushion), for Pokémon fans only: it stays sealed until the visitor
@@ -59,7 +59,7 @@ export const CARDS = [
   { id: 'i-catan', type: 'item', rarity: 'common', name: 'Catan Dice', color: '#6f5fa3', art: hobbyArt('Board Games'), text: 'Roll for wood, brick and sheep. Owen\'s current favorite.' },
 
   // --- The Secret Rare ---
-  { id: 'secret', type: 'secret', rarity: 'secret', name: 'Owen Lee', color: '#e0b23c', art: owenPortrait, quote: "If you ain't cooking then hop off the pot.", text: 'Grad quote, class of 2026.' },
+  { id: 'secret', type: 'secret', rarity: 'secret', name: 'Owen Lee', color: '#e0b23c', art: owenSprite, quote: "If you ain't cooking then hop off the pot.", text: 'Grad quote, class of 2026.' },
 ];
 
 export const RARITY_LABEL = { common: 'Common', uncommon: 'Uncommon', rare: 'Rare', holo: 'Holo Rare', secret: 'Secret Rare' };
