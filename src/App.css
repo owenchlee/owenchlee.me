@@ -6078,6 +6078,10 @@
   object-fit: cover;
 }
 
+.cabinet-screen-media--portrait {
+  object-fit: contain;
+}
+
 .cabinet-screen-media--image {
   object-fit: contain;
   padding: 10%;

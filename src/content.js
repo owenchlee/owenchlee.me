@@ -40,6 +40,7 @@ const vehicleSimDemo = '/projects/vehicle-simulation-demo.mp4';
 const justDieDemo = '/projects/just-die-demo.mp4';
 const karaokeDemo = '/projects/karaoke-demo.mp4';
 const ladderGameDemo = '/projects/ladder-game-demo.mp4';
+const fitsDemo = '/projects/fits-demo.mp4';
 
 // `**word**` inside `bio` or a `highlights` entry renders as a colored tag
 // chip (see Highlighted in App.jsx) instead of plain text — same "bold
@@ -173,6 +174,8 @@ export const PROJECTS = [
     date: 'Aug 2026',
     color: '#4fae7a',
     image: fitsIcon,
+    video: fitsDemo,
+    portrait: true, // phone-shaped clip: letterboxed on the cabinet screen instead of cropped
     link: 'https://github.com/owenchlee/Fits',
     tech: ['Next.js', 'TypeScript', 'Capacitor', 'Supabase'],
     desc: 'A mobile workout-tracking app built with Next.js and Capacitor, with progress charts and history that a lot of competing apps lock behind a paywall. Here, all of it is free.',
