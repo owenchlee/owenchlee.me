@@ -85,7 +85,7 @@ export function useRowVideoPlayback() {
 // the project's name when neither `video` nor `image` is set yet (see
 // content.js), so a section can be filled in one entry at a time without
 // any card looking broken.
-export function CardThumb({ video, image, color, alt, registerVideo }) {
+export function CardThumb({ video, image, color, alt, registerVideo, portrait }) {
   const videoRef = useRef(null);
 
   useEffect(() => {
@@ -100,7 +100,7 @@ export function CardThumb({ video, image, color, alt, registerVideo }) {
     // in a closed room. Posters are a frame from each clip, generated next
     // to it as <name>-poster.webp.
     return (
-      <div className="project-thumb project-thumb--image">
+      <div className={`project-thumb project-thumb--image ${portrait ? 'project-thumb--portrait' : ''}`}>
         <video
           ref={videoRef}
           src={video}
@@ -329,6 +329,7 @@ export const ProjectsPanel = forwardRef(function ProjectsPanel({ active }, ref) 
                   image={open.image}
                   color={open.color}
                   alt={open.name}
+                  portrait={open.portrait}
                   registerVideo={openRegisterVideo}
                 />
                 <div className="project-meta">

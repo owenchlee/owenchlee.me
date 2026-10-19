@@ -41,6 +41,7 @@ const justDieDemo = '/projects/just-die-demo.mp4';
 const karaokeDemo = '/projects/karaoke-demo.mp4';
 const ladderGameDemo = '/projects/ladder-game-demo.mp4';
 const fitsDemo = '/projects/fits-demo.mp4';
+const thumbDetectorDemo = '/projects/thumb-detector-demo.mp4';
 
 // `**word**` inside `bio` or a `highlights` entry renders as a colored tag
 // chip (see Highlighted in App.jsx) instead of plain text — same "bold
@@ -213,6 +214,7 @@ export const PROJECTS = [
     date: 'Apr 2026',
     color: '#8ea9c9',
     image: thumbDetectorShot,
+    video: thumbDetectorDemo,
     link: 'https://github.com/owenchlee/Flick',
     tech: ['Python', 'OpenCV', 'MediaPipe'],
     desc: 'Real-time hand-tracking with OpenCV and MediaPipe that maps thumb and finger gestures to keyboard and mouse input, letting you drive your computer with just your hand.',

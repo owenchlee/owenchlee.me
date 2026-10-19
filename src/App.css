@@ -2025,6 +2025,15 @@
   background: var(--pal-cream);
 }
 
+/* Phone-shaped clips (project.portrait) keep their real proportions
+   instead of sitting letterboxed in the 3:2 frame. */
+.project-thumb--image.project-thumb--portrait {
+  aspect-ratio: 780 / 1688;
+  width: min(100%, calc(min(60vh, 520px) * 780 / 1688));
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .project-thumb-img {
   width: 100%;
   height: 100%;

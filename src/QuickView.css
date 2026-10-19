@@ -232,6 +232,12 @@
   border: 3px solid var(--pal-ink);
 }
 
+.quick-view-projects .project-thumb--portrait {
+  aspect-ratio: 780 / 1688;
+  width: min(100%, calc(420px * 780 / 1688));
+  margin: -4px auto 14px;
+}
+
 .quick-view-projects .project-thumb-img {
   display: block;
   width: 100%;

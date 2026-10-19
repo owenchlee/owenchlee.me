@@ -190,7 +190,7 @@ function QuickView({ onClose, isMobileLanding }) {
             {PROJECTS.map((p) => (
               <li key={p.name} style={{ '--accent': p.color }}>
                 {(p.video || p.image) && (
-                  <CardThumb video={p.video} image={p.image} color={p.color} alt={p.name} registerVideo={registerVideo} />
+                  <CardThumb video={p.video} image={p.image} color={p.color} alt={p.name} portrait={p.portrait} registerVideo={registerVideo} />
                 )}
                 <div className="quick-view-card-head">
                   <h3>{p.name}</h3>
