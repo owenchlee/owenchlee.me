@@ -261,7 +261,7 @@ export const ProjectsPanel = forwardRef(function ProjectsPanel({ active }, ref) 
                     className={`cabinet ${matches(p) ? '' : 'is-off'}`}
                     style={{ '--cab': p.color }}
                     onClick={() => setOpenName(p.name)}
-                    aria-label={`${p.name}: open cabinet`}
+                    aria-label={`${p.name}: open game`}
                   >
                     <span className="cabinet-marquee">{p.name}</span>
                     <span className="cabinet-screen">
@@ -305,8 +305,8 @@ export const ProjectsPanel = forwardRef(function ProjectsPanel({ active }, ref) 
                 </div>
                 <p className="arcade-counter-status" aria-live="polite">
                   {tag
-                    ? `${matchCount} ${matchCount === 1 ? 'cabinet runs' : 'cabinets run'} ${tag}`
-                    : `${PROJECTS.length} cabinets. Tap one to play.`}
+                    ? `${matchCount} ${matchCount === 1 ? 'game runs' : 'games run'} ${tag}`
+                    : `${PROJECTS.length} games. Tap one to play.`}
                 </p>
               </div>
               {highScore && (

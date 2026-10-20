@@ -1153,10 +1153,19 @@ function App() {
                       visitor has caught something, a sign spells it out. */}
                   <span className="pond-bobber" />
                   <span className="pond-fish" />
-                  {!hasFished && <span className="pond-hint">Tap to fish!</span>}
                 </div>
               ))}
             </GroundCanvas>
+
+            {/* The "Tap to fish!" sign lives outside the pond (whose
+                clip-path would crop it) and above every depth-sorted
+                sprite, so no tree canopy ever covers it. */}
+            {!hasFished &&
+              PONDS.map(({ id, left, top, width, height }) => (
+                <div key={id} className="pond-hint-layer" style={{ left, top, width, height }}>
+                  <span className="pond-hint">Tap to fish!</span>
+                </div>
+              ))}
 
             {FENCES.map((post) => {
               const { x, y } = tileToPx(post.col, post.row);

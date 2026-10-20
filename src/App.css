@@ -7128,6 +7128,12 @@
 
 /* "Tap to fish!" plaque floating over each pond until the visitor's first
    catch: a little wooden sign with a fishing rod, bobbing gently. */
+.pond-hint-layer {
+  position: absolute;
+  z-index: 19000;
+  pointer-events: none;
+}
+
 .pond-hint {
   position: absolute;
   left: 50%;
