@@ -41,15 +41,12 @@
   --pal-grass: #197153;
   --pal-grass-light: #4da338;
   --pal-path: #a67a54;
-  --pal-path-dark: #7a5a3d;
-  --pal-water: #26a8b1;
   --pal-cream: #f8f0dc;
   --pal-ink: #1c1712;
   --pal-ink-soft: #3a2f24;
 
   --font-pixel: 'Press Start 2P', cursive;
   --font-terminal: 'VT323', monospace;
-  --font-hand: 'Caveat', cursive;
 }
 
 * {
