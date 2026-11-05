@@ -1919,15 +1919,6 @@
   z-index: 1;
 }
 
-.projects-heading {
-  font-family: var(--font-pixel);
-  color: var(--pal-cream);
-  font-size: 20px;
-  margin: 0 0 40px;
-  text-align: center;
-  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.4);
-}
-
 .project-thumb {
   aspect-ratio: 3 / 2;
   display: flex;
@@ -3453,17 +3444,6 @@
 
 .npc-portrait--champion .npc-portrait-star {
   animation: badgeNextBlink 1.2s steps(2) infinite;
-}
-
-.secret-note {
-  position: relative;
-  width: min(460px, 90vw);
-  background: #fff7c2;
-  color: var(--pal-ink);
-  border: 3px solid var(--pal-ink);
-  box-shadow: 5px 5px 0 #000;
-  padding: 20px 22px 18px;
-  transform: rotate(-1.5deg);
 }
 
 .secret-note-pin {
