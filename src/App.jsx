@@ -56,7 +56,6 @@ import SeasonFx from './SeasonFx';
 import { ParticleBurst } from './Badges';
 // Swap for Plausible/Fathom/GA4 here if preferred — this is a zero-config
 // default, not a hard architectural commitment.
-import { Analytics } from '@vercel/analytics/react';
 import house01 from './assets/houses/house-01.png';
 import house02 from './assets/houses/house-02.png';
 import workshopShed from './assets/houses/workshop-shed.png';
@@ -1544,8 +1543,6 @@ function App() {
       {secretBurst > 0 && <ParticleBurst key={secretBurst} />}
 
       <BadgeToast />
-
-      <Analytics />
     </>
   );
 }
