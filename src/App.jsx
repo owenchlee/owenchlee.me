@@ -34,7 +34,8 @@ import {
 import { ProjectsPanel, ExperiencePanel, HobbiesPanel, ContactPanel } from './sections';
 import { INTRO, RESUME_URL } from './content';
 import { Highlighted } from './Highlighted';
-import Minimap, { minimapPoint } from './Minimap';
+import Minimap from './Minimap';
+import { minimapPoint } from './minimapPoint';
 import SectionNav from './SectionNav';
 import MusicPlayer from './MusicPlayer';
 import GroundCanvas from './GroundCanvas';
