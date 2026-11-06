@@ -253,7 +253,7 @@ function PackOpener({ onClose }) {
                       const isTop = i === top;
                       return (
                         <button
-                          key={`${card.id}-${i}`}
+                          key={card.id}
                           type="button"
                           className={`packs-card ${gone ? 'is-gone' : ''} ${isTop ? 'is-top' : ''}`}
                           style={{ '--depth': i - top, '--tilt': `${((i * 37) % 11) - 5}deg`, zIndex: gone ? i : 20 - i }}
@@ -277,8 +277,8 @@ function PackOpener({ onClose }) {
             {phase === 'done' && (
               <>
                 <div className="packs-row">
-                  {cards.map((card, i) => (
-                    <div key={`${card.id}-${i}`} className="packs-summary-card">
+                  {cards.map((card) => (
+                    <div key={card.id} className="packs-summary-card">
                       <TradingCard card={card} />
                     </div>
                   ))}
