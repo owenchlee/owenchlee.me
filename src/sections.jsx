@@ -143,7 +143,7 @@ export const ProjectsPanel = forwardRef(function ProjectsPanel({ active }, ref) 
             <h2 className="arcade-sign" aria-label="Projects">
               <span className="arcade-sign-tubes" aria-hidden="true">
                 {[...'PROJECTS'].map((c, i) => (
-                  <span key={i} className={i === 4 ? 'arcade-sign-buzz' : undefined}>
+                  <span key={c} className={i === 4 ? 'arcade-sign-buzz' : undefined}>
                     {c}
                   </span>
                 ))}
