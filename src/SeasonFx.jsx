@@ -17,6 +17,7 @@ function SeasonFx() {
   const flakes = useMemo(() => {
     const n = COUNT[SEASON] ?? 0;
     return Array.from({ length: n }, (_, i) => ({
+      id: i,
       left: `${((i + Math.random() * 0.8) / n) * 100}%`,
       size: SEASON === 'winter' ? 3 + Math.round(Math.random() * 3) : 6,
       duration: (SEASON === 'winter' ? 9 : 12) + Math.random() * 8,
@@ -29,9 +30,9 @@ function SeasonFx() {
   if (reducedMotion || flakes.length === 0) return null;
   return (
     <div className={`season-fx season-fx--${SEASON}`} aria-hidden="true">
-      {flakes.map((f, i) => (
+      {flakes.map((f) => (
         <span
-          key={i}
+          key={f.id}
           className="season-flake"
           style={{
             left: f.left,
