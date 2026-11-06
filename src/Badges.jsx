@@ -56,6 +56,7 @@ function makeParticles(count) {
     const angle = (i / count) * Math.PI * 2 + Math.random() * 0.3;
     const dist = 140 + Math.random() * 220;
     return {
+      id: i,
       dx: Math.cos(angle) * dist,
       dy: Math.sin(angle) * dist - 60,
       color: PARTICLE_COLORS[i % PARTICLE_COLORS.length],
@@ -69,9 +70,9 @@ export function ParticleBurst() {
   const [particles] = useState(() => makeParticles(48));
   return (
     <div className="badge-burst" aria-hidden="true">
-      {particles.map((p, i) => (
+      {particles.map((p) => (
         <span
-          key={i}
+          key={p.id}
           className="badge-burst-particle"
           style={{
             '--dx': `${p.dx}px`,
