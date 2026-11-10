@@ -2942,10 +2942,11 @@
 
 @media (max-width: 640px) {
   .bookshelf-stage {
-    max-width: calc(100% - 16px);
+    max-width: calc(100% - 40px);
   }
 
   .bookshelf {
+    flex: 0 1 auto;
     min-width: 0;
     padding: 16px 8px 0;
   }
