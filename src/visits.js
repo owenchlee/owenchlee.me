@@ -10,7 +10,7 @@ const SESSION_KEY = 'visit-counted';
 function recordVisit() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? {};
-    const count = Number.isInteger(saved.count) ? saved.count : 0;
+    const count = Number.isSafeInteger(saved.count) && saved.count > 0 ? saved.count : 0;
     if (sessionStorage.getItem(SESSION_KEY)) return Math.max(count, 1);
     sessionStorage.setItem(SESSION_KEY, '1');
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ count: count + 1 }));
@@ -36,5 +36,6 @@ export function welcomeBackLines() {
   const greeting = `Welcome back! This is visit number ${visitNumber}.`;
   if (championAt) return [greeting, "You're already the Champion. Thanks for dropping by again!"];
   const next = BADGES.find((b) => !earned[b.id]);
+  if (!next) return [greeting];
   return [greeting, `You have ${found} of ${BADGES.length} badges. For the next one: ${next.hint}`];
 }

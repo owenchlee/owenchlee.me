@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { HOBBIES, RESUME_URL } from './content';
 import { playJingle } from './sfx';
+import { cleanMap, isInt } from './sanitize';
 
 // Pokémon-style gym badges for exploring the world. Eight of them, like a
 // badge case, and earning all eight makes the visitor "Champion", which
@@ -78,11 +79,14 @@ function load() {
   try {
     const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (parsed && typeof parsed === 'object') {
-      return {
-        earned: parsed.earned ?? {},
-        hobbiesSeen: parsed.hobbiesSeen ?? [],
-        championAt: parsed.championAt ?? null,
-      };
+      const earned = cleanMap(parsed.earned, (k) => BADGE_IDS.has(k), (v) => v > 0 && isInt(v));
+      const hobbiesSeen = Array.isArray(parsed.hobbiesSeen)
+        ? [...new Set(parsed.hobbiesSeen.filter((i) => isInt(i) && i >= 0 && i < HOBBIES.length))]
+        : [];
+      const all = BADGES.every((b) => earned[b.id]);
+      // Champion needs every badge; repair a missing crown, drop a bogus one.
+      const championAt = !all ? null : isInt(parsed.championAt) ? parsed.championAt : Date.now();
+      return { earned, hobbiesSeen, championAt };
     }
   } catch {
     // Private mode / blocked storage / corrupt JSON — start fresh.
