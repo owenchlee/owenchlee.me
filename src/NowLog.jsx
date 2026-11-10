@@ -14,8 +14,11 @@ function monthLabel(month) {
   return `${MONTHS[m - 1]} ${y}`;
 }
 
-const isValidLog = (data) =>
-  Array.isArray(data?.entries) && data.entries.every((e) => /^\d{4}-\d{2}$/.test(e?.month) && typeof e?.text === 'string');
+const isValidEntry = (e) => /^\d{4}-(0[1-9]|1[0-2])$/.test(e?.month) && typeof e?.text === 'string' && e.text.trim() !== '';
+
+// Drop bad entries, and keep the last of any repeated month (routine run twice).
+const cleanEntries = (data) =>
+  Array.isArray(data?.entries) ? [...new Map(data.entries.filter(isValidEntry).map((e) => [e.month, e])).values()] : null;
 
 function NowLog({ onClose }) {
   const [entries, setEntries] = useState(NOW_LOG);
@@ -26,8 +29,9 @@ function NowLog({ onClose }) {
     fetch(NOW_LOG_URL, { cache: 'no-cache' })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (cancelled || !isValidLog(data)) return;
-        const live = [...data.entries].sort((a, b) => b.month.localeCompare(a.month));
+        const clean = cleanEntries(data);
+        if (cancelled || !clean) return;
+        const live = clean.sort((a, b) => b.month.localeCompare(a.month));
         if (live.length >= NOW_LOG.length) setEntries(live);
       })
       .catch(() => {});
