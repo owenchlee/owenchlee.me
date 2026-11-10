@@ -2940,6 +2940,27 @@
   max-width: 100%;
 }
 
+@media (max-width: 640px) {
+  .bookshelf-stage {
+    max-width: calc(100% - 16px);
+  }
+
+  .bookshelf {
+    min-width: 0;
+    padding: 16px 8px 0;
+  }
+
+  .bookshelf-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 8px;
+    width: 100%;
+  }
+
+  .shelf-cubby {
+    padding: 18px 6px 8px;
+  }
+}
+
 .shelf-cubby {
   position: relative;
   display: flex;
