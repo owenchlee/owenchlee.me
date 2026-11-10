@@ -22,7 +22,7 @@
 // on Range requests for video files of this size, so these skip it entirely
 // and are served as static files in both dev and prod.
 import basketballPixel from './assets/Hobbies/pixel/basketball.png';
-import badmintonPixel from './assets/Hobbies/pixel/badminton.png';
+import badmintonPixel from './assets/Hobbies/pixel/badminton.webp';
 import boardGamesPixel from './assets/Hobbies/pixel/board-games.png';
 import cookingPixel from './assets/Hobbies/pixel/cooking.png';
 import runningPixel from './assets/Hobbies/pixel/running.png';
