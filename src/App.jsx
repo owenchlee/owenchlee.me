@@ -1090,7 +1090,7 @@ function App() {
 
   return (
     <>
-      <div aria-hidden={quickView || undefined} inert={quickView || undefined}>
+      <main aria-hidden={quickView || undefined} inert={quickView || undefined}>
       <div
         className="stage"
         ref={stageRef}
@@ -1516,7 +1516,7 @@ function App() {
       <Minimap ref={minimapDotRef} />
       <MusicPlayer inRoom={Boolean(activeHouse)} />
       <BadgeCase />
-      </div>
+      </main>
 
       <button
         type="button"
