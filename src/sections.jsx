@@ -85,8 +85,27 @@ export function useRowVideoPlayback() {
 // the project's name when neither `video` nor `image` is set yet (see
 // content.js), so a section can be filled in one entry at a time without
 // any card looking broken.
+// Posters download only once their video is near the viewport; hidden or
+// far-off rooms never intersect, so they cost nothing on first load.
+function useNearViewport(ref) {
+  const [near, setNear] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || near) return undefined;
+    if (typeof IntersectionObserver === 'undefined') {
+      setNear(true);
+      return undefined;
+    }
+    const io = new IntersectionObserver(([e]) => e.isIntersecting && setNear(true), { rootMargin: '200px' });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [ref, near]);
+  return near;
+}
+
 export function CardThumb({ video, image, color, alt, registerVideo, portrait }) {
   const videoRef = useRef(null);
+  const near = useNearViewport(videoRef);
 
   useEffect(() => {
     if (!video) return undefined;
@@ -104,7 +123,7 @@ export function CardThumb({ video, image, color, alt, registerVideo, portrait })
         <video
           ref={videoRef}
           src={video}
-          poster={video.replace(/\.mp4$/, '-poster.webp')}
+          poster={near ? video.replace(/\.mp4$/, '-poster.webp') : undefined}
           className="project-thumb-img"
           controls
           muted
@@ -152,6 +171,7 @@ const CARTRIDGE_COLORS = ['#8ec7ff', '#ffe066', '#ff9a7a', '#c8a4ff', '#7ee0c0',
 // it up: the clip with controls, the write-up, links and tech.
 function CabinetScreen({ project, registerVideo }) {
   const videoRef = useRef(null);
+  const near = useNearViewport(videoRef);
 
   useEffect(() => {
     if (!project.video) return undefined;
@@ -163,7 +183,7 @@ function CabinetScreen({ project, registerVideo }) {
       <video
         ref={videoRef}
         src={project.video}
-        poster={project.video.replace(/\.mp4$/, '-poster.webp')}
+        poster={near ? project.video.replace(/\.mp4$/, '-poster.webp') : undefined}
         className={`cabinet-screen-media ${project.portrait ? 'cabinet-screen-media--portrait' : ''}`}
         muted
         loop
