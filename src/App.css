@@ -7912,3 +7912,25 @@
     radial-gradient(circle at 50% 120%, rgba(255, 255, 255, 0.45), transparent 60%),
     var(--card);
 }
+
+/* Keyboard route to fishing; the pointer route is tapping the water. */
+.pond-fish-btn {
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  translate: -50% 0;
+  padding: 4px 8px;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--pal-cream);
+  background: #5e3b24;
+  border: 3px solid var(--pal-ink);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.talkable:focus-visible,
+.pond-fish-btn:focus-visible {
+  outline: 3px solid #ffd84a;
+  outline-offset: 2px;
+}
