@@ -862,6 +862,9 @@ function LetterPaper({ email, onClose }) {
 export const ContactPanel = forwardRef(function ContactPanel({ active }, ref) {
   const { championAt } = useAchievements();
   const [writing, setWriting] = useState(false);
+  // Mount the portrait only once the post office has been opened, so it is not fetched on first load.
+  const [seen, setSeen] = useState(active);
+  if (active && !seen) setSeen(true);
   return (
     <div ref={ref} className={`section-panel section-panel--contact ${active ? 'visible' : ''}`}>
       <div className="section-panel-inner">
@@ -906,7 +909,7 @@ export const ContactPanel = forwardRef(function ContactPanel({ active }, ref) {
 
                 <div className="po-window">
                   <div className={`npc-portrait po-clerk ${championAt ? 'npc-portrait--champion' : ''}`}>
-                    <img src={owenPortrait} alt="Owen Lee" />
+                    {seen && <img src={owenPortrait} alt="Owen Lee" />}
                     {championAt && (
                       <span className="npc-portrait-star" aria-hidden="true">
                         ★
