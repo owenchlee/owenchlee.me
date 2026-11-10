@@ -3,7 +3,7 @@ import { PROJECTS, HOBBIES, CONTACT, EDUCATION, EXPERIENCE, SKILLS, RESUME_URL, 
 import { markHobbySeen, useAchievements } from './achievements';
 import { openPackOpener } from './packs';
 import petDogA from './assets/pet-dog-a.png';
-import owenPortrait from './assets/owen-portrait.jpg';
+import owenPortrait from './assets/owen-portrait.webp';
 
 // Shared across every CardThumb in a panel so playback tracks by row, not by
 // individual card — a single IntersectionObserver tracks each video's
