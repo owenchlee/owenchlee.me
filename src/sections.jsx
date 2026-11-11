@@ -15,13 +15,21 @@ import owenPortrait from './assets/owen-portrait.jpg';
 // Scrolling further just hands playback to whichever row takes the lead.
 const MIN_RATIO = 0.5;
 const ROW_TOLERANCE_PX = 4;
+const PLAY_DWELL_MS = 700;
 
 export function useRowVideoPlayback() {
   const ratiosRef = useRef(new Map());
   const activeRowRef = useRef([]);
   const observerRef = useRef(null);
+  const dwellRef = useRef(0);
 
-  useEffect(() => () => observerRef.current?.disconnect(), []);
+  useEffect(
+    () => () => {
+      observerRef.current?.disconnect();
+      clearTimeout(dwellRef.current);
+    },
+    []
+  );
 
   function getObserver() {
     if (!observerRef.current) {
@@ -58,10 +66,16 @@ export function useRowVideoPlayback() {
           activeRowRef.current.forEach((el) => {
             if (!nextSet.has(el)) el.pause();
           });
-          nextActive.forEach((el) => {
-            if (!activeRowRef.current.includes(el)) el.play().catch(() => {});
-          });
+          // Start new clips only after the row has stayed in view for PLAY_DWELL_MS,
+          // so scrolling past a row never downloads its clip.
+          const started = nextActive.filter((el) => !activeRowRef.current.includes(el));
           activeRowRef.current = nextActive;
+          if (started.length) {
+            clearTimeout(dwellRef.current);
+            dwellRef.current = setTimeout(() => {
+              activeRowRef.current.forEach((el) => el.paused && el.play().catch(() => {}));
+            }, PLAY_DWELL_MS);
+          }
         },
         { threshold: [0, 0.25, 0.5, 0.6, 0.75, 0.9, 1] }
       );
