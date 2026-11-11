@@ -164,18 +164,19 @@ const CARTRIDGE_COLORS = ['#8ec7ff', '#ffe066', '#ff9a7a', '#c8a4ff', '#7ee0c0',
 // filter is a counter of game cartridges on the floor in front; pick one
 // and the cabinets that don't use it power down. Tapping a cabinet opens
 // it up: the clip with controls, the write-up, links and tech.
-function CabinetScreen({ project, registerVideo }) {
-  const videoRef = useRef(null);
+// The screen only plays (and so only downloads) while its cabinet is hovered
+// or focused; otherwise it shows the poster.
+function playCabinet(e, on) {
+  const v = e.currentTarget.querySelector('video');
+  if (!v) return;
+  if (on) v.play().catch(() => {});
+  else v.pause();
+}
 
-  useEffect(() => {
-    if (!project.video) return undefined;
-    return registerVideo(videoRef.current);
-  }, [project.video, registerVideo]);
-
+function CabinetScreen({ project }) {
   if (project.video) {
     return (
       <video
-        ref={videoRef}
         src={project.video}
         poster={project.video.replace(/\.mp4$/, '-poster.webp')}
         className={`cabinet-screen-media ${project.portrait ? 'cabinet-screen-media--portrait' : ''}`}
@@ -191,7 +192,6 @@ function CabinetScreen({ project, registerVideo }) {
 }
 
 export const ProjectsPanel = forwardRef(function ProjectsPanel({ active }, ref) {
-  const registerVideo = useRowVideoPlayback();
   const openRegisterVideo = useRowVideoPlayback();
   // Pick a cartridge on the counter (or a tech chip on an open cabinet) to
   // light up only the cabinets that use it; the rest power down. Pick it
@@ -275,11 +275,15 @@ export const ProjectsPanel = forwardRef(function ProjectsPanel({ active }, ref) 
                     className={`cabinet ${matches(p) ? '' : 'is-off'}`}
                     style={{ '--cab': p.color }}
                     onClick={() => setOpenName(p.name)}
+                    onPointerEnter={(e) => playCabinet(e, true)}
+                    onPointerLeave={(e) => playCabinet(e, false)}
+                    onFocus={(e) => playCabinet(e, true)}
+                    onBlur={(e) => playCabinet(e, false)}
                     aria-label={`${p.name}: open game`}
                   >
                     <span className="cabinet-marquee">{p.name}</span>
                     <span className="cabinet-screen">
-                      <CabinetScreen project={p} registerVideo={registerVideo} />
+                      <CabinetScreen project={p} />
                     </span>
                     <span className="cabinet-deck" aria-hidden="true">
                       <span className="cabinet-stick" />
