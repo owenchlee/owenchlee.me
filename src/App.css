@@ -4337,16 +4337,22 @@
   right: 30px;
 }
 
+/* Shared plank look for the bench shelf and the counter tops. */
+.workshop-bench-shelf,
+.guild-counter::before,
+.po-counter::before {
+  height: 14px;
+  background: var(--wood-mid);
+  border: 4px solid var(--pal-ink);
+  box-shadow: inset 0 4px 0 var(--wood-light);
+}
+
 /* Lower shelf between the legs: offcut planks and a clamp. */
 .workshop-bench-shelf {
   position: absolute;
   left: 50px;
   right: 50px;
   top: calc(100% + 96px);
-  height: 14px;
-  background: var(--wood-mid);
-  border: 4px solid var(--pal-ink);
-  box-shadow: inset 0 4px 0 var(--wood-light);
 }
 
 .workshop-bench-planks {
@@ -5495,10 +5501,6 @@
   left: -10px;
   right: -10px;
   bottom: 42px;
-  height: 14px;
-  background: var(--wood-mid);
-  border: 4px solid var(--pal-ink);
-  box-shadow: inset 0 4px 0 var(--wood-light);
 }
 
 .guild-card,
@@ -6568,10 +6570,6 @@
   left: -10px;
   right: -10px;
   bottom: 56px;
-  height: 14px;
-  background: var(--wood-mid);
-  border: 4px solid var(--pal-ink);
-  box-shadow: inset 0 4px 0 var(--wood-light);
 }
 
 .po-counter::after {
