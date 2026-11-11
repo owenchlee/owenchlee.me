@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useModalKeys } from './useModalKeys';
 import { NOW_LOG, NOW_LOG_URL, NOW_PINNED } from './content';
 
 // The NOW board's log: a cork board of diary notes, one per month. This
@@ -38,20 +39,7 @@ function NowLog({ onClose }) {
 
   // Same capture-phase key handling as the Trainer Card and Workshop, so
   // Escape closes this and nothing behind it.
-  useEffect(() => {
-    const opener = document.activeElement;
-    closeRef.current?.focus();
-    const onKeyDown = (e) => {
-      if (e.key === 'Tab') return;
-      e.stopPropagation();
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKeyDown, true);
-    return () => {
-      window.removeEventListener('keydown', onKeyDown, true);
-      opener?.focus?.();
-    };
-  }, [onClose]);
+  useModalKeys(closeRef, onClose);
 
   const [latest, ...older] = entries;
   const years = [];

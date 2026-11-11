@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
+import { useModalKeys } from './useModalKeys';
 import { WORKSHOP_PROJECTS } from './content';
 
 // Inside the hidden workshop: a walk-in room like Hobbies, but a
@@ -47,20 +48,7 @@ function Workshop({ onClose }) {
   const [selected, setSelected] = useState(null);
   const project = selected != null ? WORKSHOP_PROJECTS[selected] : null;
 
-  useEffect(() => {
-    const opener = document.activeElement;
-    closeRef.current?.focus();
-    const onKeyDown = (e) => {
-      if (e.key === 'Tab') return;
-      e.stopPropagation();
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKeyDown, true);
-    return () => {
-      window.removeEventListener('keydown', onKeyDown, true);
-      opener?.focus?.();
-    };
-  }, [onClose]);
+  useModalKeys(closeRef, onClose);
 
   return (
     <div className="workshop-room" role="dialog" aria-modal="true" aria-labelledby="workshop-title">
