@@ -97,8 +97,11 @@ export function installKonami(onUnlock) {
   function onKeyDown(e) {
     if (e.target.closest?.('input, textarea, select')) return;
     const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
-    if (key === KONAMI[at]) at += 1;
-    else at = key === KONAMI[0] ? 1 : 0;
+    // KMP-style: keep the longest code prefix that is still a suffix of the input so far.
+    const seen = [...KONAMI.slice(0, at), key];
+    let k = Math.min(seen.length, KONAMI.length);
+    while (k > 0 && !seen.slice(seen.length - k).every((s, i) => s === KONAMI[i])) k -= 1;
+    at = k;
     if (at === KONAMI.length) {
       at = 0;
       if (findSecret('konami')) onUnlock();
