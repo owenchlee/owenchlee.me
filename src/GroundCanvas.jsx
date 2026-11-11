@@ -230,7 +230,9 @@ const TREE_REACH_ROWS = 3;
 function paintForestTile(img, forestFloor) {
   const T = TILE_SIZE;
   const size = FOREST_PERIOD * T;
-  const canvas = document.createElement('canvas');
+  // Only ever encoded to an image, so use an OffscreenCanvas (async encode)
+  // where available.
+  const canvas = typeof OffscreenCanvas === 'function' ? new OffscreenCanvas(size, size) : document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
   const ctx = canvas.getContext('2d');
@@ -438,11 +440,14 @@ const GroundCanvas = forwardRef(function GroundCanvas({ children }, ref) {
 
       // A blob URL rather than toDataURL(), which would keep a few hundred
       // KB of base64 text alive in the style for the life of the page.
-      paintForestTile(img, grassVariants.forest).toBlob((blob) => {
+      const onBlob = (blob) => {
         if (cancelled || !blob || !backdropRef.current) return;
         backdropUrl = URL.createObjectURL(blob);
         backdropRef.current.style.backgroundImage = `url(${backdropUrl})`;
-      });
+      };
+      const forestTile = paintForestTile(img, grassVariants.forest);
+      if (forestTile.convertToBlob) forestTile.convertToBlob().then(onBlob);
+      else forestTile.toBlob(onBlob);
     });
     return () => {
       cancelled = true;
