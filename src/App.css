@@ -1354,6 +1354,18 @@
   }
 }
 
+/* Shared pixel-button look for the HUD toggles and the QuickView close. */
+.quick-view-toggle,
+.badge-case-toggle,
+.quick-view-close {
+  background: var(--pal-ink);
+  color: var(--pal-cream);
+  border: 3px solid var(--pal-cream);
+  box-shadow: 3px 3px 0 #000;
+  font-family: var(--font-pixel);
+  cursor: pointer;
+}
+
 /* Top-right fixed HUD, the one corner left free by .section-nav/.minimap/
    .music-player. Opens QuickView.jsx, a plain accessible layout of the same
    content for anyone who wants the facts without the scroll/game mechanic. */
@@ -1362,14 +1374,8 @@
   right: 14px;
   top: 14px;
   z-index: 31;
-  background: var(--pal-ink);
-  color: var(--pal-cream);
-  border: 3px solid var(--pal-cream);
-  box-shadow: 3px 3px 0 #000;
-  font-family: var(--font-pixel);
   font-size: 11px;
   padding: 10px 12px;
-  cursor: pointer;
 }
 
 .quick-view-toggle:hover,
@@ -3268,14 +3274,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--pal-ink);
-  color: var(--pal-cream);
-  border: 3px solid var(--pal-cream);
-  box-shadow: 3px 3px 0 #000;
-  font-family: var(--font-pixel);
   font-size: 10px;
   padding: 7px 10px;
-  cursor: pointer;
 }
 
 .badge-case-toggle:hover,
