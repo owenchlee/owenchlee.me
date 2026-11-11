@@ -1452,17 +1452,19 @@
   position: absolute;
   left: 0;
   top: 0;
-  width: 0;
-  height: 0;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
 }
 
-/* Centered on the (0x0) anchor the transform moves. */
+/* Dot box is centered on the anchor the transform moves (non-zero size so
+   the pulse counts as a visible animation target). */
 .minimap-player::before,
 .minimap-player::after {
   content: '';
   position: absolute;
-  left: -3px;
-  top: -3px;
+  left: 0;
+  top: 0;
   width: 6px;
   height: 6px;
   border-radius: 50%;
@@ -1579,6 +1581,11 @@
   box-shadow: 3px 3px 0 #000;
   pointer-events: none;
   animation: music-guide-nudge 2.4s ease-in-out infinite;
+}
+
+/* Faded out with the guide: stop animating it. */
+.music-guide.is-away .music-guide-bubble {
+  animation-play-state: paused;
 }
 
 /* Tail pointing down at the person. */
