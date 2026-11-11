@@ -7175,7 +7175,7 @@
   }
 }
 
-.water-pond.is-offscreen .pond-hint {
+.pond-hint-layer.is-offscreen .pond-hint {
   animation-play-state: paused;
 }
 

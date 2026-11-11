@@ -1162,7 +1162,7 @@ function App() {
                 sprite, so no tree canopy ever covers it. */}
             {!hasFished &&
               PONDS.map(({ id, left, top, width, height }) => (
-                <div key={id} className="pond-hint-layer" style={{ left, top, width, height }}>
+                <div key={id} className="pond-hint-layer ambient" style={{ left, top, width, height }}>
                   <span className="pond-hint">Tap to fish!</span>
                 </div>
               ))}
