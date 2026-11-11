@@ -5635,7 +5635,8 @@
   border-top: 4px solid var(--pal-ink);
 }
 
-.arcade-back {
+.arcade-back,
+.po-back {
   grid-row: 1;
   grid-column: 1;
   align-self: end;
@@ -5646,6 +5647,9 @@
   flex-direction: column;
   align-items: center;
   max-width: calc(100% - 32px);
+}
+
+.arcade-back {
   margin-bottom: calc(var(--cab-w) * -0.18);
 }
 
@@ -6360,17 +6364,7 @@
 }
 
 .po-back {
-  grid-row: 1;
-  grid-column: 1;
-  align-self: end;
-  justify-self: center;
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   gap: 22px;
-  max-width: calc(100% - 32px);
   padding-top: 40px;
   /* Leaves room for the counter items that rise above the floor line. */
   margin-bottom: 104px;
