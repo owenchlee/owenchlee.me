@@ -1300,10 +1300,10 @@
    the same activeHouse state that lights up the in-world house label, so
    the two never disagree about which section you're currently in. */
 
-.section-nav {
+.section-nav,
+.music-player {
   position: fixed;
   left: 14px;
-  top: 14px;
   z-index: 30;
   display: flex;
   flex-direction: column;
@@ -1311,6 +1311,10 @@
   background: var(--pal-ink);
   border: 3px solid var(--pal-cream);
   box-shadow: 3px 3px 0 #000;
+}
+
+.section-nav {
+  top: 14px;
   padding: 10px 8px;
 }
 
@@ -1506,16 +1510,7 @@
    autoplays; sound only starts from the visitor's own click on
    .music-toggle. */
 .music-player {
-  position: fixed;
-  left: 14px;
   bottom: 14px;
-  z-index: 30;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  background: var(--pal-ink);
-  border: 3px solid var(--pal-cream);
-  box-shadow: 3px 3px 0 #000;
   padding: 8px;
 }
 
