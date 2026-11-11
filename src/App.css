@@ -150,7 +150,8 @@
 }
 
 .hud-cta:hover,
-.hud-cta:focus-visible {
+.hud-cta:focus-visible,
+.dialogue-link:hover {
   background: var(--pal-grass);
   color: var(--pal-cream);
   transform: translate(-2px, -2px);
@@ -3215,13 +3216,6 @@
   font-size: 12px;
   box-shadow: 3px 3px 0 var(--pal-ink);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.dialogue-link:hover {
-  background: var(--pal-grass);
-  color: var(--pal-cream);
-  transform: translate(-2px, -2px);
-  box-shadow: 5px 5px 0 var(--pal-ink);
 }
 
 .dialogue-link--copy {
