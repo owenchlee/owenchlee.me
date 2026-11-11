@@ -7919,3 +7919,10 @@
 [inert] *::after {
   animation-play-state: paused !important;
 }
+
+/* Closed rooms are invisible (opacity 0): freeze their animations until opened. */
+.section-panel:not(.visible) *,
+.section-panel:not(.visible) *::before,
+.section-panel:not(.visible) *::after {
+  animation-play-state: paused !important;
+}
