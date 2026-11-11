@@ -108,8 +108,15 @@ function treeVariants(sprite, isPine) {
 }
 
 // One entry per tree sprite: the list of seasonal versions of it.
+// Cached by source URL: the ground canvas and the live <img> trees both ask,
+// so the recolor runs once. Callers only read the returned sprites.
+const treeSpriteCache = new Map();
 export function seasonTreeSprites(treeRound, treePine) {
-  return { round: treeVariants(treeRound, false), pine: treeVariants(treePine, true) };
+  const key = `${treeRound.src}|${treePine.src}`;
+  if (!treeSpriteCache.has(key)) {
+    treeSpriteCache.set(key, { round: treeVariants(treeRound, false), pine: treeVariants(treePine, true) });
+  }
+  return treeSpriteCache.get(key);
 }
 
 // Which of a sprite's seasonal versions a given tree uses — stable per
