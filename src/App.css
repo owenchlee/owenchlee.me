@@ -7912,3 +7912,10 @@
     radial-gradient(circle at 50% 120%, rgba(255, 255, 255, 0.45), transparent 60%),
     var(--card);
 }
+
+/* The world is inert behind Quick View: nothing in it can be seen, so freeze it. */
+[inert] *,
+[inert] *::before,
+[inert] *::after {
+  animation-play-state: paused !important;
+}
