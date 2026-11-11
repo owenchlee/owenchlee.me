@@ -2159,7 +2159,9 @@
   }
 }
 
-.room {
+.room,
+.arcade,
+.po {
   position: relative;
   min-height: 100%;
   display: grid;
@@ -5613,15 +5615,6 @@
   overscroll-behavior: contain;
 }
 
-.arcade {
-  position: relative;
-  min-height: 100%;
-  display: grid;
-  grid-template-rows: 1fr var(--floor-h);
-  grid-template-columns: 100%;
-  box-shadow: inset 0 0 0 4px var(--pal-ink);
-}
-
 .arcade-wall {
   grid-row: 1;
   grid-column: 1;
@@ -6348,15 +6341,6 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   font-family: var(--font-terminal);
-}
-
-.po {
-  position: relative;
-  min-height: 100%;
-  display: grid;
-  grid-template-rows: 1fr var(--floor-h);
-  grid-template-columns: 100%;
-  box-shadow: inset 0 0 0 4px var(--pal-ink);
 }
 
 .po-wall {
