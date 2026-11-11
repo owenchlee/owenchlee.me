@@ -75,7 +75,8 @@
 /* Small availability pill — separate from .hud-tag--role since it's a status
    indicator, not a "bold callout" word, so it gets its own solid green block
    rather than the tunable --tag-color used for highlight words. */
-.hud-status {
+.hud-status,
+.quick-view-status {
   display: inline-block;
   font-family: var(--font-pixel);
   font-size: clamp(9px, min(1.2vw, 1.7vh), 12px);

@@ -92,14 +92,8 @@
 }
 
 .quick-view-status {
-  display: inline-block;
-  font-family: var(--font-pixel);
   font-size: 11px;
   line-height: 1.4;
-  color: var(--pal-ink);
-  background: var(--pal-grass-light);
-  border: 2px solid var(--pal-ink);
-  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
   padding: 4px 10px;
   margin: 0 0 18px;
 }
