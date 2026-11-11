@@ -3518,7 +3518,8 @@
   visibility: visible;
 }
 
-.badge-toast-next {
+.badge-toast-next,
+.talk-box-next {
   position: absolute;
   right: 12px;
   bottom: 8px;
@@ -3761,18 +3762,6 @@
   font-family: var(--font-pixel);
   font-size: 12px;
   line-height: 1.8;
-}
-
-.talk-box-next {
-  position: absolute;
-  right: 12px;
-  bottom: 8px;
-  background: none;
-  border: none;
-  color: var(--pal-ink);
-  font-size: 14px;
-  padding: 4px;
-  animation: badgeNextBlink 0.8s steps(2) infinite;
 }
 
 @media (max-width: 600px) {
