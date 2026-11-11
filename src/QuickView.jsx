@@ -1,57 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { INTRO, PROJECTS, HOBBIES, CONTACT, EDUCATION, EXPERIENCE, SKILLS, RESUME_URL } from './content';
 import { Highlighted } from './Highlighted';
 import { CardThumb, GitHubIcon, useRowVideoPlayback } from './sections';
+import { CopyEmailButton as BaseCopyEmailButton } from './CopyEmailButton';
 import './QuickView.css';
-
-function MailIcon() {
-  return (
-    <svg
-      className="qv-mail-icon"
-      viewBox="0 0 24 24"
-      width="15"
-      height="15"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <rect x="3" y="5" width="18" height="14" rx="1.5" />
-      <path d="m3.5 6.5 8.5 6.5 8.5-6.5" />
-    </svg>
-  );
-}
-
-// Same copy-to-clipboard behavior as sections.jsx's CopyEmailButton, kept
-// as its own small copy here rather than shared — QuickView has its own
-// class names (see QuickView.css), and the two buttons never render at the
-// same time anyway.
-function CopyEmailButton({ email }) {
-  const [copied, setCopied] = useState(false);
-  const timeoutRef = useRef(null);
-
-  useEffect(() => () => clearTimeout(timeoutRef.current), []);
-
-  async function handleClick() {
-    try {
-      await navigator.clipboard.writeText(email);
-    } catch {
-      return;
-    }
-    setCopied(true);
-    clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => setCopied(false), 1500);
-  }
-
-  return (
-    <button type="button" className="qv-email-button" onClick={handleClick}>
-      <MailIcon />
-      {copied ? 'Copied!' : email}
-    </button>
-  );
-}
 
 // A plain, static, fully keyboard/screen-reader-operable view of the same
 // content.js data the game world renders — for recruiters (or anyone) who
@@ -243,7 +195,7 @@ function QuickView({ onClose, isMobileLanding }) {
           <ul className="quick-view-contact">
             {CONTACT.email && (
               <li>
-                <CopyEmailButton email={CONTACT.email} />
+                <BaseCopyEmailButton email={CONTACT.email} buttonClass="qv-email-button" iconClass="qv-mail-icon" iconSize="15" />
               </li>
             )}
             {CONTACT.links.map((l) => (
