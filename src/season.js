@@ -39,34 +39,43 @@ function hueRotate(r, g, b, deg) {
 
 const clamp = (v) => Math.min(255, Math.max(0, Math.round(v)));
 
-function recolor(img, fn) {
-  const canvas = document.createElement('canvas');
+// One recolored canvas per fn, all from a single read of the source pixels.
+function recolorAll(img, fns) {
   const w = img.naturalWidth || img.width;
   const h = img.naturalHeight || img.height;
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(img, 0, 0);
-  const data = ctx.getImageData(0, 0, w, h);
+  const src = document.createElement('canvas');
+  src.width = w;
+  src.height = h;
+  const sctx = src.getContext('2d');
+  sctx.drawImage(img, 0, 0);
+  const data = sctx.getImageData(0, 0, w, h);
   const px = data.data;
   const alphaAt = (x, y) => (x < 0 || y < 0 || x >= w || y >= h ? 0 : px[(y * w + x) * 4 + 3]);
-  // Decide from the untouched pixels, then write, so one change can't
-  // feed into the next pixel's test.
-  const out = new Uint8ClampedArray(px);
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      const i = (y * w + x) * 4;
-      const rgb = fn(px[i], px[i + 1], px[i + 2], px[i + 3], x, y, alphaAt);
-      if (!rgb) continue;
-      out[i] = clamp(rgb[0]);
-      out[i + 1] = clamp(rgb[1]);
-      out[i + 2] = clamp(rgb[2]);
+  return fns.map((fn, n) => {
+    const canvas = n === 0 ? src : document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    // Decide from the untouched pixels, then write, so one change can't
+    // feed into the next pixel's test.
+    const out = new ImageData(new Uint8ClampedArray(px), w, h);
+    const o = out.data;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4;
+        const rgb = fn(px[i], px[i + 1], px[i + 2], px[i + 3], x, y, alphaAt);
+        if (!rgb) continue;
+        o[i] = clamp(rgb[0]);
+        o[i + 1] = clamp(rgb[1]);
+        o[i + 2] = clamp(rgb[2]);
+      }
     }
-  }
-  data.data.set(out);
-  ctx.putImageData(data, 0, 0);
-  return canvas;
+    ctx.putImageData(out, 0, 0);
+    return canvas;
+  });
 }
+
+const recolor = (img, fn) => recolorAll(img, [fn])[0];
 
 const mix = (rgb, to, t) => rgb.map((v, i) => v + (to[i] - v) * t);
 
@@ -81,8 +90,9 @@ const AUTUMN_HUES = [-58, -44, -30];
 function treeVariants(sprite, isPine) {
   if (SEASON === 'autumn') {
     if (isPine) return [sprite];
-    return AUTUMN_HUES.map((deg) =>
-      recolor(sprite, (r, g, b, a) => (isLeaf(r, g, b, a) ? hueRotate(r * 1.08, g, b, deg) : null)),
+    return recolorAll(
+      sprite,
+      AUTUMN_HUES.map((deg) => (r, g, b, a) => (isLeaf(r, g, b, a) ? hueRotate(r * 1.08, g, b, deg) : null)),
     );
   }
   if (SEASON === 'winter') {
