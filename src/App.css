@@ -3284,7 +3284,8 @@
   color: #ffe066;
 }
 
-.trainer-card-backdrop {
+.trainer-card-backdrop,
+.nowlog-backdrop {
   position: fixed;
   inset: 0;
   z-index: 240;
@@ -6910,16 +6911,6 @@
    A cork board of diary notes: this month pinned big at the top with the
    standing co-op note under it, then earlier months as smaller pinned
    notes grouped by year. Scrolls inside the frame. */
-.nowlog-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 240;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  background: rgba(28, 23, 18, 0.72);
-}
 
 .nowlog {
   display: flex;
