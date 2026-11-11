@@ -69,8 +69,7 @@
   font-size: clamp(16px, min(2.8vw, 4.2vh), 30px);
   color: var(--pal-cream);
   margin-top: clamp(6px, 1.2vh, 10px);
-  text-shadow: 1px 1px 0 var(--pal-ink), -1px -1px 0 var(--pal-ink), 1px -1px 0 var(--pal-ink),
-    -1px 1px 0 var(--pal-ink);
+  text-shadow: var(--ink-outline);
 }
 
 /* Small availability pill — separate from .hud-tag--role since it's a status
@@ -94,8 +93,7 @@
   line-height: 1.4;
   color: var(--pal-cream);
   margin: clamp(6px, 1.2vh, 10px) 0 0;
-  text-shadow: 1px 1px 0 var(--pal-ink), -1px -1px 0 var(--pal-ink), 1px -1px 0 var(--pal-ink),
-    -1px 1px 0 var(--pal-ink);
+  text-shadow: var(--ink-outline);
 }
 
 /* Pill chips for `**word**` segments (see Highlighted in App.jsx) — solid
@@ -171,8 +169,7 @@
   font-size: 13px;
   color: var(--pal-cream);
   opacity: 0.75;
-  text-shadow: 1px 1px 0 var(--pal-ink), -1px -1px 0 var(--pal-ink), 1px -1px 0 var(--pal-ink),
-    -1px 1px 0 var(--pal-ink);
+  text-shadow: var(--ink-outline);
 }
 
 /* Inherits .hud-scroll-hint's own text-shadow/size via normal cascade —

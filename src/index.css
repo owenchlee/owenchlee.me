@@ -45,6 +45,8 @@
   --pal-water: #26a8b1;
   --pal-cream: #f8f0dc;
   --pal-ink: #1c1712;
+  --ink-outline: 1px 1px 0 var(--pal-ink), -1px -1px 0 var(--pal-ink), 1px -1px 0 var(--pal-ink),
+    -1px 1px 0 var(--pal-ink);
   --pal-ink-soft: #3a2f24;
 
   --font-pixel: 'Press Start 2P', cursive;
