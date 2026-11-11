@@ -2138,10 +2138,6 @@
   /* Size multiplier for the CSS-drawn furniture, so it stays in proportion
      with the bookcase as that steps up on big screens. */
   --decor-scale: 1;
-  --wood-dark: #3b2616;
-  --wood: #5e3b24;
-  --wood-mid: #7a4b2c;
-  --wood-light: #a0693f;
   position: absolute;
   inset: 0;
   z-index: 1;
@@ -4028,11 +4024,6 @@
    props are plain CSS shapes with the same ink outlines and hard drop
    shadows as the rest of the pixel art. */
 .workshop-room {
-  /* Same wood palette as the Hobbies room (scoped there, so repeated). */
-  --wood-dark: #3b2616;
-  --wood: #5e3b24;
-  --wood-mid: #7a4b2c;
-  --wood-light: #a0693f;
   position: fixed;
   inset: 0;
   z-index: 240;
@@ -5169,10 +5160,6 @@
    the résumé ledger. Like the Hobbies room it fills the screen and scrolls
    internally on short viewports. */
 .guild-content {
-  --wood-dark: #3b2616;
-  --wood: #5e3b24;
-  --wood-mid: #7a4b2c;
-  --wood-light: #a0693f;
   --parchment: #f1e2bc;
   position: absolute;
   inset: 0;
@@ -5597,10 +5584,6 @@
     104px,
     min(calc((100vw - 96px) / 9 - 14px), calc((100vh - var(--floor-h) - var(--sign-top) - 150px) / 2.07))
   );
-  --wood-dark: #3b2616;
-  --wood: #5e3b24;
-  --wood-mid: #7a4b2c;
-  --wood-light: #a0693f;
   position: absolute;
   inset: 0;
   z-index: 1;
@@ -6324,10 +6307,6 @@
    top; a mailbox stands on the floor to the right. */
 .po-content {
   --floor-h: clamp(170px, 24vh, 260px);
-  --wood-dark: #3b2616;
-  --wood: #5e3b24;
-  --wood-mid: #7a4b2c;
-  --wood-light: #a0693f;
   position: absolute;
   inset: 0;
   z-index: 1;

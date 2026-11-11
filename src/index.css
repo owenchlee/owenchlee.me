@@ -31,6 +31,11 @@
 }
 
 :root {
+  /* Shared wood palette for the Hobbies, Workshop, Arcade and Post Office rooms. */
+  --wood-dark: #3b2616;
+  --wood: #5e3b24;
+  --wood-mid: #7a4b2c;
+  --wood-light: #a0693f;
   color-scheme: dark;
   font: 16px/1.4 system-ui, 'Segoe UI', Roboto, sans-serif;
 
