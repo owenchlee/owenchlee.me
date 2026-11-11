@@ -53,13 +53,16 @@ function recolorAll(img, fns) {
   const alphaAt = (x, y) => (x < 0 || y < 0 || x >= w || y >= h ? 0 : px[(y * w + x) * 4 + 3]);
   return fns.map((fn, n) => {
     const canvas = n === 0 ? src : document.createElement('canvas');
-    canvas.width = w;
-    canvas.height = h;
+    if (n > 0) {
+      canvas.width = w;
+      canvas.height = h;
+    }
     const ctx = canvas.getContext('2d');
+    if (n > 0) ctx.drawImage(img, 0, 0); // canvas 0 already holds the original
     // Decide from the untouched pixels, then write, so one change can't
     // feed into the next pixel's test.
-    const out = new ImageData(new Uint8ClampedArray(px), w, h);
-    const o = out.data;
+    const o = new Uint8ClampedArray(px);
+    let x0 = w, y0 = h, x1 = -1, y1 = -1;
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
         const i = (y * w + x) * 4;
@@ -68,9 +71,19 @@ function recolorAll(img, fns) {
         o[i] = clamp(rgb[0]);
         o[i + 1] = clamp(rgb[1]);
         o[i + 2] = clamp(rgb[2]);
+        if (x < x0) x0 = x;
+        if (x > x1) x1 = x;
+        if (y < y0) y0 = y;
+        if (y > y1) y1 = y;
       }
     }
-    ctx.putImageData(out, 0, 0);
+    // Only the changed box is written back; the rest is already on the canvas.
+    if (x1 >= 0) {
+      const bw = x1 - x0 + 1;
+      const box = new ImageData(bw, y1 - y0 + 1);
+      for (let y = y0; y <= y1; y++) box.data.set(o.subarray((y * w + x0) * 4, (y * w + x1 + 1) * 4), (y - y0) * bw * 4);
+      ctx.putImageData(box, x0, y0);
+    }
     return canvas;
   });
 }
