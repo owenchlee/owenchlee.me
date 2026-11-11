@@ -15,7 +15,7 @@ import owenPortrait from './assets/owen-portrait.jpg';
 // Scrolling further just hands playback to whichever row takes the lead.
 const MIN_RATIO = 0.5;
 const ROW_TOLERANCE_PX = 4;
-const PLAY_DWELL_MS = 700;
+const PLAY_DWELL_MS = 1500;
 
 export function useRowVideoPlayback() {
   const ratiosRef = useRef(new Map());
