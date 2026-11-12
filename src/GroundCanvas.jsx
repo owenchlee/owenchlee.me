@@ -361,9 +361,30 @@ const GroundCanvas = forwardRef(function GroundCanvas({ children }, ref) {
   // bitmap, the last view, and the last spans (to skip no-op updates).
   const stateRef = useRef({ assets: null, painted: new Set(), view: null, spanKey: '' });
 
+  // The forest tile only shows past the ground canvas's padded edge, so
+  // it's painted the first time the view reaches that far.
+  function syncBackdrop() {
+    const s = stateRef.current;
+    const v = s.view;
+    if (s.backdropStarted || !s.assets || !v) return;
+    if (
+      v.x - v.halfW >= -PAD_PX && v.y - v.halfH >= -PAD_PX &&
+      v.x + v.halfW <= WORLD_W + PAD_PX && v.y + v.halfH <= WORLD_H + PAD_PX
+    ) return;
+    s.backdropStarted = true;
+    // A blob URL rather than toDataURL(), which would keep a few hundred
+    // KB of base64 text alive in the style for the life of the page.
+    paintForestTile(s.assets.img, s.assets.grassVariants.forest).toBlob((blob) => {
+      if (s.cancelled || !blob || !backdropRef.current) return;
+      s.backdropUrl = URL.createObjectURL(blob);
+      backdropRef.current.style.backgroundImage = `url(${s.backdropUrl})`;
+    });
+  }
+
   function syncChunks() {
     const s = stateRef.current;
     if (!s.assets || !s.view) return;
+    syncBackdrop();
     const paint = chunkSpan(s.view, PAINT_MARGIN);
     const keep = chunkSpan(s.view, FREE_MARGIN);
     const key = `${paint.c0},${paint.c1},${paint.r0},${paint.r1}|${keep.c0},${keep.c1},${keep.r0},${keep.r1}`;
@@ -398,7 +419,7 @@ const GroundCanvas = forwardRef(function GroundCanvas({ children }, ref) {
 
   useEffect(() => {
     let cancelled = false;
-    let backdropUrl = null;
+    const state = stateRef.current;
     Promise.all([
       loadImage(grassUrl),
       loadImage(dirtUrl),
@@ -423,18 +444,11 @@ const GroundCanvas = forwardRef(function GroundCanvas({ children }, ref) {
       };
       stateRef.current.assets = { img, grassVariants };
       syncChunks();
-
-      // A blob URL rather than toDataURL(), which would keep a few hundred
-      // KB of base64 text alive in the style for the life of the page.
-      paintForestTile(img, grassVariants.forest).toBlob((blob) => {
-        if (cancelled || !blob || !backdropRef.current) return;
-        backdropUrl = URL.createObjectURL(blob);
-        backdropRef.current.style.backgroundImage = `url(${backdropUrl})`;
-      });
     });
     return () => {
       cancelled = true;
-      if (backdropUrl) URL.revokeObjectURL(backdropUrl);
+      state.cancelled = true;
+      if (state.backdropUrl) URL.revokeObjectURL(state.backdropUrl);
     };
   }, []);
 
