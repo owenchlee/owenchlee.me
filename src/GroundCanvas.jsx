@@ -387,14 +387,28 @@ const GroundCanvas = forwardRef(function GroundCanvas({ children }, ref) {
     syncBackdrop();
     const paint = chunkSpan(s.view, PAINT_MARGIN);
     const keep = chunkSpan(s.view, FREE_MARGIN);
-    const key = `${paint.c0},${paint.c1},${paint.r0},${paint.r1}|${keep.c0},${keep.c1},${keep.r0},${keep.r1}`;
+    // At startup only the on-screen chunks paint now; the margin ring waits
+    // for an idle slot, then paints as usual from there on.
+    const visible = s.marginReady ? paint : chunkSpan(s.view, 0);
+    if (!s.marginReady && !s.marginScheduled) {
+      s.marginScheduled = true;
+      const ready = () => {
+        if (s.cancelled) return;
+        s.marginReady = true;
+        s.spanKey = '';
+        syncChunks();
+      };
+      if (window.requestIdleCallback) window.requestIdleCallback(ready, { timeout: 1500 });
+      else setTimeout(ready, 300);
+    }
+    const key = `${visible.c0},${visible.c1},${visible.r0},${visible.r1}|${keep.c0},${keep.c1},${keep.r0},${keep.r1}`;
     if (key === s.spanKey) return;
     s.spanKey = key;
     CHUNKS.forEach((chunk, i) => {
       const canvas = chunkRefs.current[i];
       if (!canvas) return;
       const isPainted = s.painted.has(i);
-      if (!isPainted && inSpan(chunk, paint)) {
+      if (!isPainted && inSpan(chunk, visible)) {
         canvas.width = chunk.w;
         canvas.height = chunk.h;
         const ctx = canvas.getContext('2d');
