@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { trapTab } from './trapTab';
 import {
   CARDS,
   FAN_QUESTIONS,
@@ -135,6 +136,9 @@ function PackOpener({ onClose }) {
   const [top, setTop] = useState(0);
   const closeRef = useRef(null);
   const tearTimer = useRef(null);
+  const openerRef = useRef(document.activeElement);
+
+  useEffect(() => () => openerRef.current?.focus?.(), []);
 
   useEffect(() => () => clearTimeout(tearTimer.current), []);
 
@@ -172,10 +176,9 @@ function PackOpener({ onClose }) {
   }
 
   useEffect(() => {
-    const opener = document.activeElement;
     closeRef.current?.focus();
     const onKeyDown = (e) => {
-      if (e.key === 'Tab') return;
+      if (e.key === 'Tab') { trapTab(e, closeRef.current?.closest('[role="dialog"]')); return; }
       e.stopPropagation();
       if (e.key === 'Escape') onClose();
       else if ((e.key === 'Enter' || e.key === ' ') && view === 'pack' && unlocked) {
@@ -187,7 +190,6 @@ function PackOpener({ onClose }) {
     window.addEventListener('keydown', onKeyDown, true);
     return () => {
       window.removeEventListener('keydown', onKeyDown, true);
-      opener?.focus?.();
     };
   }, [onClose, phase, view, tear, flipNext, unlocked]);
 

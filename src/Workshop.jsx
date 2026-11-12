@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { trapTab } from './trapTab';
 import { WORKSHOP_PROJECTS } from './content';
 
 // Inside the hidden workshop: a walk-in room like Hobbies, but a
@@ -51,7 +52,7 @@ function Workshop({ onClose }) {
     const opener = document.activeElement;
     closeRef.current?.focus();
     const onKeyDown = (e) => {
-      if (e.key === 'Tab') return;
+      if (e.key === 'Tab') { trapTab(e, closeRef.current?.closest('[role="dialog"]')); return; }
       e.stopPropagation();
       if (e.key === 'Escape') onClose();
     };

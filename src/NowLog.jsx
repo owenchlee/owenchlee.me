@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { trapTab } from './trapTab';
 import { NOW_LOG, NOW_LOG_URL, NOW_PINNED } from './content';
 
 // The NOW board's log: a cork board of diary notes, one per month. This
@@ -42,7 +43,7 @@ function NowLog({ onClose }) {
     const opener = document.activeElement;
     closeRef.current?.focus();
     const onKeyDown = (e) => {
-      if (e.key === 'Tab') return;
+      if (e.key === 'Tab') { trapTab(e, closeRef.current?.closest('[role="dialog"]')); return; }
       e.stopPropagation();
       if (e.key === 'Escape') onClose();
     };

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { trapTab } from './trapTab';
 import { BADGES, useAchievements, dismissAnnouncement } from './achievements';
 import { HOBBIES, FISH } from './content';
 import { SECRETS, useSecrets } from './secrets';
@@ -200,7 +201,7 @@ export function BadgeCase() {
     // out of the house behind it, and arrow keys shouldn't walk the
     // character around under an open dialog.
     const onKeyDown = (e) => {
-      if (e.key === 'Tab') return;
+      if (e.key === 'Tab') { trapTab(e, closeRef.current?.closest('[role="dialog"]')); return; }
       e.stopPropagation();
       if (e.key === 'Escape') setOpen(false);
     };

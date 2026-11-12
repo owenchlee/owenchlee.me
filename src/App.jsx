@@ -655,8 +655,14 @@ function App() {
   // anything), so the house's badge is earned the moment its panel opens.
   // Focus moves into the panel so the wheel, arrow keys and screen readers
   // all land in the room's content straight away.
+  const houseOpenerRef = useRef(null);
   useEffect(() => {
-    if (!activeHouse) return;
+    if (!activeHouse) {
+      houseOpenerRef.current?.focus?.({ preventScroll: true });
+      houseOpenerRef.current = null;
+      return;
+    }
+    houseOpenerRef.current = document.activeElement;
     earnBadge(activeHouse);
     const panelEl = panelRefs.current[activeHouse];
     if (panelEl) {
