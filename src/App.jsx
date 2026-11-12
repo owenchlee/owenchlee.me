@@ -776,7 +776,8 @@ function App() {
       kickRef.current();
     };
 
-    updateCenter();
+    // observe() delivers an initial callback after the first layout, so no
+    // forced synchronous measure is needed here.
     const observer = new ResizeObserver(updateCenter);
     observer.observe(box);
     return () => observer.disconnect();
