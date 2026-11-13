@@ -320,6 +320,40 @@ const HudNameplate = memo(function HudNameplate() {
   );
 });
 
+const HudCta = memo(function HudCta({ welcomeSeen, onSelect }) {
+  return (
+    <div className="hud-cta-block">
+      <button type="button" className="hud-cta" onClick={() => onSelect('projects')}>
+        See My Projects →
+      </button>
+      {!welcomeSeen && (
+        <p className="hud-start-hint">
+          New here? Tap the <span className="hud-start-bang">!</span> sign →
+        </p>
+      )}
+      <p className="hud-scroll-hint">
+        or tap anywhere to walk · tap a house to go in ·{' '}
+        <a href={RESUME_URL} target="_blank" rel="noopener noreferrer" className="hud-resume-link">
+          résumé (PDF)
+        </a>
+      </p>
+    </div>
+  );
+});
+
+const StageActors = memo(function StageActors({ lightingRef, tapRippleRef, characterWrapRef, characterImgRef }) {
+  return (
+    <>
+      <div className="lighting-overlay" ref={lightingRef} aria-hidden="true" />
+      <div className="tap-ripple" ref={tapRippleRef} aria-hidden="true" />
+      <div className="character-wrap" ref={characterWrapRef}>
+        <div className="character-shadow" />
+        <img ref={characterImgRef} className="character" src={CHAR_SPRITES.down.idle} alt="" aria-hidden="true" />
+      </div>
+    </>
+  );
+});
+
 const WorldBefore = memo(function WorldBefore({ groundRef, hasFished }) {
   return (
     <>
@@ -1472,26 +1506,7 @@ function App() {
       >
         <HudNameplate />
 
-        <div className="hud-cta-block">
-          <button
-            type="button"
-            className="hud-cta"
-            onClick={() => goToHouse('projects')}
-          >
-            See My Projects →
-          </button>
-          {!welcomeSeen && (
-            <p className="hud-start-hint">
-              New here? Tap the <span className="hud-start-bang">!</span> sign →
-            </p>
-          )}
-          <p className="hud-scroll-hint">
-            or tap anywhere to walk · tap a house to go in ·{' '}
-            <a href={RESUME_URL} target="_blank" rel="noopener noreferrer" className="hud-resume-link">
-              résumé (PDF)
-            </a>
-          </p>
-        </div>
+        <HudCta welcomeSeen={welcomeSeen} onSelect={onNavSelect} />
 
         <div className="stage-box" ref={boxRef}>
           <div
@@ -1506,20 +1521,7 @@ function App() {
 
           {!activeHouse && <SeasonFx />}
 
-          <div className="lighting-overlay" ref={lightingRef} aria-hidden="true" />
-
-          <div className="tap-ripple" ref={tapRippleRef} aria-hidden="true" />
-
-          <div className="character-wrap" ref={characterWrapRef}>
-            <div className="character-shadow" />
-            <img
-              ref={characterImgRef}
-              className="character"
-              src={CHAR_SPRITES.down.idle}
-              alt=""
-              aria-hidden="true"
-            />
-          </div>
+          <StageActors lightingRef={lightingRef} tapRippleRef={tapRippleRef} characterWrapRef={characterWrapRef} characterImgRef={characterImgRef} />
 
           <ProjectsPanel
             ref={panelRefSetters.projects}
