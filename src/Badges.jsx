@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { BADGES, useAchievements, dismissAnnouncement } from './achievements';
 import { HOBBIES, FISH } from './content';
 import { SECRETS, useSecrets } from './secrets';
@@ -92,7 +92,7 @@ const AUTO_DISMISS_MS = 4200;
 // bottom of the screen (where the games put it), with the badge itself
 // glinting in a frame on the left. Plays through BadgeToast's queue one at a
 // time; each one auto-advances, or click / Enter / Space to advance sooner.
-export function BadgeToast() {
+export const BadgeToast = memo(function BadgeToast() {
   const { queue } = useAchievements();
   const current = queue[0];
   const reducedMotion = useMemo(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches, []);
@@ -177,12 +177,12 @@ export function BadgeToast() {
       </div>
     </>
   );
-}
+});
 
 // Top-right HUD button (under Quick View) showing the badge count, which
 // opens the Trainer Card — the badge case where empty slots show as
 // silhouettes with a hint, so a visitor can see what's left to find.
-export function BadgeCase() {
+export const BadgeCase = memo(function BadgeCase() {
   const { earned, hobbiesSeen, championAt } = useAchievements();
   const { found, fish } = useSecrets();
   const secretsFound = SECRETS.filter((x) => found[x.id]).length;
@@ -284,4 +284,4 @@ export function BadgeCase() {
       )}
     </>
   );
-}
+});

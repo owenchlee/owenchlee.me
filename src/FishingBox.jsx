@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { memo, useEffect } from 'react';
 import { useFishing, fishingAction, stopFishing } from './fishing';
 import { useSecrets } from './secrets';
 import { FISH, RUSTY_KEY } from './content';
@@ -89,4 +89,4 @@ function FishingBox() {
   );
 }
 
-export default FishingBox;
+export default memo(FishingBox);

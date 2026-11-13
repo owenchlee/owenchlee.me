@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { createMusicEngine, TRACK_LIST } from './music';
 import guideSprite from './assets/npc-c.png';
 import { useDialogue } from './dialogue';
@@ -131,4 +131,4 @@ function MusicPlayer({ inRoom = false }) {
   );
 }
 
-export default MusicPlayer;
+export default memo(MusicPlayer);

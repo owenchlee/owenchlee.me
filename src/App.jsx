@@ -298,6 +298,28 @@ function zFromGroundY(groundY) {
 
 // Static world pieces, memoized so opening a pop-up or room (App state) doesn't
 // re-render every tree, NPC and house. Props are refs or rarely-changing values.
+const HudNameplate = memo(function HudNameplate() {
+  return (
+    <header className="hud-nameplate">
+      <div className="hud-textbox">
+        <div className="hud-name">{INTRO.name}</div>
+        <div className="hud-role">
+          <span className="hud-tag hud-tag--role" style={{ '--tag-color': '#e0b23c' }}>
+            {INTRO.roleTitle}
+          </span>{' '}
+          @ {INTRO.roleOrg}
+        </div>
+        {INTRO.status && <div className="hud-status">{INTRO.status}</div>}
+        {INTRO.bio && (
+          <p className="hud-bio">
+            <Highlighted text={INTRO.bio} />
+          </p>
+        )}
+      </div>
+    </header>
+  );
+});
+
 const WorldBefore = memo(function WorldBefore({ groundRef, hasFished }) {
   return (
     <>
@@ -1442,23 +1464,7 @@ function App() {
         onPointerCancel={onStagePointerUp}
         onPointerLeave={hideGhost}
       >
-        <header className="hud-nameplate">
-          <div className="hud-textbox">
-            <div className="hud-name">{INTRO.name}</div>
-            <div className="hud-role">
-              <span className="hud-tag hud-tag--role" style={{ '--tag-color': '#e0b23c' }}>
-                {INTRO.roleTitle}
-              </span>{' '}
-              @ {INTRO.roleOrg}
-            </div>
-            {INTRO.status && <div className="hud-status">{INTRO.status}</div>}
-            {INTRO.bio && (
-              <p className="hud-bio">
-                <Highlighted text={INTRO.bio} />
-              </p>
-            )}
-          </div>
-        </header>
+        <HudNameplate />
 
         <div className="hud-cta-block">
           <button
