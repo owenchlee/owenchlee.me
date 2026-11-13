@@ -1,4 +1,4 @@
-import { Fragment, memo, useEffect, useRef, useState } from 'react';
+import { Fragment, memo, useCallback, useEffect, useRef, useState } from 'react';
 import './App.css';
 import {
   TILE_SIZE,
@@ -1452,6 +1452,12 @@ function App() {
     };
   }, []);
 
+  const navSelectRef = useRef(null);
+  useEffect(() => {
+    navSelectRef.current = (id) => (id ? goToHouse(id) : goToProgress(0));
+  });
+  const onNavSelect = useCallback((id) => navSelectRef.current(id), []);
+
   return (
     <>
       <div aria-hidden={quickView || undefined} inert={quickView || undefined}>
@@ -1543,7 +1549,7 @@ function App() {
       <SectionNav
         activeId={activeHouse}
         introActive={atSpawn}
-        onSelect={(id) => (id ? goToHouse(id) : goToProgress(0))}
+        onSelect={onNavSelect}
       />
       <Minimap ref={minimapDotRef} />
       <MusicPlayer inRoom={Boolean(activeHouse)} />
