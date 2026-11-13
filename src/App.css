@@ -60,6 +60,12 @@
   }
   .hud-textbox {
     max-width: 100%;
+    padding-left: clamp(16px, 2.4vw, 40px);
+    padding-right: clamp(16px, 2.4vw, 40px);
+  }
+  /* "Owen Lee" is 8 pixel-font glyphs wide, so size by the narrower inset box. */
+  .hud-nameplate .hud-name {
+    font-size: clamp(40px, min(6vw, 11vh), 96px);
   }
 }
 
