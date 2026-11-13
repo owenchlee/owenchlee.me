@@ -647,6 +647,8 @@ function App() {
   const facingRef = useRef({ direction: 'down', mirror: false });
   const houseElRefs = useRef({});
   const panelRefs = useRef({});
+  // Stable ref callbacks so the memoized room panels skip renders while closed.
+  const [panelRefSetters] = useState(() => Object.fromEntries(['projects', 'experience', 'hobbies', 'contact'].map((id) => [id, (el) => { panelRefs.current[id] = el; }])));
   const lastRevealRef = useRef({});
   const lightingRef = useRef(null);
   const characterWrapRef = useRef(null);
@@ -1508,27 +1510,19 @@ function App() {
           </div>
 
           <ProjectsPanel
-            ref={(el) => {
-              panelRefs.current.projects = el;
-            }}
+            ref={panelRefSetters.projects}
             active={activeHouse === 'projects'}
           />
           <ExperiencePanel
-            ref={(el) => {
-              panelRefs.current.experience = el;
-            }}
+            ref={panelRefSetters.experience}
             active={activeHouse === 'experience'}
           />
           <HobbiesPanel
-            ref={(el) => {
-              panelRefs.current.hobbies = el;
-            }}
+            ref={panelRefSetters.hobbies}
             active={activeHouse === 'hobbies'}
           />
           <ContactPanel
-            ref={(el) => {
-              panelRefs.current.contact = el;
-            }}
+            ref={panelRefSetters.contact}
             active={activeHouse === 'contact'}
           />
 

@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useRef, useState } from 'react';
+import { forwardRef, memo, useEffect, useRef, useState } from 'react';
 import { PROJECTS, HOBBIES, CONTACT, EDUCATION, EXPERIENCE, SKILLS, RESUME_URL, SECRET_NOTE } from './content';
 import { markHobbySeen, useAchievements } from './achievements';
 import { openPackOpener } from './packs';
@@ -176,7 +176,7 @@ function CabinetScreen({ project, registerVideo }) {
   return <span className="cabinet-screen-fallback">{project.name}</span>;
 }
 
-export const ProjectsPanel = forwardRef(function ProjectsPanel({ active }, ref) {
+export const ProjectsPanel = memo(forwardRef(function ProjectsPanel({ active }, ref) {
   const registerVideo = useRowVideoPlayback();
   const openRegisterVideo = useRowVideoPlayback();
   // Pick a cartridge on the counter (or a tech chip on an open cabinet) to
@@ -377,7 +377,7 @@ export const ProjectsPanel = forwardRef(function ProjectsPanel({ active }, ref) 
       </div>
     </div>
   );
-});
+}));
 
 // Experience is an adventurers'-guild hall: each role is a quest notice
 // pinned to the quest board, stamped ONGOING or COMPLETE from its dates,
@@ -389,7 +389,7 @@ export const ProjectsPanel = forwardRef(function ProjectsPanel({ active }, ref) 
 // so the room and the plain view never drift apart.
 const isOngoing = (dates) => /present/i.test(dates);
 
-export const ExperiencePanel = forwardRef(function ExperiencePanel({ active }, ref) {
+export const ExperiencePanel = memo(forwardRef(function ExperiencePanel({ active }, ref) {
   const [openQuest, setOpenQuest] = useState(null);
   const quest = openQuest != null ? EXPERIENCE[openQuest] : null;
 
@@ -506,7 +506,7 @@ export const ExperiencePanel = forwardRef(function ExperiencePanel({ active }, r
       </div>
     </div>
   );
-});
+}));
 
 // Hobbies is a 3/4 top-down interior in the Pokémon/Stardew mold: a back
 // wall (crown trim, wallpaper, wainscot, baseboard) over a plank floor,
@@ -550,7 +550,7 @@ function BookStack({ variant }) {
   );
 }
 
-export const HobbiesPanel = forwardRef(function HobbiesPanel({ active }, ref) {
+export const HobbiesPanel = memo(forwardRef(function HobbiesPanel({ active }, ref) {
   const [selected, setSelected] = useState(null);
   const skyPhase = useSkyPhase();
 
@@ -667,7 +667,7 @@ export const HobbiesPanel = forwardRef(function HobbiesPanel({ active }, ref) {
       </div>
     </div>
   );
-});
+}));
 
 // Copying rather than linking out to a mailto: means the address shows up
 // as plain readable text (recruiters can just look at it) and a click gets
@@ -839,7 +839,7 @@ function LetterPaper({ email, onClose }) {
   );
 }
 
-export const ContactPanel = forwardRef(function ContactPanel({ active }, ref) {
+export const ContactPanel = memo(forwardRef(function ContactPanel({ active }, ref) {
   const { championAt } = useAchievements();
   const [writing, setWriting] = useState(false);
   return (
@@ -934,4 +934,4 @@ export const ContactPanel = forwardRef(function ContactPanel({ active }, ref) {
       </div>
     </div>
   );
-});
+}));
