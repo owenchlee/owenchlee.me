@@ -25,13 +25,14 @@ export function BadgeIcon({ badge, earned = true, size = 36 }) {
     const fills = earned
       ? { o: '#1c1712', h: shade(badge.color, 0.45), b: badge.color, s: shade(badge.color, -0.35) }
       : { o: '#1c1712', h: '#3a2f24', b: '#3a2f24', s: '#3a2f24' };
-    const out = [];
+    // One path per fill colour instead of one <rect> per pixel: same pixels, far fewer DOM nodes.
+    const paths = {};
     badge.pixels.forEach((row, y) => {
       [...row].forEach((ch, x) => {
-        if (fills[ch]) out.push(<rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill={fills[ch]} />);
+        if (fills[ch]) paths[fills[ch]] = `${paths[fills[ch]] ?? ''}M${x} ${y}h1v1h-1z`;
       });
     });
-    return out;
+    return Object.entries(paths).map(([fill, d]) => <path key={fill} d={d} fill={fill} />);
   }, [badge, earned]);
 
   return (
