@@ -489,9 +489,37 @@ const WorldHouses = memo(function WorldHouses({ houseElRefs, activeHouse }) {
   );
 });
 
+const Signposts = memo(function Signposts({ welcomeSeen }) {
+  return (
+    <>
+    {SIGNS.map((sign) => {
+      const { x, y } = tileToPx(sign.col, sign.row);
+      const isWelcome = sign.id === 'sign-welcome';
+      return (
+        <div
+          key={sign.id}
+          className={`signpost talkable ${isWelcome ? 'signpost--welcome' : ''} ${
+            isWelcome && !welcomeSeen ? 'is-unread' : ''
+          }`}
+          data-talk-id={sign.id}
+          style={{ left: x, top: y, zIndex: zFromGroundY(y + TILE_SIZE) }}
+        >
+          <span className="signpost-post" />
+          <span className="signpost-board" />
+          {isWelcome && !welcomeSeen && (
+            <span className="signpost-alert" aria-hidden="true">
+              !
+            </span>
+          )}
+        </div>
+      );
+    })}
+    </>
+  );
+});
+
 const WorldAfter = memo(function WorldAfter({
   seasonTrees,
-  welcomeSeen,
   workshopUnlocked,
   routeShadowRef,
   routeRef,
@@ -615,29 +643,6 @@ const WorldAfter = memo(function WorldAfter({
               return (
                 <div key={p.id} className="picnic-scene" style={{ left: x, top: y, zIndex: zFromGroundY(y + 96) }}>
                   <img src={picnicScene} className="picnic-blanket" alt="" />
-                </div>
-              );
-            })}
-
-            {SIGNS.map((sign) => {
-              const { x, y } = tileToPx(sign.col, sign.row);
-              const isWelcome = sign.id === 'sign-welcome';
-              return (
-                <div
-                  key={sign.id}
-                  className={`signpost talkable ${isWelcome ? 'signpost--welcome' : ''} ${
-                    isWelcome && !welcomeSeen ? 'is-unread' : ''
-                  }`}
-                  data-talk-id={sign.id}
-                  style={{ left: x, top: y, zIndex: zFromGroundY(y + TILE_SIZE) }}
-                >
-                  <span className="signpost-post" />
-                  <span className="signpost-board" />
-                  {isWelcome && !welcomeSeen && (
-                    <span className="signpost-alert" aria-hidden="true">
-                      !
-                    </span>
-                  )}
                 </div>
               );
             })}
@@ -1516,7 +1521,8 @@ function App() {
           >
             <WorldBefore groundRef={groundRef} hasFished={hasFished} />
             <WorldHouses houseElRefs={houseElRefs} activeHouse={activeHouse} />
-            <WorldAfter seasonTrees={seasonTrees} welcomeSeen={welcomeSeen} workshopUnlocked={workshopUnlocked} routeShadowRef={routeShadowRef} routeRef={routeRef} destGhostRef={destGhostRef} destMarkerRef={destMarkerRef} />
+            <WorldAfter seasonTrees={seasonTrees} workshopUnlocked={workshopUnlocked} routeShadowRef={routeShadowRef} routeRef={routeRef} destGhostRef={destGhostRef} destMarkerRef={destMarkerRef} />
+            <Signposts welcomeSeen={welcomeSeen} />
           </div>
 
           {!activeHouse && <SeasonFx />}
