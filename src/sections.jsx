@@ -176,7 +176,7 @@ function CabinetScreen({ project, registerVideo }) {
   return <span className="cabinet-screen-fallback">{project.name}</span>;
 }
 
-export const ProjectsPanel = memo(forwardRef(function ProjectsPanel({ active }, ref) {
+const ProjectsBody = memo(function ProjectsBody() {
   const registerVideo = useRowVideoPlayback();
   const openRegisterVideo = useRowVideoPlayback();
   // Pick a cartridge on the counter (or a tech chip on an open cabinet) to
@@ -205,7 +205,6 @@ export const ProjectsPanel = memo(forwardRef(function ProjectsPanel({ active }, 
   }, [openName]);
 
   return (
-    <div ref={ref} className={`section-panel section-panel--projects ${active ? 'visible' : ''}`}>
       <div className="section-panel-inner">
         <div className="section-content arcade-content">
           <div className="arcade">
@@ -375,6 +374,14 @@ export const ProjectsPanel = memo(forwardRef(function ProjectsPanel({ active }, 
           )}
         </div>
       </div>
+  );
+});
+
+// The wrapper is the only thing that depends on `active`; the room body is memoized so opening/closing doesn't re-render it.
+export const ProjectsPanel = memo(forwardRef(function ProjectsPanel({ active }, ref) {
+  return (
+    <div ref={ref} className={`section-panel section-panel--projects ${active ? 'visible' : ''}`}>
+      <ProjectsBody />
     </div>
   );
 }));
@@ -389,12 +396,11 @@ export const ProjectsPanel = memo(forwardRef(function ProjectsPanel({ active }, 
 // so the room and the plain view never drift apart.
 const isOngoing = (dates) => /present/i.test(dates);
 
-export const ExperiencePanel = memo(forwardRef(function ExperiencePanel({ active }, ref) {
+const ExperienceBody = memo(function ExperienceBody() {
   const [openQuest, setOpenQuest] = useState(null);
   const quest = openQuest != null ? EXPERIENCE[openQuest] : null;
 
   return (
-    <div ref={ref} className={`section-panel section-panel--experience ${active ? 'visible' : ''}`}>
       <div className="section-panel-inner">
         <div className="section-content guild-content">
           <div className="guild">
@@ -504,6 +510,14 @@ export const ExperiencePanel = memo(forwardRef(function ExperiencePanel({ active
           </div>
         </div>
       </div>
+  );
+});
+
+// The wrapper is the only thing that depends on `active`; the room body is memoized so opening/closing doesn't re-render it.
+export const ExperiencePanel = memo(forwardRef(function ExperiencePanel({ active }, ref) {
+  return (
+    <div ref={ref} className={`section-panel section-panel--experience ${active ? 'visible' : ''}`}>
+      <ExperienceBody />
     </div>
   );
 }));
@@ -550,7 +564,7 @@ function BookStack({ variant }) {
   );
 }
 
-export const HobbiesPanel = memo(forwardRef(function HobbiesPanel({ active }, ref) {
+const HobbiesBody = memo(function HobbiesBody() {
   const [selected, setSelected] = useState(null);
   const skyPhase = useSkyPhase();
 
@@ -558,7 +572,6 @@ export const HobbiesPanel = memo(forwardRef(function HobbiesPanel({ active }, re
   const fillerCount = (HOBBY_COLS - (HOBBIES.length % HOBBY_COLS)) % HOBBY_COLS;
 
   return (
-    <div ref={ref} className={`section-panel section-panel--hobbies ${active ? 'visible' : ''}`}>
       <div className="section-panel-inner">
         <div className="section-content hobbies-content">
           <div className={`room room--${skyPhase}`}>
@@ -665,6 +678,14 @@ export const HobbiesPanel = memo(forwardRef(function HobbiesPanel({ active }, re
           </div>
         </div>
       </div>
+  );
+});
+
+// The wrapper is the only thing that depends on `active`; the room body is memoized so opening/closing doesn't re-render it.
+export const HobbiesPanel = memo(forwardRef(function HobbiesPanel({ active }, ref) {
+  return (
+    <div ref={ref} className={`section-panel section-panel--hobbies ${active ? 'visible' : ''}`}>
+      <HobbiesBody />
     </div>
   );
 }));
@@ -839,11 +860,10 @@ function LetterPaper({ email, onClose }) {
   );
 }
 
-export const ContactPanel = memo(forwardRef(function ContactPanel({ active }, ref) {
+const ContactBody = memo(function ContactBody() {
   const { championAt } = useAchievements();
   const [writing, setWriting] = useState(false);
   return (
-    <div ref={ref} className={`section-panel section-panel--contact ${active ? 'visible' : ''}`}>
       <div className="section-panel-inner">
         <div className="section-content po-content">
           <div className="po">
@@ -932,6 +952,14 @@ export const ContactPanel = memo(forwardRef(function ContactPanel({ active }, re
           {writing && <LetterPaper email={CONTACT.email} onClose={() => setWriting(false)} />}
         </div>
       </div>
+  );
+});
+
+// The wrapper is the only thing that depends on `active`; the room body is memoized so opening/closing doesn't re-render it.
+export const ContactPanel = memo(forwardRef(function ContactPanel({ active }, ref) {
+  return (
+    <div ref={ref} className={`section-panel section-panel--contact ${active ? 'visible' : ''}`}>
+      <ContactBody />
     </div>
   );
 }));
