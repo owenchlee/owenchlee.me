@@ -117,7 +117,7 @@ function MusicPlayer({ inRoom = false }) {
         type="button"
         className={`music-guide ${playing ? 'is-dancing' : ''} ${guideAway ? 'is-away' : ''}`}
         onClick={togglePlay}
-        aria-label={playing ? 'Pause music' : 'Play music'}
+        aria-label={`${!hintDone && !bubbleTimedOut ? 'Psst! Tap the disc for some music ♪ - ' : ''}${playing ? 'Pause music' : 'Play music'}`}
         tabIndex={-1}
       >
         {!hintDone && !bubbleTimedOut && (

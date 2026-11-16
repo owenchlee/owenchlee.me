@@ -1782,6 +1782,7 @@
   .section-nav-item {
     font-size: 9px;
     padding: 5px 6px;
+    min-height: 24px;
   }
 
   .quick-view-toggle {
@@ -2450,7 +2451,7 @@
   height: 80px;
   background:
     linear-gradient(to top, var(--wood-mid) 0 22%, transparent 22%),
-    radial-gradient(circle at 36% 62%, #c9463e 0 9px, transparent 10px),
+    radial-gradient(circle at 36% 62%, #ad372f 0 9px, transparent 10px),
     radial-gradient(circle at 62% 60%, #e0b23c 0 8px, transparent 9px),
     #2f4f66;
 }
@@ -2509,9 +2510,9 @@
     repeating-linear-gradient(-45deg, transparent 0 10px, rgba(248, 240, 220, 0.14) 10px 14px);
   border: 4px solid var(--pal-ink);
   box-shadow:
-    inset 0 0 0 6px #c9463e,
+    inset 0 0 0 6px #ad372f,
     inset 0 0 0 10px var(--pal-cream),
-    inset 0 0 0 14px #c9463e,
+    inset 0 0 0 14px #ad372f,
     5px 5px 0 rgba(0, 0, 0, 0.25);
 }
 
@@ -2970,11 +2971,11 @@
   width: calc(6px * var(--shelf-scale));
   height: calc(26px * var(--shelf-scale));
   background: linear-gradient(to bottom, transparent 18%, rgba(248, 240, 220, 0.55) 18% 24%, transparent 24% 70%, rgba(248, 240, 220, 0.55) 70% 76%, transparent 76%),
-    var(--book, #c9463e);
+    var(--book, #ad372f);
   border: 3px solid var(--pal-ink);
 }
 
-.shelf-book:nth-child(1) { --book: #c9463e; }
+.shelf-book:nth-child(1) { --book: #ad372f; }
 .shelf-book:nth-child(2) { --book: #2f6f73; height: calc(22px * var(--shelf-scale)); }
 .shelf-book:nth-child(3) { --book: #e0b23c; height: calc(28px * var(--shelf-scale)); width: calc(8px * var(--shelf-scale)); }
 .shelf-book:nth-child(4) { --book: #6f5fa3; height: calc(24px * var(--shelf-scale)); }
@@ -2985,7 +2986,7 @@
 }
 
 .shelf-cubby--books-b .shelf-book:nth-child(1) { --book: #5b7a94; }
-.shelf-cubby--books-b .shelf-book:nth-child(3) { --book: #c9463e; }
+.shelf-cubby--books-b .shelf-book:nth-child(3) { --book: #ad372f; }
 .shelf-cubby--books-b .shelf-book--lean { --book: #e0b23c; }
 
 /* --- Detail: an RPG-style text box that pops up over the floor ---
@@ -3475,7 +3476,7 @@
   width: 14px;
   height: 14px;
   margin-left: -7px;
-  background: #c9463e;
+  background: #ad372f;
   border: 2px solid var(--pal-ink);
 }
 
@@ -3707,7 +3708,7 @@
   height: 10px;
   z-index: 1;
   border: 2px solid #3d2a19;
-  background: repeating-linear-gradient(-45deg, #c9463e 0 6px, #f3ead2 6px 12px);
+  background: repeating-linear-gradient(-45deg, #ad372f 0 6px, #f3ead2 6px 12px);
   box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
 }
 
@@ -4272,7 +4273,7 @@
   bottom: 100%;
   width: 46px;
   height: 40px;
-  border: 7px solid #c9463e;
+  border: 7px solid #ad372f;
   border-left: 0;
   outline: 3px solid var(--pal-ink);
 }
@@ -4391,7 +4392,7 @@
   top: 44px;
   width: 126px;
   height: 96px;
-  background: linear-gradient(#c9463e, #c9463e) 50% 22px / 18px 14px no-repeat, #e0b23c;
+  background: linear-gradient(#ad372f, #ad372f) 50% 22px / 18px 14px no-repeat, #e0b23c;
 }
 
 /* Drill press: red head and motor up top, a column down to the base, with
@@ -4415,7 +4416,7 @@
   top: 0;
   width: 88px;
   height: 66px;
-  background: linear-gradient(90deg, #e0645a 0 30%, #c9463e 30%);
+  background: linear-gradient(90deg, #e0645a 0 30%, #ad372f 30%);
   border-radius: 8px;
 }
 
@@ -4758,7 +4759,7 @@
   top: 12px;
   width: 10px;
   height: 10px;
-  background: #c9463e;
+  background: #ad372f;
   border: 2px solid var(--pal-ink);
   border-radius: 50%;
   box-shadow: 0 22px 0 -2px #e0b23c, 0 22px 0 0 var(--pal-ink);
@@ -4907,7 +4908,7 @@
   position: relative;
   width: 14px;
   height: 14px;
-  background: linear-gradient(#c9463e 0 50%, #f3ead2 50% 100%);
+  background: linear-gradient(#ad372f 0 50%, #f3ead2 50% 100%);
   border: 2px solid var(--pal-ink);
   border-radius: 50%;
   animation: fish-bob 1.2s steps(2) infinite alternate;
@@ -4963,7 +4964,7 @@
 }
 
 .fish-new {
-  color: #c9463e;
+  color: #ad372f;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -5249,7 +5250,7 @@
   height: 10px;
   margin-left: -5px;
   border-radius: 50%;
-  background: #c9463e;
+  background: #ad372f;
   border: 2px solid var(--pal-ink);
 }
 
@@ -5280,14 +5281,14 @@
   font-family: var(--font-pixel);
   font-size: 8px;
   text-transform: uppercase;
-  color: #2f8f5a;
+  color: #176139;
   border: 2px solid currentColor;
   rotate: -10deg;
-  opacity: 0.9;
+  opacity: 1;
 }
 
 .guild-stamp--ongoing {
-  color: #c9463e;
+  color: #9a2f28;
 }
 
 /* The full notice unrolled over the board. */
@@ -5425,7 +5426,7 @@
 .guild-card-title {
   font-family: var(--font-pixel);
   font-size: 8px;
-  color: #c9463e;
+  color: #ad372f;
 }
 
 .guild-ledger {
@@ -5855,7 +5856,7 @@
    screen in a dark bezel, the control deck with stick and two buttons,
    and a coin slot. Body tinted per project, lit on the left edge. */
 .cabinet {
-  --cab: #c9463e;
+  --cab: #ad372f;
   position: relative;
   flex: none;
   width: var(--cab-w);
@@ -5979,7 +5980,7 @@
   width: 14%;
   aspect-ratio: 1;
   border-radius: 50%;
-  background: #c9463e;
+  background: #ad372f;
   border: 3px solid #f3ead2;
 }
 
@@ -6133,7 +6134,7 @@
   font-family: var(--font-pixel);
   font-size: 9px;
   text-transform: uppercase;
-  color: #c9463e;
+  color: #ad372f;
 }
 
 /* The opened cabinet: the project's full card over a dimmed room. */
@@ -6310,7 +6311,7 @@
   text-transform: uppercase;
   color: var(--pal-cream);
   text-shadow: 2px 2px 0 var(--pal-ink);
-  background: #c9463e;
+  background: #ad372f;
   border: 4px solid var(--pal-ink);
   box-shadow: inset 0 4px 0 #e0766e, 5px 5px 0 rgba(0, 0, 0, 0.25);
 }
@@ -6552,7 +6553,7 @@
   top: 8px;
   width: 26px;
   height: 30px;
-  background: #c9463e radial-gradient(circle at 50% 45%, #ffe066 0 5px, transparent 6px);
+  background: #ad372f radial-gradient(circle at 50% 45%, #ffe066 0 5px, transparent 6px);
   outline: 3px dashed var(--pal-cream);
   outline-offset: -5px;
   border: 2px solid var(--pal-ink);
@@ -6612,7 +6613,7 @@
     repeating-linear-gradient(transparent 0 15px, #cfd9e8 15px 16px) 0 26px / 100% calc(100% - 26px) no-repeat,
     #fffdf4;
   border: 4px solid var(--pal-ink);
-  border-top: 10px solid #c9463e;
+  border-top: 10px solid #ad372f;
   box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.3);
   rotate: 2deg;
   transition: translate 0.15s ease;
@@ -6708,7 +6709,7 @@
 .po-letter-title {
   font-family: var(--font-pixel);
   font-size: 12px;
-  color: #c9463e;
+  color: #ad372f;
 }
 
 .po-letter-field {
@@ -6734,7 +6735,7 @@
 .po-letter-field input:focus,
 .po-letter-field textarea:focus {
   outline: none;
-  border-bottom-color: #c9463e;
+  border-bottom-color: #ad372f;
   background: rgba(255, 224, 102, 0.15);
 }
 
@@ -6751,7 +6752,7 @@
   font-size: 10px;
   color: var(--pal-cream);
   text-decoration: none;
-  background: #c9463e;
+  background: #ad372f;
   border: 3px solid var(--pal-ink);
   box-shadow: 3px 3px 0 var(--pal-ink);
 }
@@ -6910,7 +6911,7 @@
   height: 12px;
   margin-left: -6px;
   border-radius: 50%;
-  background: #c9463e;
+  background: #ad372f;
   border: 2px solid var(--pal-ink);
 }
 
@@ -6919,7 +6920,7 @@
   margin: 0 0 6px;
   font-family: var(--font-pixel);
   font-size: 10px;
-  color: #c9463e;
+  color: #ad372f;
 }
 
 .nowlog-note p {
@@ -7193,7 +7194,7 @@
   border: 4px solid var(--pal-ink);
   background:
     linear-gradient(115deg, transparent 0 40%, rgba(255, 255, 255, 0.45) 46%, transparent 52%),
-    linear-gradient(160deg, #6f5fa3, #c9463e 55%, #e0b23c);
+    linear-gradient(160deg, #6f5fa3, #ad372f 55%, #e0b23c);
 }
 
 .booster-strip {
@@ -7201,7 +7202,7 @@
   height: 12%;
   background-image:
     repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.25) 0 4px, transparent 4px 8px),
-    linear-gradient(160deg, #6f5fa3, #c9463e);
+    linear-gradient(160deg, #6f5fa3, #ad372f);
 }
 
 .booster-body {
@@ -7399,7 +7400,7 @@
 /* --- A trading card. Sized by --cw; everything inside is in em, off a
    font-size that scales with the card. --- */
 .tcg {
-  --card: #c9463e;
+  --card: #ad372f;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -7437,7 +7438,7 @@
 .tcg-hp {
   flex: none;
   font-size: 0.85em;
-  color: #c9463e;
+  color: #ad372f;
 }
 
 .tcg-art {

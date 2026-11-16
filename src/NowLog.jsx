@@ -82,7 +82,7 @@ function NowLog({ onClose }) {
           </button>
         </div>
 
-        <div className="nowlog-scroll">
+        <div className="nowlog-scroll" tabIndex={0} role="region" aria-label="Now notes">
           {latest && (
             <article className="nowlog-note nowlog-note--latest">
               <span className="nowlog-pin" aria-hidden="true" />
