@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react';
+import { createStore } from './store';
 import { DIALOGUE } from './content';
 import { welcomeBackLines } from './visits';
 
@@ -6,26 +6,13 @@ import { welcomeBackLines } from './visits';
 // lines is showing. A tiny module store (same pattern as achievements.js)
 // so App.jsx can open one from its pointer handler and DialogueBox can
 // render it, without either re-rendering the other.
-let state = null;
-const listeners = new Set();
 
-function emit(next) {
-  state = next;
-  listeners.forEach((l) => l());
-}
+const store = createStore();
+const { emit } = store;
 
-function subscribe(listener) {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
-}
+export const useDialogue = store.use;
 
-export function useDialogue() {
-  return useSyncExternalStore(subscribe, () => state);
-}
-
-export function getDialogue() {
-  return state;
-}
+export const getDialogue = store.get;
 
 export function openDialogue(id) {
   const entry = DIALOGUE[id];
@@ -38,12 +25,13 @@ export function openDialogue(id) {
 
 // Next line, or close after the last one.
 export function advanceDialogue() {
+  const state = store.get();
   if (!state) return;
   emit(state.index + 1 < state.lines.length ? { ...state, index: state.index + 1 } : null);
 }
 
 export function closeDialogue() {
-  if (state) emit(null);
+  if (store.get()) emit(null);
 }
 
 // Signs, boards and barricades (as opposed to people and pets): they get a

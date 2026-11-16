@@ -32,15 +32,9 @@
 
 .quick-view-close {
   display: inline-block;
-  background: var(--pal-ink);
-  color: var(--pal-cream);
-  border: 3px solid var(--pal-cream);
-  box-shadow: 3px 3px 0 #000;
-  font-family: var(--font-pixel);
   font-size: 11px;
   line-height: 1.4;
   padding: 10px 12px;
-  cursor: pointer;
 }
 
 .quick-view-close:hover {
@@ -92,14 +86,8 @@
 }
 
 .quick-view-status {
-  display: inline-block;
-  font-family: var(--font-pixel);
   font-size: 11px;
   line-height: 1.4;
-  color: var(--pal-ink);
-  background: var(--pal-grass-light);
-  border: 2px solid var(--pal-ink);
-  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
   padding: 4px 10px;
   margin: 0 0 18px;
 }
@@ -145,11 +133,6 @@
 }
 
 .quick-view-resume {
-  display: inline-block;
-  background: var(--pal-grass-light);
-  color: var(--pal-ink);
-  border: 3px solid var(--pal-ink);
-  font-family: var(--font-pixel);
   font-size: 12px;
   line-height: 1.4;
   padding: 12px 18px;

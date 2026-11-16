@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react';
+import { createStore } from './store';
 import { rollCatch, recordCatch } from './secrets';
 import { playSplash, playBite, playMiss, playJingle } from './sfx';
 
@@ -13,58 +13,45 @@ const BITE_MIN_MS = 1400;
 const BITE_MAX_MS = 4200;
 const BITE_WINDOW_MS = 850;
 
-let state = null;
 let timer = null;
-const listeners = new Set();
 
-function emit(next) {
-  state = next;
-  listeners.forEach((l) => l());
-}
+const store = createStore();
+const { emit } = store;
 
-function subscribe(listener) {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
-}
+export const useFishing = store.use;
 
-export function useFishing() {
-  return useSyncExternalStore(subscribe, () => state);
-}
-
-export function getFishing() {
-  return state;
-}
+export const getFishing = store.get;
 
 function cast() {
   clearTimeout(timer);
   playSplash();
-  emit({ phase: 'waiting', catchId: null, cast: (state?.cast ?? 0) + 1 });
+  emit({ phase: 'waiting', catchId: null, cast: (store.get()?.cast ?? 0) + 1 });
   timer = setTimeout(() => {
     playBite();
-    emit({ ...state, phase: 'bite' });
+    emit({ ...store.get(), phase: 'bite' });
     timer = setTimeout(() => {
       playMiss();
-      emit({ ...state, phase: 'missed' });
+      emit({ ...store.get(), phase: 'missed' });
     }, BITE_WINDOW_MS);
   }, BITE_MIN_MS + Math.random() * (BITE_MAX_MS - BITE_MIN_MS));
 }
 
 export function startFishing() {
-  if (!state) cast();
+  if (!store.get()) cast();
 }
 
 // The one input: tap the box or the pond, or press Enter/Space.
 export function fishingAction() {
-  if (!state) return;
+  if (!store.get()) return;
   clearTimeout(timer);
-  if (state.phase === 'waiting') {
+  if (store.get().phase === 'waiting') {
     playMiss();
-    emit({ ...state, phase: 'early' });
-  } else if (state.phase === 'bite') {
+    emit({ ...store.get(), phase: 'early' });
+  } else if (store.get().phase === 'bite') {
     const catchId = rollCatch();
     recordCatch(catchId);
     if (catchId !== 'key') playJingle('catch');
-    emit({ ...state, phase: 'caught', catchId });
+    emit({ ...store.get(), phase: 'caught', catchId });
   } else {
     cast();
   }
@@ -72,5 +59,5 @@ export function fishingAction() {
 
 export function stopFishing() {
   clearTimeout(timer);
-  if (state) emit(null);
+  if (store.get()) emit(null);
 }

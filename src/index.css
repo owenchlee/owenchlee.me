@@ -17,8 +17,8 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/vt323-latin.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  src: url('/fonts/vt323-latin.woff2') format('woff2');
 }
 
 @font-face {
@@ -31,6 +31,11 @@
 }
 
 :root {
+  /* Shared wood palette for the Hobbies, Workshop, Arcade and Post Office rooms. */
+  --wood-dark: #3b2616;
+  --wood: #5e3b24;
+  --wood-mid: #7a4b2c;
+  --wood-light: #a0693f;
   color-scheme: dark;
   font: 16px/1.4 system-ui, 'Segoe UI', Roboto, sans-serif;
 
@@ -43,6 +48,8 @@
   --pal-path: #a67a54;
   --pal-cream: #f8f0dc;
   --pal-ink: #1c1712;
+  --ink-outline: 1px 1px 0 var(--pal-ink), -1px -1px 0 var(--pal-ink), 1px -1px 0 var(--pal-ink),
+    -1px 1px 0 var(--pal-ink);
   --pal-ink-soft: #3a2f24;
 
   --font-pixel: 'Press Start 2P', cursive;

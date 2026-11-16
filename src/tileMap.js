@@ -129,6 +129,18 @@ function nearestWaypoint(col, row) {
   return best;
 }
 
+// Per-segment geometry of the real path, shared by everything that lines or
+// measures the route.
+function routeSegments() {
+  return WAYPOINTS_TILE.slice(0, -1).map((a, i) => {
+    const b = WAYPOINTS_TILE[i + 1];
+    const dx = b.col - a.col;
+    const dy = b.row - a.row;
+    const len = Math.hypot(dx, dy) || 1;
+    return { i, a, dx, dy, perpX: -dy / len, perpY: dx / len, steps: Math.round(len) };
+  });
+}
+
 // Nearest tile on the route itself (anywhere along a segment, not just at
 // a corner). Decor driveways run here, so each one takes the short way to
 // the road instead of every house in a neighbourhood converging on the
@@ -136,11 +148,7 @@ function nearestWaypoint(col, row) {
 function nearestRouteTile(col, row) {
   let best = WAYPOINTS_TILE[0];
   let bestDist = Infinity;
-  for (let i = 0; i < WAYPOINTS_TILE.length - 1; i++) {
-    const a = WAYPOINTS_TILE[i];
-    const b = WAYPOINTS_TILE[i + 1];
-    const dx = b.col - a.col;
-    const dy = b.row - a.row;
+  for (const { a, dx, dy } of routeSegments()) {
     const t = Math.min(1, Math.max(0, ((col - a.col) * dx + (row - a.row) * dy) / (dx * dx + dy * dy)));
     const p = { col: Math.round(a.col + dx * t), row: Math.round(a.row + dy * t) };
     const d = Math.hypot(p.col - col, p.row - row);
@@ -398,15 +406,7 @@ function buildTileGrid() {
   // route being visually channeled rather than open field on both sides.
   // Perpendicular offset per segment so the lining tracks whichever way the
   // path is currently running.
-  for (let i = 0; i < WAYPOINTS_TILE.length - 1; i++) {
-    const a = WAYPOINTS_TILE[i];
-    const b = WAYPOINTS_TILE[i + 1];
-    const dx = b.col - a.col;
-    const dy = b.row - a.row;
-    const len = Math.hypot(dx, dy) || 1;
-    const perpX = -dy / len;
-    const perpY = dx / len;
-    const steps = Math.round(len);
+  for (const { a, dx, dy, perpX, perpY, steps } of routeSegments()) {
     for (let s = 0; s <= steps; s += 3) {
       const t = s / steps;
       const cx = a.col + dx * t;
@@ -630,15 +630,7 @@ export const BARRIERS = buildBarriers();
 // instead of just a flat darkening tint over the whole scene.
 function buildLamps() {
   const lamps = [];
-  for (let i = 0; i < WAYPOINTS_TILE.length - 1; i++) {
-    const a = WAYPOINTS_TILE[i];
-    const b = WAYPOINTS_TILE[i + 1];
-    const dx = b.col - a.col;
-    const dy = b.row - a.row;
-    const len = Math.hypot(dx, dy) || 1;
-    const perpX = -dy / len;
-    const perpY = dx / len;
-    const steps = Math.round(len);
+  for (const { i, a, dx, dy, perpX, perpY, steps } of routeSegments()) {
     for (let s = 7; s < steps; s += 14) {
       const t = s / steps;
       const cx = a.col + dx * t;

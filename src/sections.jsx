@@ -2,6 +2,7 @@ import { forwardRef, useEffect, useRef, useState } from 'react';
 import { PROJECTS, HOBBIES, CONTACT, EDUCATION, EXPERIENCE, SKILLS, RESUME_URL, SECRET_NOTE } from './content';
 import { markHobbySeen, useAchievements } from './achievements';
 import { openPackOpener } from './packs';
+import { CopyEmailButton } from './CopyEmailButton';
 import petDogA from './assets/pet-dog-a.png';
 import owenPortrait from './assets/owen-portrait.webp';
 import { useRowVideoPlayback } from './useRowVideoPlayback';
@@ -614,59 +615,6 @@ export const HobbiesPanel = forwardRef(function HobbiesPanel({ active }, ref) {
   );
 });
 
-// Copying rather than linking out to a mailto: means the address shows up
-// as plain readable text (recruiters can just look at it) and a click gets
-// it onto the clipboard without launching whatever mail client happens to
-// be registered on the visitor's machine.
-function CopyEmailButton({ email }) {
-  const [copied, setCopied] = useState(false);
-  const timeoutRef = useRef(null);
-
-  useEffect(() => () => clearTimeout(timeoutRef.current), []);
-
-  async function handleClick() {
-    try {
-      await navigator.clipboard.writeText(email);
-    } catch {
-      return;
-    }
-    setCopied(true);
-    clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => setCopied(false), 1500);
-  }
-
-  return (
-    <button type="button" className="dialogue-link dialogue-link--copy" onClick={handleClick}>
-      {!copied && <MailIcon />}
-      {copied ? 'Copied!' : email}
-    </button>
-  );
-}
-
-// Plain inline SVG (not an icon font glyph) so it stays crisp at this size
-// and needs no extra asset — a small envelope in front of the address is
-// enough to make "this is an email, click to copy" legible at a glance
-// instead of relying on visitors reading it as one from the text alone.
-function MailIcon() {
-  return (
-    <svg
-      className="mail-icon"
-      viewBox="0 0 24 24"
-      width="14"
-      height="14"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <rect x="3" y="5" width="18" height="14" rx="1.5" />
-      <path d="m3.5 6.5 8.5 6.5 8.5-6.5" />
-    </svg>
-  );
-}
-
 // Plain document/page glyph — matches MailIcon's stroke line-art style
 // rather than GitHubIcon/LinkedInIcon's filled brand marks, since there's no
 // brand mark for "résumé", just a generic file.
@@ -857,7 +805,7 @@ export const ContactPanel = forwardRef(function ContactPanel({ active }, ref) {
                 {CONTACT.email && (
                   <div className="po-envelope">
                     <span className="po-envelope-stamp" aria-hidden="true" />
-                    <CopyEmailButton email={CONTACT.email} />
+                    <CopyEmailButton email={CONTACT.email} buttonClass="dialogue-link dialogue-link--copy" iconClass="mail-icon" iconSize="14" hideIconWhenCopied />
                   </div>
                 )}
                 <a href={RESUME_URL} className="po-parcel" target="_blank" rel="noopener noreferrer">

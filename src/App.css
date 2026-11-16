@@ -69,14 +69,14 @@
   font-size: clamp(16px, min(2.8vw, 4.2vh), 30px);
   color: var(--pal-cream);
   margin-top: clamp(6px, 1.2vh, 10px);
-  text-shadow: 1px 1px 0 var(--pal-ink), -1px -1px 0 var(--pal-ink), 1px -1px 0 var(--pal-ink),
-    -1px 1px 0 var(--pal-ink);
+  text-shadow: var(--ink-outline);
 }
 
 /* Small availability pill — separate from .hud-tag--role since it's a status
    indicator, not a "bold callout" word, so it gets its own solid green block
    rather than the tunable --tag-color used for highlight words. */
-.hud-status {
+.hud-status,
+.quick-view-status {
   display: inline-block;
   font-family: var(--font-pixel);
   font-size: clamp(9px, min(1.2vw, 1.7vh), 12px);
@@ -94,8 +94,7 @@
   line-height: 1.4;
   color: var(--pal-cream);
   margin: clamp(6px, 1.2vh, 10px) 0 0;
-  text-shadow: 1px 1px 0 var(--pal-ink), -1px -1px 0 var(--pal-ink), 1px -1px 0 var(--pal-ink),
-    -1px 1px 0 var(--pal-ink);
+  text-shadow: var(--ink-outline);
 }
 
 /* Pill chips for `**word**` segments (see Highlighted in App.jsx) — solid
@@ -138,12 +137,16 @@
   transition: opacity 0.35s ease;
 }
 
-.hud-cta {
+.hud-cta,
+.quick-view-resume {
   display: inline-block;
   background: var(--pal-grass-light);
   color: var(--pal-ink);
   border: 3px solid var(--pal-ink);
   font-family: var(--font-pixel);
+}
+
+.hud-cta {
   padding: 14px 22px;
   font-size: 13px;
   cursor: pointer;
@@ -152,7 +155,8 @@
 }
 
 .hud-cta:hover,
-.hud-cta:focus-visible {
+.hud-cta:focus-visible,
+.dialogue-link:hover {
   background: var(--pal-grass);
   color: var(--pal-cream);
   transform: translate(-2px, -2px);
@@ -171,8 +175,7 @@
   font-size: 13px;
   color: var(--pal-cream);
   opacity: 0.75;
-  text-shadow: 1px 1px 0 var(--pal-ink), -1px -1px 0 var(--pal-ink), 1px -1px 0 var(--pal-ink),
-    -1px 1px 0 var(--pal-ink);
+  text-shadow: var(--ink-outline);
 }
 
 /* Inherits .hud-scroll-hint's own text-shadow/size via normal cascade —
@@ -1300,10 +1303,10 @@
    the same activeHouse state that lights up the in-world house label, so
    the two never disagree about which section you're currently in. */
 
-.section-nav {
+.section-nav,
+.music-player {
   position: fixed;
   left: 14px;
-  top: 14px;
   z-index: 30;
   display: flex;
   flex-direction: column;
@@ -1311,6 +1314,10 @@
   background: var(--pal-ink);
   border: 3px solid var(--pal-cream);
   box-shadow: 3px 3px 0 #000;
+}
+
+.section-nav {
+  top: 14px;
   padding: 10px 8px;
 }
 
@@ -1347,6 +1354,18 @@
   }
 }
 
+/* Shared pixel-button look for the HUD toggles and the QuickView close. */
+.quick-view-toggle,
+.badge-case-toggle,
+.quick-view-close {
+  background: var(--pal-ink);
+  color: var(--pal-cream);
+  border: 3px solid var(--pal-cream);
+  box-shadow: 3px 3px 0 #000;
+  font-family: var(--font-pixel);
+  cursor: pointer;
+}
+
 /* Top-right fixed HUD, the one corner left free by .section-nav/.minimap/
    .music-player. Opens QuickView.jsx, a plain accessible layout of the same
    content for anyone who wants the facts without the scroll/game mechanic. */
@@ -1355,14 +1374,8 @@
   right: 14px;
   top: 14px;
   z-index: 31;
-  background: var(--pal-ink);
-  color: var(--pal-cream);
-  border: 3px solid var(--pal-cream);
-  box-shadow: 3px 3px 0 #000;
-  font-family: var(--font-pixel);
   font-size: 11px;
   padding: 10px 12px;
-  cursor: pointer;
 }
 
 .quick-view-toggle:hover,
@@ -1508,16 +1521,7 @@
    autoplays; sound only starts from the visitor's own click on
    .music-toggle. */
 .music-player {
-  position: fixed;
-  left: 14px;
   bottom: 14px;
-  z-index: 30;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  background: var(--pal-ink);
-  border: 3px solid var(--pal-cream);
-  box-shadow: 3px 3px 0 #000;
   padding: 8px;
 }
 
@@ -2046,10 +2050,6 @@
   /* Size multiplier for the CSS-drawn furniture, so it stays in proportion
      with the bookcase as that steps up on big screens. */
   --decor-scale: 1;
-  --wood-dark: #3b2616;
-  --wood: #5e3b24;
-  --wood-mid: #7a4b2c;
-  --wood-light: #a0693f;
   position: absolute;
   inset: 0;
   z-index: 1;
@@ -2079,7 +2079,9 @@
   }
 }
 
-.room {
+.room,
+.arcade,
+.po {
   position: relative;
   min-height: 100%;
   display: grid;
@@ -2827,21 +2829,26 @@
 
 /* Wooden sign hung on the wall high above the case: high enough that an
    open hobby description (which pops up between the two) never covers it. */
-.bookshelf-sign {
-  position: absolute;
-  left: 50%;
-  top: -262px;
-  transform: translateX(-50%);
+.bookshelf-sign,
+.workshop-sign,
+.guild-sign {
   margin: 0;
   padding: 10px 18px 9px;
   font-family: var(--font-pixel);
   font-size: 16px;
   color: var(--pal-cream);
   text-shadow: 2px 2px 0 var(--pal-ink);
-  white-space: nowrap;
   background: var(--wood-mid);
   border: 4px solid var(--pal-ink);
   box-shadow: inset 0 4px 0 var(--wood-light), 5px 5px 0 rgba(0, 0, 0, 0.2);
+}
+
+.bookshelf-sign {
+  position: absolute;
+  left: 50%;
+  top: -262px;
+  transform: translateX(-50%);
+  white-space: nowrap;
 }
 
 .bookshelf-grid {
@@ -3119,13 +3126,6 @@
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.dialogue-link:hover {
-  background: var(--pal-grass);
-  color: var(--pal-cream);
-  transform: translate(-2px, -2px);
-  box-shadow: 5px 5px 0 var(--pal-ink);
-}
-
 .dialogue-link--copy {
   border: none;
   cursor: pointer;
@@ -3171,14 +3171,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--pal-ink);
-  color: var(--pal-cream);
-  border: 3px solid var(--pal-cream);
-  box-shadow: 3px 3px 0 #000;
-  font-family: var(--font-pixel);
   font-size: 10px;
   padding: 7px 10px;
-  cursor: pointer;
 }
 
 .badge-case-toggle:hover,
@@ -3191,7 +3185,8 @@
   color: #ffe066;
 }
 
-.trainer-card-backdrop {
+.trainer-card-backdrop,
+.nowlog-backdrop {
   position: fixed;
   inset: 0;
   z-index: 240;
@@ -3202,14 +3197,20 @@
   background: rgba(28, 23, 18, 0.72);
 }
 
-.trainer-card {
-  width: min(620px, 100%);
-  max-height: calc(100svh - 32px);
-  overflow-y: auto;
+/* Shared cream/ink frame for the trainer card, badge toast and dialogue box. */
+.trainer-card,
+.badge-toast,
+.talk-box {
   background: var(--pal-cream);
   color: var(--pal-ink);
   border: 4px solid var(--pal-ink);
   outline: 4px solid var(--pal-cream);
+}
+
+.trainer-card {
+  width: min(620px, 100%);
+  max-height: calc(100svh - 32px);
+  overflow-y: auto;
   box-shadow: 8px 8px 0 #000;
   padding: 22px 24px 26px;
   animation: trainerCardIn 0.24s steps(4) both;
@@ -3317,10 +3318,6 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  background: var(--pal-cream);
-  color: var(--pal-ink);
-  border: 4px solid var(--pal-ink);
-  outline: 4px solid var(--pal-cream);
   box-shadow: 6px 6px 0 #000;
   padding: 14px 44px 14px 14px;
   cursor: pointer;
@@ -3422,7 +3419,8 @@
   visibility: visible;
 }
 
-.badge-toast-next {
+.badge-toast-next,
+.talk-box-next {
   position: absolute;
   right: 12px;
   bottom: 8px;
@@ -3624,10 +3622,6 @@
   width: min(600px, calc(100vw - 32px));
   min-height: 92px;
   transform: translateX(-50%);
-  background: var(--pal-cream);
-  color: var(--pal-ink);
-  border: 4px solid var(--pal-ink);
-  outline: 4px solid var(--pal-cream);
   box-shadow: 6px 6px 0 #000;
   padding: 18px 44px 16px 18px;
   cursor: pointer;
@@ -3651,18 +3645,6 @@
   font-family: var(--font-pixel);
   font-size: 12px;
   line-height: 1.8;
-}
-
-.talk-box-next {
-  position: absolute;
-  right: 12px;
-  bottom: 8px;
-  background: none;
-  border: none;
-  color: var(--pal-ink);
-  font-size: 14px;
-  padding: 4px;
-  animation: badgeNextBlink 0.8s steps(2) infinite;
 }
 
 @media (max-width: 600px) {
@@ -3926,11 +3908,6 @@
    props are plain CSS shapes with the same ink outlines and hard drop
    shadows as the rest of the pixel art. */
 .workshop-room {
-  /* Same wood palette as the Hobbies room (scoped there, so repeated). */
-  --wood-dark: #3b2616;
-  --wood: #5e3b24;
-  --wood-mid: #7a4b2c;
-  --wood-light: #a0693f;
   position: fixed;
   inset: 0;
   z-index: 240;
@@ -4129,15 +4106,6 @@
 
 /* Sign and the taped-up note. */
 .workshop-sign {
-  margin: 0;
-  padding: 10px 18px 9px;
-  font-family: var(--font-pixel);
-  font-size: 16px;
-  color: var(--pal-cream);
-  text-shadow: 2px 2px 0 var(--pal-ink);
-  background: var(--wood-mid);
-  border: 4px solid var(--pal-ink);
-  box-shadow: inset 0 4px 0 var(--wood-light), 5px 5px 0 rgba(0, 0, 0, 0.2);
   rotate: -1.5deg;
 }
 
@@ -4252,16 +4220,22 @@
   right: 30px;
 }
 
+/* Shared plank look for the bench shelf and the counter tops. */
+.workshop-bench-shelf,
+.guild-counter::before,
+.po-counter::before {
+  height: 14px;
+  background: var(--wood-mid);
+  border: 4px solid var(--pal-ink);
+  box-shadow: inset 0 4px 0 var(--wood-light);
+}
+
 /* Lower shelf between the legs: offcut planks and a clamp. */
 .workshop-bench-shelf {
   position: absolute;
   left: 50px;
   right: 50px;
   top: calc(100% + 96px);
-  height: 14px;
-  background: var(--wood-mid);
-  border: 4px solid var(--pal-ink);
-  box-shadow: inset 0 4px 0 var(--wood-light);
 }
 
 .workshop-bench-planks {
@@ -5057,10 +5031,6 @@
    the résumé ledger. Like the Hobbies room it fills the screen and scrolls
    internally on short viewports. */
 .guild-content {
-  --wood-dark: #3b2616;
-  --wood: #5e3b24;
-  --wood-mid: #7a4b2c;
-  --wood-light: #a0693f;
   --parchment: #f1e2bc;
   position: absolute;
   inset: 0;
@@ -5148,14 +5118,7 @@
 
 .guild-sign {
   position: relative;
-  margin: 0;
   padding: 12px 22px 11px;
-  font-family: var(--font-pixel);
-  font-size: 16px;
-  color: var(--pal-cream);
-  text-shadow: 2px 2px 0 var(--pal-ink);
-  background: var(--wood-mid);
-  border: 4px solid var(--pal-ink);
   box-shadow: inset 0 4px 0 var(--wood-light), 5px 5px 0 rgba(0, 0, 0, 0.25);
 }
 
@@ -5402,10 +5365,6 @@
   left: -10px;
   right: -10px;
   bottom: 42px;
-  height: 14px;
-  background: var(--wood-mid);
-  border: 4px solid var(--pal-ink);
-  box-shadow: inset 0 4px 0 var(--wood-light);
 }
 
 .guild-card,
@@ -5492,24 +5451,11 @@
     104px,
     min(calc((100vw - 96px) / 9 - 14px), calc((100vh - var(--floor-h) - var(--sign-top) - 150px) / 2.07))
   );
-  --wood-dark: #3b2616;
-  --wood: #5e3b24;
-  --wood-mid: #7a4b2c;
-  --wood-light: #a0693f;
   position: absolute;
   inset: 0;
   z-index: 1;
   overflow-y: auto;
   overscroll-behavior: contain;
-}
-
-.arcade {
-  position: relative;
-  min-height: 100%;
-  display: grid;
-  grid-template-rows: 1fr var(--floor-h);
-  grid-template-columns: 100%;
-  box-shadow: inset 0 0 0 4px var(--pal-ink);
 }
 
 .arcade-wall {
@@ -5556,7 +5502,8 @@
   border-top: 4px solid var(--pal-ink);
 }
 
-.arcade-back {
+.arcade-back,
+.po-back {
   grid-row: 1;
   grid-column: 1;
   align-self: end;
@@ -5567,6 +5514,9 @@
   flex-direction: column;
   align-items: center;
   max-width: calc(100% - 32px);
+}
+
+.arcade-back {
   margin-bottom: calc(var(--cab-w) * -0.18);
 }
 
@@ -6228,25 +6178,12 @@
    top; a mailbox stands on the floor to the right. */
 .po-content {
   --floor-h: clamp(170px, 24vh, 260px);
-  --wood-dark: #3b2616;
-  --wood: #5e3b24;
-  --wood-mid: #7a4b2c;
-  --wood-light: #a0693f;
   position: absolute;
   inset: 0;
   z-index: 1;
   overflow-y: auto;
   overscroll-behavior: contain;
   font-family: var(--font-terminal);
-}
-
-.po {
-  position: relative;
-  min-height: 100%;
-  display: grid;
-  grid-template-rows: 1fr var(--floor-h);
-  grid-template-columns: 100%;
-  box-shadow: inset 0 0 0 4px var(--pal-ink);
 }
 
 .po-wall {
@@ -6294,17 +6231,7 @@
 }
 
 .po-back {
-  grid-row: 1;
-  grid-column: 1;
-  align-self: end;
-  justify-self: center;
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   gap: 22px;
-  max-width: calc(100% - 32px);
   padding-top: 40px;
   /* Leaves room for the counter items that rise above the floor line. */
   margin-bottom: 104px;
@@ -6507,10 +6434,6 @@
   left: -10px;
   right: -10px;
   bottom: 56px;
-  height: 14px;
-  background: var(--wood-mid);
-  border: 4px solid var(--pal-ink);
-  box-shadow: inset 0 4px 0 var(--wood-light);
 }
 
 .po-counter::after {
@@ -6850,16 +6773,6 @@
    A cork board of diary notes: this month pinned big at the top with the
    standing co-op note under it, then earlier months as smaller pinned
    notes grouped by year. Scrolls inside the frame. */
-.nowlog-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 240;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  background: rgba(28, 23, 18, 0.72);
-}
 
 .nowlog {
   display: flex;
