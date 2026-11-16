@@ -32,7 +32,7 @@ import {
   getNightAmount,
 } from './tileMap';
 import { ProjectsPanel, ExperiencePanel, HobbiesPanel, ContactPanel } from './sections';
-import { INTRO, RESUME_URL } from './content';
+import { INTRO, RESUME_URL, DIALOGUE } from './content';
 import { Highlighted } from './Highlighted';
 import Minimap from './Minimap';
 import { minimapPoint } from './minimapPoint';
@@ -367,6 +367,21 @@ function App() {
   const workshopUnlocked = isWorkshopOpen(secrets);
   const seasonTrees = useSeasonTreeUrls(treeRoundSprite, treePineSprite);
 
+  // Keyboard / screen-reader access for the pointer-only talk targets.
+  function talkA11y(id, label) {
+    return {
+      role: 'button',
+      tabIndex: 0,
+      'aria-label': label ?? (DIALOGUE[id]?.name ? `Talk to ${DIALOGUE[id].name}` : 'Talk'),
+      onKeyDown: (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        e.stopPropagation();
+        talkTo(id);
+      },
+    };
+  }
+
   function talkTo(id) {
     stopFishing();
     if (isObjectTalk(id)) playKnock();
@@ -622,7 +637,7 @@ function App() {
         if (houseTargetRef.current === 1 || houseTRef.current > 0) leaveHouse();
         return;
       }
-      if (e.target.closest?.('input, textarea, select, button, a')) return;
+      if (e.target.closest?.('input, textarea, select, button, a, [role=button]')) return;
       if (houseTRef.current > 0) return;
       const step = KEY_STEP_PX / TOTAL_PATH_LENGTH;
       if (['ArrowRight', 'ArrowDown', 'd', 's'].includes(e.key)) {
@@ -1164,12 +1179,24 @@ function App() {
             {/* The "Tap to fish!" sign lives outside the pond (whose
                 clip-path would crop it) and above every depth-sorted
                 sprite, so no tree canopy ever covers it. */}
-            {!hasFished &&
-              PONDS.map(({ id, left, top, width, height }) => (
-                <div key={id} className="pond-hint-layer" style={{ left, top, width, height }}>
-                  <span className="pond-hint">Tap to fish!</span>
-                </div>
-              ))}
+            {PONDS.map(({ id, left, top, width, height }, pi) => (
+              <div key={id} className="pond-hint-layer" style={{ left, top, width, height }}>
+                {!hasFished && <span className="pond-hint">Tap to fish!</span>}
+                {pi === 0 && (
+                  <button
+                    type="button"
+                    className="pond-fish-btn"
+                    aria-label="Go fishing"
+                    onClick={() => {
+                      if (getFishing()) fishingAction();
+                      else startFishing();
+                    }}
+                  >
+                    Fish
+                  </button>
+                )}
+              </div>
+            ))}
 
             {FENCES.map((post) => {
               const { x, y } = tileToPx(post.col, post.row);
@@ -1182,7 +1209,7 @@ function App() {
               );
             })}
 
-            {BARRIERS.map((b) => {
+            {BARRIERS.map((b, bi) => {
               // Each barricade stands just on the dirt side of the
               // pavement edge it closes off (see buildBarriers).
               const edge = b.line * TILE_SIZE;
@@ -1207,6 +1234,7 @@ function App() {
                   key={b.id}
                   className={`barricade barricade--${b.orientation} talkable`}
                   data-talk-id="barricade"
+                  {...(bi === 0 ? talkA11y('barricade', 'Inspect the barricade') : { 'aria-hidden': true })}
                   style={style}
                 >
                   <span className="barricade-board" />
@@ -1294,6 +1322,7 @@ function App() {
                   key={npc.id}
                   className={`npc npc--${npc.axis} ambient talkable`}
                   data-talk-id={npc.id}
+                  {...talkA11y(npc.id)}
                   style={{
                     left: x,
                     top: y,
@@ -1335,6 +1364,7 @@ function App() {
                   key={pet.id}
                   className={`npc npc--${pet.axis} ambient talkable`}
                   data-talk-id={pet.id}
+                  {...talkA11y(pet.id)}
                   style={{
                     left: x,
                     top: y,
@@ -1401,6 +1431,7 @@ function App() {
                     isWelcome && !welcomeSeen ? 'is-unread' : ''
                   }`}
                   data-talk-id={sign.id}
+                  {...talkA11y(sign.id, isWelcome ? 'Read the welcome sign' : 'Read the sign')}
                   style={{ left: x, top: y, zIndex: zFromGroundY(y + TILE_SIZE) }}
                 >
                   <span className="signpost-post" />
@@ -1420,6 +1451,7 @@ function App() {
                 <div
                   className="notice-board talkable"
                   data-talk-id={NOTICE_BOARD.id}
+                  {...talkA11y(NOTICE_BOARD.id, 'Read the Now board')}
                   style={{ left: x, top: y, zIndex: zFromGroundY(y + TILE_SIZE) }}
                 >
                   <span className="notice-board-face">
