@@ -352,6 +352,9 @@ function App() {
   // someone who landed here first.
   const [isMobileLanding] = useState(() => window.matchMedia('(max-width: 900px)').matches);
   const [quickView, setQuickView] = useState(isMobileLanding);
+  // The world is only built once it has been shown; it is never unmounted after.
+  const [worldMounted, setWorldMounted] = useState(!isMobileLanding);
+  if (!quickView && !worldMounted) setWorldMounted(true);
   const [welcomeSeen, setWelcomeSeen] = useState(readWelcomeSeen);
   const [workshopOpen, setWorkshopOpen] = useState(false);
   const [nowLogOpen, setNowLogOpen] = useState(false);
@@ -742,7 +745,7 @@ function App() {
     );
     els.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
-  }, []);
+  }, [worldMounted]);
 
   // Read once + subscribe: everything that consumes this ref lives inside
   // the animation loop, so a plain mutable ref (not state) avoids
@@ -777,7 +780,7 @@ function App() {
     const observer = new ResizeObserver(updateCenter);
     observer.observe(box);
     return () => observer.disconnect();
-  }, []);
+  }, [worldMounted]);
 
   // The whole scene — camera, house glow + panel iris, the walk to the door,
   // lighting, night sky, minimap dot, walk-cycle frames — is drawn from
@@ -789,6 +792,7 @@ function App() {
   // only for the few hard on/off things (panel pointer-events, the label
   // color swap, the Leave button, the house badge).
   useEffect(() => {
+    if (!worldMounted) return undefined;
     let rafId = null;
     let lastFrame = 0;
     let lastOpenId = null;
@@ -1086,11 +1090,11 @@ function App() {
       kickRef.current = () => {};
       if (rafId) cancelAnimationFrame(rafId);
     };
-  }, []);
+  }, [worldMounted]);
 
   return (
     <>
-      <div aria-hidden={quickView || undefined} inert={quickView || undefined}>
+      {worldMounted && <div aria-hidden={quickView || undefined} inert={quickView || undefined}>
       <div
         className="stage"
         ref={stageRef}
@@ -1516,7 +1520,7 @@ function App() {
       <Minimap ref={minimapDotRef} />
       <MusicPlayer inRoom={Boolean(activeHouse)} />
       <BadgeCase />
-      </div>
+      </div>}
 
       <button
         type="button"
