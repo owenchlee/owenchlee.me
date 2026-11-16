@@ -1186,7 +1186,7 @@ function App() {
                 clip-path would crop it) and above every depth-sorted
                 sprite, so no tree canopy ever covers it. */}
             {PONDS.map(({ id, left, top, width, height }, pi) => (
-              <div key={id} className="pond-hint-layer" style={{ left, top, width, height }}>
+              <div key={id} className="pond-hint-layer ambient" style={{ left, top, width, height }}>
                 {!hasFished && <span className="pond-hint">Tap to fish!</span>}
                 {pi === 0 && (
                   <button
