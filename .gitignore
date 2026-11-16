@@ -29,3 +29,8 @@ dist-ssr
 # Claude Code tooling, not app code
 .claude/
 .vercel
+
+# local secrets
+.env
+.env.*
+!.env.example
