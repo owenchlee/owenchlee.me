@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { FISH } from './content';
 import { playJingle } from './sfx';
+import { cleanMap, isInt } from './sanitize';
 
 // Hidden extras, kept apart from the eight badges (finding these isn't
 // needed to become Champion). The Trainer Card lists them as "???" until
@@ -20,7 +21,11 @@ function load() {
   try {
     const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (parsed && typeof parsed === 'object') {
-      return { found: parsed.found ?? {}, fish: parsed.fish ?? {}, casts: parsed.casts ?? 0 };
+      return {
+        found: cleanMap(parsed.found, (k) => SECRETS.some((s) => s.id === k), (v) => v > 0 && isInt(v)),
+        fish: cleanMap(parsed.fish, (k) => FISH.some((f) => f.id === k), (v) => isInt(v) && v >= 0),
+        casts: isInt(parsed.casts) && parsed.casts >= 0 ? parsed.casts : 0,
+      };
     }
   } catch {
     // Private mode / blocked storage / corrupt JSON — start fresh.

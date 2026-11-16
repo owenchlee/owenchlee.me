@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { PROJECTS, HOBBIES } from './content';
 import { findSecret } from './secrets';
+import { cleanMap, isInt } from './sanitize';
 import owenSprite from './assets/char/char-down-idle.png';
 
 // The secret booster pack in the Hobbies room (tucked under the armchair
@@ -127,7 +128,7 @@ const STORAGE_KEY = 'pack-binder-v1';
 let binder = (() => {
   try {
     const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    return parsed && typeof parsed === 'object' ? parsed : {};
+    return cleanMap(parsed, (k) => CARDS.some((c) => c.id === k), (v) => isInt(v) && v > 0);
   } catch {
     return {};
   }
