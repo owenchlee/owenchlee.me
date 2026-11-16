@@ -1,4 +1,4 @@
-import { forwardRef } from 'react';
+import { forwardRef, memo } from 'react';
 import { WAYPOINTS_PX, HOUSES, DECOR_HOUSES, WATER_PATCHES, TILE_SIZE, WORLD_W, WORLD_H } from './tileMap';
 
 const pathPoints = WAYPOINTS_PX.map((p) => `${p.x},${p.y}`).join(' ');
@@ -14,7 +14,7 @@ const START_DOT = minimapPoint(WAYPOINTS_PX[0].x, WAYPOINTS_PX[0].y);
 // ~2300 individual trees are too many to plot as one shape each in a
 // 100x126px widget — a tiled fleck pattern stands in for treeline texture
 // without the DOM cost.
-const Minimap = forwardRef(function Minimap(_props, playerDotRef) {
+const Minimap = memo(forwardRef(function Minimap(_props, playerDotRef) {
   return (
     <div className="minimap" aria-hidden="true">
       <svg
@@ -74,6 +74,6 @@ const Minimap = forwardRef(function Minimap(_props, playerDotRef) {
       />
     </div>
   );
-});
+}));
 
 export default Minimap;

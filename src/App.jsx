@@ -1,4 +1,4 @@
-import { Fragment, startTransition, useEffect, useRef, useState } from 'react';
+import { Fragment, memo, startTransition, useCallback, useEffect, useRef, useState } from 'react';
 import './App.css';
 import {
   TILE_SIZE,
@@ -296,6 +296,440 @@ function zFromGroundY(groundY) {
   return Math.round(groundY);
 }
 
+// Keyboard / screen-reader access for the pointer-only talk targets.
+function talkA11y(onTalk, id, label) {
+  return {
+    role: 'button',
+    tabIndex: 0,
+    'aria-label': label ?? (DIALOGUE[id]?.name ? `Talk to ${DIALOGUE[id].name}` : 'Talk'),
+    onKeyDown: (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      e.stopPropagation();
+      onTalk(id);
+    },
+  };
+}
+
+// Static world pieces, memoized so opening a pop-up or room (App state) doesn't
+// re-render every tree, NPC and house. Props are refs or rarely-changing values.
+const HudNameplate = memo(function HudNameplate() {
+  return (
+    <header className="hud-nameplate">
+      <div className="hud-textbox">
+        <div className="hud-name">{INTRO.name}</div>
+        <div className="hud-role">
+          <span className="hud-tag hud-tag--role" style={{ '--tag-color': '#e0b23c' }}>
+            {INTRO.roleTitle}
+          </span>{' '}
+          @ {INTRO.roleOrg}
+        </div>
+        {INTRO.status && <div className="hud-status">{INTRO.status}</div>}
+        {INTRO.bio && (
+          <p className="hud-bio">
+            <Highlighted text={INTRO.bio} />
+          </p>
+        )}
+      </div>
+    </header>
+  );
+});
+
+const HudCta = memo(function HudCta({ welcomeSeen, onSelect, away }) {
+  return (
+    <div className="hud-cta-block" inert={away ? true : undefined}>
+      <button type="button" className="hud-cta" onClick={() => onSelect('projects')}>
+        See My Projects →
+      </button>
+      {!welcomeSeen && (
+        <p className="hud-start-hint">
+          New here? Tap the <span className="hud-start-bang">!</span> sign →
+        </p>
+      )}
+      <p className="hud-scroll-hint">
+        or tap anywhere to walk · tap a house to go in ·{' '}
+        <a href={RESUME_URL} target="_blank" rel="noopener noreferrer" className="hud-resume-link">
+          résumé (PDF)
+        </a>
+      </p>
+    </div>
+  );
+});
+
+const StageActors = memo(function StageActors({ lightingRef, tapRippleRef, characterWrapRef, characterImgRef }) {
+  return (
+    <>
+      <div className="lighting-overlay" ref={lightingRef} aria-hidden="true" />
+      <div className="tap-ripple" ref={tapRippleRef} aria-hidden="true" />
+      <div className="character-wrap" ref={characterWrapRef}>
+        <div className="character-shadow" />
+        <img ref={characterImgRef} className="character" src={CHAR_SPRITES.down.idle} alt="" aria-hidden="true" />
+      </div>
+    </>
+  );
+});
+
+const WorldBefore = memo(function WorldBefore({ groundRef, hasFished, onTalk }) {
+  return (
+    <>
+            <GroundCanvas ref={groundRef}>
+              {PONDS.map(({ id, ...style }) => (
+                <div key={id} className="water-pond ambient" style={style}>
+                  {/* A bobber floating mid-pond (and now and then a fish
+                      leaping) says the water can be fished; until the
+                      visitor has caught something, a sign spells it out. */}
+                  <span className="pond-bobber" />
+                  <span className="pond-fish" />
+                </div>
+              ))}
+            </GroundCanvas>
+
+            {/* The "Tap to fish!" sign lives outside the pond (whose
+                clip-path would crop it) and above every depth-sorted
+                sprite, so no tree canopy ever covers it. */}
+            {PONDS.map(({ id, left, top, width, height }, pi) => (
+              <div key={id} className="pond-hint-layer ambient" style={{ left, top, width, height }}>
+                {!hasFished && <span className="pond-hint">Tap to fish!</span>}
+                {pi === 0 && (
+                  <button
+                    type="button"
+                    className="pond-fish-btn"
+                    aria-label="Go fishing"
+                    onClick={() => {
+                      if (getFishing()) fishingAction();
+                      else startFishing();
+                    }}
+                  >
+                    Fish
+                  </button>
+                )}
+              </div>
+            ))}
+
+            {FENCES.map((post) => {
+              const { x, y } = tileToPx(post.col, post.row);
+              return (
+                <div
+                  key={post.id}
+                  className={`fence-post fence-post--${post.orientation}`}
+                  style={{ left: x, top: y }}
+                />
+              );
+            })}
+
+            {BARRIERS.map((b, bi) => {
+              // Each barricade stands just on the dirt side of the
+              // pavement edge it closes off (see buildBarriers).
+              const edge = b.line * TILE_SIZE;
+              const span = b.length * TILE_SIZE;
+              const from = b.start * TILE_SIZE;
+              const style =
+                b.orientation === 'h'
+                  ? {
+                      left: from + span / 2,
+                      top: edge + (b.side > 0 ? 20 : -2),
+                      width: span - 4,
+                      zIndex: zFromGroundY(edge + (b.side > 0 ? 20 : -2)),
+                    }
+                  : {
+                      left: edge + b.side * 7,
+                      top: from + 2,
+                      height: span - 4,
+                      zIndex: zFromGroundY(from + span),
+                    };
+              return (
+                <div
+                  key={b.id}
+                  className={`barricade barricade--${b.orientation} talkable`}
+                  data-talk-id="barricade"
+                  {...(bi === 0 ? talkA11y(onTalk, 'barricade', 'Inspect the barricade') : { 'aria-hidden': true })}
+                  style={style}
+                >
+                  <span className="barricade-board" />
+                </div>
+              );
+            })}
+
+            {LAMPS.map((lamp) => {
+              const { x, y } = tileToPx(lamp.col, lamp.row);
+              return (
+                <div key={lamp.id} className="lamp-post" style={{ left: x, top: y }}>
+                  <div className="lamp-glow" />
+                  <div className="lamp-bulb" />
+                  <div className="lamp-pole" />
+                </div>
+              );
+            })}
+
+            {DECOR_HOUSES.map((house) => {
+              const { x, y } = tileToPx(house.col, house.row);
+              const footprint = getHouseFootprintWidth(house.sprite, DECOR_SPRITE_H);
+              return (
+                <div
+                  key={house.id}
+                  className="decor-house-wrap"
+                  style={{ left: x, top: y, '--footprint-w': `${footprint}px`, zIndex: zFromGroundY(y + 70) }}
+                >
+                  <div className="building-shadow" />
+                  <div className="building-foundation" />
+                  <img src={HOUSE_SPRITES[house.sprite]} className="decor-house" alt="" />
+                  <div className="building-window-glow" />
+                </div>
+              );
+            })}
+    </>
+  );
+});
+
+const WorldHouses = memo(function WorldHouses({ houseElRefs, activeHouse }) {
+  return (
+    <>
+            {HOUSES.map((house) => {
+              const { x, y } = tileToPx(house.col, house.row);
+              const footprint = getHouseFootprintWidth(house.sprite, HOUSE_SPRITE_H);
+              return (
+                <div
+                  key={house.id}
+                  ref={(el) => {
+                    houseElRefs.current[house.id] = el;
+                  }}
+                  className={`house house--${house.kind} house-${house.side} ${
+                    activeHouse === house.id ? 'active' : ''
+                  }`}
+                  data-house-id={house.id}
+                  style={{
+                    left: x,
+                    top: y,
+                    '--house-color': house.color,
+                    '--footprint-w': `${footprint}px`,
+                    zIndex: zFromGroundY(y + 70),
+                  }}
+                >
+                  <div className="building-shadow" />
+                  <div className="building-foundation" />
+                  <img src={HOUSE_SPRITES[house.sprite]} className="house-sprite" alt="" />
+                  <div className="building-window-glow" />
+                  <span className="house-label">{house.label}</span>
+                </div>
+              );
+            })}
+    </>
+  );
+});
+
+const Signposts = memo(function Signposts({ welcomeSeen, onTalk }) {
+  return (
+    <>
+    {SIGNS.map((sign) => {
+      const { x, y } = tileToPx(sign.col, sign.row);
+      const isWelcome = sign.id === 'sign-welcome';
+      return (
+        <div
+          key={sign.id}
+          className={`signpost talkable ${isWelcome ? 'signpost--welcome' : ''} ${
+            isWelcome && !welcomeSeen ? 'is-unread' : ''
+          }`}
+          data-talk-id={sign.id}
+          {...talkA11y(onTalk, sign.id, isWelcome ? 'Read the welcome sign' : 'Read the sign')}
+          style={{ left: x, top: y, zIndex: zFromGroundY(y + TILE_SIZE) }}
+        >
+          <span className="signpost-post" />
+          <span className="signpost-board" />
+          {isWelcome && !welcomeSeen && (
+            <span className="signpost-alert" aria-hidden="true">
+              !
+            </span>
+          )}
+        </div>
+      );
+    })}
+    </>
+  );
+});
+
+const WorldAfter = memo(function WorldAfter({
+  seasonTrees,
+  workshopUnlocked,
+  routeShadowRef,
+  routeRef,
+  destGhostRef,
+  destMarkerRef,
+  onTalk,
+}) {
+  return (
+    <>
+            {LIVE_TREES.map((tree) => {
+              const { x, y } = tileToPx(tree.col, tree.row);
+              const groundY = y + TILE_SIZE;
+              const versions = seasonTrees?.[tree.variant];
+              return (
+                <img
+                  key={`tree-${tree.col}-${tree.row}`}
+                  src={versions ? versions[treeVariant(tree, versions.length)] : TREE_SPRITES[tree.variant]}
+                  className="tree"
+                  style={{ left: x + TILE_SIZE / 2, top: groundY, zIndex: zFromGroundY(groundY) }}
+                  alt=""
+                />
+              );
+            })}
+
+            {NPCS.map((npc) => {
+              const { x, y } = tileToPx(npc.col, npc.row);
+              return (
+                <div
+                  key={npc.id}
+                  className={`npc npc--${npc.axis} ambient talkable`}
+                  data-talk-id={npc.id}
+                  {...talkA11y(onTalk, npc.id)}
+                  style={{
+                    left: x,
+                    top: y,
+                    '--npc-range': `${npc.range}px`,
+                    '--npc-duration': `${npc.duration}s`,
+                    zIndex: zFromGroundY(y + 40),
+                  }}
+                >
+                  <div className="npc-shadow" />
+                  <img src={NPC_SPRITES[npc.sprite]} className="npc-sprite" alt="" />
+                  <span className="talk-hint" aria-hidden="true" />
+                </div>
+              );
+            })}
+
+            {CRITTERS.map((critter) => {
+              const { x, y } = tileToPx(critter.col, critter.row);
+              return (
+                <div
+                  key={critter.id}
+                  className={`critter critter--${critter.axis} ambient`}
+                  style={{
+                    left: x,
+                    top: y,
+                    '--critter-range': `${critter.range}px`,
+                    '--critter-duration': `${critter.duration}s`,
+                    zIndex: zFromGroundY(y + 18),
+                  }}
+                >
+                  <img src={CRITTER_SPRITES[critter.sprite]} className="critter-sprite" alt="" />
+                </div>
+              );
+            })}
+
+            {PET_WALKERS.map((pet) => {
+              const { x, y } = tileToPx(pet.col, pet.row);
+              return (
+                <div
+                  key={pet.id}
+                  className={`npc npc--${pet.axis} ambient talkable`}
+                  data-talk-id={pet.id}
+                  {...talkA11y(onTalk, pet.id)}
+                  style={{
+                    left: x,
+                    top: y,
+                    '--npc-range': `${pet.range}px`,
+                    '--npc-duration': `${pet.duration}s`,
+                    zIndex: zFromGroundY(y + 40),
+                  }}
+                >
+                  <div className="npc-shadow" />
+                  <img src={NPC_SPRITES[pet.npcSprite]} className="npc-sprite" alt="" />
+                  <div className="pet-leash" />
+                  <img src={PET_SPRITES[pet.dogSprite]} className="pet-dog" alt="" />
+                  <span className="talk-hint" aria-hidden="true" />
+                </div>
+              );
+            })}
+
+            {SPORTS.map((s) => {
+              const p1 = tileToPx(s.col, s.row);
+              const p2 = tileToPx(s.col + s.gap, s.row);
+              const z1 = zFromGroundY(p1.y + 40);
+              const z2 = zFromGroundY(p2.y + 40);
+              return (
+                <Fragment key={s.id}>
+                  <div className="npc" style={{ left: p1.x, top: p1.y, zIndex: z1 }}>
+                    <div className="npc-shadow" />
+                    <img src={NPC_SPRITES[s.npc1Sprite]} className="npc-sprite" alt="" />
+                  </div>
+                  <div className="npc" style={{ left: p2.x, top: p2.y, zIndex: z2 }}>
+                    <div className="npc-shadow" />
+                    <img src={NPC_SPRITES[s.npc2Sprite]} className="npc-sprite" alt="" />
+                  </div>
+                  <img
+                    src={sportsBall}
+                    className="sports-ball ambient"
+                    style={{
+                      left: p1.x + 14,
+                      top: p1.y + 18,
+                      '--ball-dx': `${p2.x - p1.x}px`,
+                      zIndex: Math.max(z1, z2) + 1,
+                    }}
+                    alt=""
+                  />
+                </Fragment>
+              );
+            })}
+
+            {PICNICS.map((p) => {
+              const { x, y } = tileToPx(p.col, p.row);
+              return (
+                <div key={p.id} className="picnic-scene" style={{ left: x, top: y, zIndex: zFromGroundY(y + 96) }}>
+                  <img src={picnicScene} className="picnic-blanket" alt="" />
+                </div>
+              );
+            })}
+
+            {(() => {
+              const { x, y } = tileToPx(NOTICE_BOARD.col, NOTICE_BOARD.row);
+              return (
+                <div
+                  className="notice-board talkable"
+                  data-talk-id={NOTICE_BOARD.id}
+                  {...talkA11y(onTalk, NOTICE_BOARD.id, 'Read the Now board')}
+                  style={{ left: x, top: y, zIndex: zFromGroundY(y + TILE_SIZE) }}
+                >
+                  <span className="notice-board-face">
+                    <span className="notice-board-title">NOW</span>
+                  </span>
+                  <span className="talk-hint" aria-hidden="true" />
+                </div>
+              );
+            })()}
+
+            {(() => {
+              const { x, y } = tileToPx(WORKSHOP.col, WORKSHOP.row);
+              const footprint = getHouseFootprintWidth(WORKSHOP.sprite, DECOR_SPRITE_H);
+              return (
+                <div
+                  className={`decor-house-wrap workshop ${workshopUnlocked ? 'is-open' : 'is-locked'}`}
+                  data-workshop=""
+                  style={{ left: x, top: y, '--footprint-w': `${footprint}px`, zIndex: zFromGroundY(y + 70) }}
+                >
+                  <div className="building-shadow" />
+                  <div className="building-foundation" />
+                  <img src={HOUSE_SPRITES[WORKSHOP.sprite]} className="decor-house" alt="" />
+                  {/* It's a secret: no lit windows, no label, no glow. Once
+                      unlocked, the boards just come off the door. */}
+                  {!workshopUnlocked && <span className="workshop-boards" aria-hidden="true" />}
+                </div>
+              );
+            })()}
+
+            <svg className="route-preview" width={WORLD_W} height={WORLD_H} aria-hidden="true">
+              <polyline ref={routeShadowRef} className="route-preview-shadow" points="" />
+              <polyline ref={routeRef} className="route-preview-dots" points="" />
+            </svg>
+
+            <div className="dest-ghost" ref={destGhostRef} aria-hidden="true" />
+
+            <div className="dest-marker" ref={destMarkerRef} aria-hidden="true">
+              <div className="dest-marker-tile" />
+              <div className="dest-marker-arrow" />
+            </div>
+    </>
+  );
+});
+
 function App() {
   const stageRef = useRef(null);
   const boxRef = useRef(null);
@@ -308,6 +742,8 @@ function App() {
   const houseElRefs = useRef({});
   const panelRefs = useRef({});
   const seenRoomsRef = useRef({});
+  // Stable ref callbacks so the memoized room panels skip renders while closed.
+  const [panelRefSetters] = useState(() => Object.fromEntries(['projects', 'experience', 'hobbies', 'contact'].map((id) => [id, (el) => { panelRefs.current[id] = el; }])));
   const lastRevealRef = useRef({});
   const lightingRef = useRef(null);
   const characterWrapRef = useRef(null);
@@ -369,21 +805,6 @@ function App() {
   const hasFished = Object.keys(secrets.fish).length > 0 || Boolean(secrets.found.key);
   const workshopUnlocked = isWorkshopOpen(secrets);
   const seasonTrees = useSeasonTreeUrls(treeRoundSprite, treePineSprite);
-
-  // Keyboard / screen-reader access for the pointer-only talk targets.
-  function talkA11y(id, label) {
-    return {
-      role: 'button',
-      tabIndex: 0,
-      'aria-label': label ?? (DIALOGUE[id]?.name ? `Talk to ${DIALOGUE[id].name}` : 'Talk'),
-      onKeyDown: (e) => {
-        if (e.key !== 'Enter' && e.key !== ' ') return;
-        e.preventDefault();
-        e.stopPropagation();
-        talkTo(id);
-      },
-    };
-  }
 
   function talkTo(id) {
     stopFishing();
@@ -1121,6 +1542,18 @@ function App() {
     };
   }, [worldMounted]);
 
+  const navSelectRef = useRef(null);
+  useEffect(() => {
+    navSelectRef.current = (id) => (id ? goToHouse(id) : goToProgress(0));
+  });
+  const onNavSelect = useCallback((id) => navSelectRef.current(id), []);
+  // Stable keyboard-talk handler for the memoized world pieces (see talkA11y).
+  const talkToRef = useRef(null);
+  useEffect(() => {
+    talkToRef.current = talkTo;
+  });
+  const onTalk = useCallback((id) => talkToRef.current(id), []);
+
   return (
     <>
       {worldMounted && <main aria-hidden={quickView || undefined} inert={quickView || undefined}>
@@ -1133,44 +1566,9 @@ function App() {
         onPointerCancel={onStagePointerUp}
         onPointerLeave={hideGhost}
       >
-        <header className="hud-nameplate">
-          <div className="hud-textbox">
-            <div className="hud-name">{INTRO.name}</div>
-            <div className="hud-role">
-              <span className="hud-tag hud-tag--role" style={{ '--tag-color': '#e0b23c' }}>
-                {INTRO.roleTitle}
-              </span>{' '}
-              @ {INTRO.roleOrg}
-            </div>
-            {INTRO.status && <div className="hud-status">{INTRO.status}</div>}
-            {INTRO.bio && (
-              <p className="hud-bio">
-                <Highlighted text={INTRO.bio} />
-              </p>
-            )}
-          </div>
-        </header>
+        <HudNameplate />
 
-        <div className="hud-cta-block" inert={activeHouse ? true : undefined}>
-          <button
-            type="button"
-            className="hud-cta"
-            onClick={() => goToHouse('projects')}
-          >
-            See My Projects →
-          </button>
-          {!welcomeSeen && (
-            <p className="hud-start-hint">
-              New here? Tap the <span className="hud-start-bang">!</span> sign →
-            </p>
-          )}
-          <p className="hud-scroll-hint">
-            or tap anywhere to walk · tap a house to go in ·{' '}
-            <a href={RESUME_URL} target="_blank" rel="noopener noreferrer" className="hud-resume-link">
-              résumé (PDF)
-            </a>
-          </p>
-        </div>
+        <HudCta welcomeSeen={welcomeSeen} onSelect={onNavSelect} away={Boolean(activeHouse)} />
 
         <div className="stage-box" ref={boxRef}>
           <div
@@ -1178,382 +1576,37 @@ function App() {
             ref={worldRef}
             style={{ width: WORLD_W, height: WORLD_H }}
           >
-            <GroundCanvas ref={groundRef}>
-              {PONDS.map(({ id, ...style }) => (
-                <div key={id} className="water-pond ambient" style={style}>
-                  {/* A bobber floating mid-pond (and now and then a fish
-                      leaping) says the water can be fished; until the
-                      visitor has caught something, a sign spells it out. */}
-                  <span className="pond-bobber" />
-                  <span className="pond-fish" />
-                </div>
-              ))}
-            </GroundCanvas>
-
-            {/* The "Tap to fish!" sign lives outside the pond (whose
-                clip-path would crop it) and above every depth-sorted
-                sprite, so no tree canopy ever covers it. */}
-            {PONDS.map(({ id, left, top, width, height }, pi) => (
-              <div key={id} className="pond-hint-layer ambient" style={{ left, top, width, height }}>
-                {!hasFished && <span className="pond-hint">Tap to fish!</span>}
-                {pi === 0 && (
-                  <button
-                    type="button"
-                    className="pond-fish-btn"
-                    aria-label="Go fishing"
-                    onClick={() => {
-                      if (getFishing()) fishingAction();
-                      else startFishing();
-                    }}
-                  >
-                    Fish
-                  </button>
-                )}
-              </div>
-            ))}
-
-            {FENCES.map((post) => {
-              const { x, y } = tileToPx(post.col, post.row);
-              return (
-                <div
-                  key={post.id}
-                  className={`fence-post fence-post--${post.orientation}`}
-                  style={{ left: x, top: y }}
-                />
-              );
-            })}
-
-            {BARRIERS.map((b, bi) => {
-              // Each barricade stands just on the dirt side of the
-              // pavement edge it closes off (see buildBarriers).
-              const edge = b.line * TILE_SIZE;
-              const span = b.length * TILE_SIZE;
-              const from = b.start * TILE_SIZE;
-              const style =
-                b.orientation === 'h'
-                  ? {
-                      left: from + span / 2,
-                      top: edge + (b.side > 0 ? 20 : -2),
-                      width: span - 4,
-                      zIndex: zFromGroundY(edge + (b.side > 0 ? 20 : -2)),
-                    }
-                  : {
-                      left: edge + b.side * 7,
-                      top: from + 2,
-                      height: span - 4,
-                      zIndex: zFromGroundY(from + span),
-                    };
-              return (
-                <div
-                  key={b.id}
-                  className={`barricade barricade--${b.orientation} talkable`}
-                  data-talk-id="barricade"
-                  {...(bi === 0 ? talkA11y('barricade', 'Inspect the barricade') : { 'aria-hidden': true })}
-                  style={style}
-                >
-                  <span className="barricade-board" />
-                </div>
-              );
-            })}
-
-            {LAMPS.map((lamp) => {
-              const { x, y } = tileToPx(lamp.col, lamp.row);
-              return (
-                <div key={lamp.id} className="lamp-post" style={{ left: x, top: y }}>
-                  <div className="lamp-glow" />
-                  <div className="lamp-bulb" />
-                  <div className="lamp-pole" />
-                </div>
-              );
-            })}
-
-            {DECOR_HOUSES.map((house) => {
-              const { x, y } = tileToPx(house.col, house.row);
-              const footprint = getHouseFootprintWidth(house.sprite, DECOR_SPRITE_H);
-              return (
-                <div
-                  key={house.id}
-                  className="decor-house-wrap"
-                  style={{ left: x, top: y, '--footprint-w': `${footprint}px`, zIndex: zFromGroundY(y + 70) }}
-                >
-                  <div className="building-shadow" />
-                  <div className="building-foundation" />
-                  <img src={HOUSE_SPRITES[house.sprite]} className="decor-house" alt="" />
-                  <div className="building-window-glow" />
-                </div>
-              );
-            })}
-
-            {HOUSES.map((house) => {
-              const { x, y } = tileToPx(house.col, house.row);
-              const footprint = getHouseFootprintWidth(house.sprite, HOUSE_SPRITE_H);
-              return (
-                <div
-                  key={house.id}
-                  ref={(el) => {
-                    houseElRefs.current[house.id] = el;
-                  }}
-                  className={`house house--${house.kind} house-${house.side} ${
-                    activeHouse === house.id ? 'active' : ''
-                  }`}
-                  data-house-id={house.id}
-                  style={{
-                    left: x,
-                    top: y,
-                    '--house-color': house.color,
-                    '--footprint-w': `${footprint}px`,
-                    zIndex: zFromGroundY(y + 70),
-                  }}
-                >
-                  <div className="building-shadow" />
-                  <div className="building-foundation" />
-                  <img src={HOUSE_SPRITES[house.sprite]} className="house-sprite" alt="" />
-                  <div className="building-window-glow" />
-                  <span className="house-label">{house.label}</span>
-                </div>
-              );
-            })}
-
-            {LIVE_TREES.map((tree) => {
-              const { x, y } = tileToPx(tree.col, tree.row);
-              const groundY = y + TILE_SIZE;
-              const versions = seasonTrees?.[tree.variant];
-              return (
-                <img
-                  key={`tree-${tree.col}-${tree.row}`}
-                  src={versions ? versions[treeVariant(tree, versions.length)] : TREE_SPRITES[tree.variant]}
-                  className="tree"
-                  style={{ left: x + TILE_SIZE / 2, top: groundY, zIndex: zFromGroundY(groundY) }}
-                  alt=""
-                />
-              );
-            })}
-
-            {NPCS.map((npc) => {
-              const { x, y } = tileToPx(npc.col, npc.row);
-              return (
-                <div
-                  key={npc.id}
-                  className={`npc npc--${npc.axis} ambient talkable`}
-                  data-talk-id={npc.id}
-                  {...talkA11y(npc.id)}
-                  style={{
-                    left: x,
-                    top: y,
-                    '--npc-range': `${npc.range}px`,
-                    '--npc-duration': `${npc.duration}s`,
-                    zIndex: zFromGroundY(y + 40),
-                  }}
-                >
-                  <div className="npc-shadow" />
-                  <img src={NPC_SPRITES[npc.sprite]} className="npc-sprite" alt="" />
-                  <span className="talk-hint" aria-hidden="true" />
-                </div>
-              );
-            })}
-
-            {CRITTERS.map((critter) => {
-              const { x, y } = tileToPx(critter.col, critter.row);
-              return (
-                <div
-                  key={critter.id}
-                  className={`critter critter--${critter.axis} ambient`}
-                  style={{
-                    left: x,
-                    top: y,
-                    '--critter-range': `${critter.range}px`,
-                    '--critter-duration': `${critter.duration}s`,
-                    zIndex: zFromGroundY(y + 18),
-                  }}
-                >
-                  <img src={CRITTER_SPRITES[critter.sprite]} className="critter-sprite" alt="" />
-                </div>
-              );
-            })}
-
-            {PET_WALKERS.map((pet) => {
-              const { x, y } = tileToPx(pet.col, pet.row);
-              return (
-                <div
-                  key={pet.id}
-                  className={`npc npc--${pet.axis} ambient talkable`}
-                  data-talk-id={pet.id}
-                  {...talkA11y(pet.id)}
-                  style={{
-                    left: x,
-                    top: y,
-                    '--npc-range': `${pet.range}px`,
-                    '--npc-duration': `${pet.duration}s`,
-                    zIndex: zFromGroundY(y + 40),
-                  }}
-                >
-                  <div className="npc-shadow" />
-                  <img src={NPC_SPRITES[pet.npcSprite]} className="npc-sprite" alt="" />
-                  <div className="pet-leash" />
-                  <img src={PET_SPRITES[pet.dogSprite]} className="pet-dog" alt="" />
-                  <span className="talk-hint" aria-hidden="true" />
-                </div>
-              );
-            })}
-
-            {SPORTS.map((s) => {
-              const p1 = tileToPx(s.col, s.row);
-              const p2 = tileToPx(s.col + s.gap, s.row);
-              const z1 = zFromGroundY(p1.y + 40);
-              const z2 = zFromGroundY(p2.y + 40);
-              return (
-                <Fragment key={s.id}>
-                  <div className="npc" style={{ left: p1.x, top: p1.y, zIndex: z1 }}>
-                    <div className="npc-shadow" />
-                    <img src={NPC_SPRITES[s.npc1Sprite]} className="npc-sprite" alt="" />
-                  </div>
-                  <div className="npc" style={{ left: p2.x, top: p2.y, zIndex: z2 }}>
-                    <div className="npc-shadow" />
-                    <img src={NPC_SPRITES[s.npc2Sprite]} className="npc-sprite" alt="" />
-                  </div>
-                  <img
-                    src={sportsBall}
-                    className="sports-ball ambient"
-                    style={{
-                      left: p1.x + 14,
-                      top: p1.y + 18,
-                      '--ball-dx': `${p2.x - p1.x}px`,
-                      zIndex: Math.max(z1, z2) + 1,
-                    }}
-                    alt=""
-                  />
-                </Fragment>
-              );
-            })}
-
-            {PICNICS.map((p) => {
-              const { x, y } = tileToPx(p.col, p.row);
-              return (
-                <div key={p.id} className="picnic-scene" style={{ left: x, top: y, zIndex: zFromGroundY(y + 96) }}>
-                  <img src={picnicScene} className="picnic-blanket" alt="" />
-                </div>
-              );
-            })}
-
-            {SIGNS.map((sign) => {
-              const { x, y } = tileToPx(sign.col, sign.row);
-              const isWelcome = sign.id === 'sign-welcome';
-              return (
-                <div
-                  key={sign.id}
-                  className={`signpost talkable ${isWelcome ? 'signpost--welcome' : ''} ${
-                    isWelcome && !welcomeSeen ? 'is-unread' : ''
-                  }`}
-                  data-talk-id={sign.id}
-                  {...talkA11y(sign.id, isWelcome ? 'Read the welcome sign' : 'Read the sign')}
-                  style={{ left: x, top: y, zIndex: zFromGroundY(y + TILE_SIZE) }}
-                >
-                  <span className="signpost-post" />
-                  <span className="signpost-board" />
-                  {isWelcome && !welcomeSeen && (
-                    <span className="signpost-alert" aria-hidden="true">
-                      !
-                    </span>
-                  )}
-                </div>
-              );
-            })}
-
-            {(() => {
-              const { x, y } = tileToPx(NOTICE_BOARD.col, NOTICE_BOARD.row);
-              return (
-                <div
-                  className="notice-board talkable"
-                  data-talk-id={NOTICE_BOARD.id}
-                  {...talkA11y(NOTICE_BOARD.id, 'Read the Now board')}
-                  style={{ left: x, top: y, zIndex: zFromGroundY(y + TILE_SIZE) }}
-                >
-                  <span className="notice-board-face">
-                    <span className="notice-board-title">NOW</span>
-                  </span>
-                  <span className="talk-hint" aria-hidden="true" />
-                </div>
-              );
-            })()}
-
-            {(() => {
-              const { x, y } = tileToPx(WORKSHOP.col, WORKSHOP.row);
-              const footprint = getHouseFootprintWidth(WORKSHOP.sprite, DECOR_SPRITE_H);
-              return (
-                <div
-                  className={`decor-house-wrap workshop ${workshopUnlocked ? 'is-open' : 'is-locked'}`}
-                  data-workshop=""
-                  style={{ left: x, top: y, '--footprint-w': `${footprint}px`, zIndex: zFromGroundY(y + 70) }}
-                >
-                  <div className="building-shadow" />
-                  <div className="building-foundation" />
-                  <img src={HOUSE_SPRITES[WORKSHOP.sprite]} className="decor-house" alt="" />
-                  {/* It's a secret: no lit windows, no label, no glow. Once
-                      unlocked, the boards just come off the door. */}
-                  {!workshopUnlocked && <span className="workshop-boards" aria-hidden="true" />}
-                </div>
-              );
-            })()}
-
-            <svg className="route-preview" width={WORLD_W} height={WORLD_H} aria-hidden="true">
-              <polyline ref={routeShadowRef} className="route-preview-shadow" points="" />
-              <polyline ref={routeRef} className="route-preview-dots" points="" />
-            </svg>
-
-            <div className="dest-ghost" ref={destGhostRef} aria-hidden="true" />
-
-            <div className="dest-marker" ref={destMarkerRef} aria-hidden="true">
-              <div className="dest-marker-tile" />
-              <div className="dest-marker-arrow" />
-            </div>
+            <WorldBefore groundRef={groundRef} hasFished={hasFished} onTalk={onTalk} />
+            <WorldHouses houseElRefs={houseElRefs} activeHouse={activeHouse} />
+            <WorldAfter seasonTrees={seasonTrees} workshopUnlocked={workshopUnlocked} routeShadowRef={routeShadowRef} routeRef={routeRef} destGhostRef={destGhostRef} destMarkerRef={destMarkerRef} onTalk={onTalk} />
+            <Signposts welcomeSeen={welcomeSeen} onTalk={onTalk} />
           </div>
 
           {!activeHouse && <SeasonFx />}
 
-          <div className="lighting-overlay" ref={lightingRef} aria-hidden="true" />
-
-          <div className="tap-ripple" ref={tapRippleRef} aria-hidden="true" />
-
-          <div className="character-wrap" ref={characterWrapRef}>
-            <div className="character-shadow" />
-            <img
-              ref={characterImgRef}
-              className="character"
-              src={CHAR_SPRITES.down.idle}
-              alt=""
-              aria-hidden="true"
-            />
-          </div>
+          <StageActors lightingRef={lightingRef} tapRippleRef={tapRippleRef} characterWrapRef={characterWrapRef} characterImgRef={characterImgRef} />
 
           {(seenRooms.projects || activeHouse === 'projects') && (
           <ProjectsPanel
-            ref={(el) => {
-              panelRefs.current.projects = el;
-            }}
+            ref={panelRefSetters.projects}
             active={activeHouse === 'projects'}
           />
           )}
           {(seenRooms.experience || activeHouse === 'experience') && (
           <ExperiencePanel
-            ref={(el) => {
-              panelRefs.current.experience = el;
-            }}
+            ref={panelRefSetters.experience}
             active={activeHouse === 'experience'}
           />
           )}
           {(seenRooms.hobbies || activeHouse === 'hobbies') && (
           <HobbiesPanel
-            ref={(el) => {
-              panelRefs.current.hobbies = el;
-            }}
+            ref={panelRefSetters.hobbies}
             active={activeHouse === 'hobbies'}
           />
           )}
           {(seenRooms.contact || activeHouse === 'contact') && (
           <ContactPanel
-            ref={(el) => {
-              panelRefs.current.contact = el;
-            }}
+            ref={panelRefSetters.contact}
             active={activeHouse === 'contact'}
           />
           )}
@@ -1569,7 +1622,7 @@ function App() {
       <SectionNav
         activeId={activeHouse}
         introActive={atSpawn}
-        onSelect={(id) => (id ? goToHouse(id) : goToProgress(0))}
+        onSelect={onNavSelect}
       />
       <Minimap ref={minimapDotRef} />
       <MusicPlayer inRoom={Boolean(activeHouse)} />

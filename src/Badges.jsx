@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { trapTab } from './trapTab';
 import { BADGES, useAchievements, dismissAnnouncement } from './achievements';
 import { HOBBIES, FISH } from './content';
 import { SECRETS, useSecrets } from './secrets';
 import { useTypewriter } from './useTypewriter';
-const cellKey = (x, y) => `${x}-${y}`;
 
 
 // Mixes a hex color toward white (amt > 0) or black (amt < 0) — enough to
@@ -28,13 +27,14 @@ export function BadgeIcon({ badge, earned = true, size = 36 }) {
     const fills = earned
       ? { o: '#1c1712', h: shade(badge.color, 0.45), b: badge.color, s: shade(badge.color, -0.35) }
       : { o: '#1c1712', h: '#3a2f24', b: '#3a2f24', s: '#3a2f24' };
-    const out = [];
+    // One path per fill colour instead of one <rect> per pixel: same pixels, far fewer DOM nodes.
+    const paths = {};
     badge.pixels.forEach((row, y) => {
       [...row].forEach((ch, x) => {
-        if (fills[ch]) out.push(<rect key={cellKey(x, y)} x={x} y={y} width="1" height="1" fill={fills[ch]} />);
+        if (fills[ch]) paths[fills[ch]] = `${paths[fills[ch]] ?? ''}M${x} ${y}h1v1h-1z`;
       });
     });
-    return out;
+    return Object.entries(paths).map(([fill, d]) => <path key={fill} d={d} fill={fill} />);
   }, [badge, earned]);
 
   return (
@@ -96,7 +96,7 @@ const AUTO_DISMISS_MS = 4200;
 // bottom of the screen (where the games put it), with the badge itself
 // glinting in a frame on the left. Plays through BadgeToast's queue one at a
 // time; each one auto-advances, or click / Enter / Space to advance sooner.
-export function BadgeToast() {
+export const BadgeToast = memo(function BadgeToast() {
   const { queue } = useAchievements();
   const current = queue[0];
   const reducedMotion = useMemo(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches, []);
@@ -181,12 +181,12 @@ export function BadgeToast() {
       </div>
     </>
   );
-}
+});
 
 // Top-right HUD button (under Quick View) showing the badge count, which
 // opens the Trainer Card — the badge case where empty slots show as
 // silhouettes with a hint, so a visitor can see what's left to find.
-export function BadgeCase() {
+export const BadgeCase = memo(function BadgeCase() {
   const { earned, hobbiesSeen, championAt } = useAchievements();
   const { found, fish } = useSecrets();
   const secretsFound = SECRETS.filter((x) => found[x.id]).length;
@@ -288,4 +288,4 @@ export function BadgeCase() {
       )}
     </>
   );
-}
+});

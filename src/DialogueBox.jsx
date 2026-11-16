@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { useDialogue, advanceDialogue, closeDialogue } from './dialogue';
 import { useTypewriter } from './useTypewriter';
 import { playBlip } from './sfx';
@@ -77,4 +77,4 @@ function DialogueBox() {
   );
 }
 
-export default DialogueBox;
+export default memo(DialogueBox);

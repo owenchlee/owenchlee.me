@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { HOUSES } from './tileMap';
 
 // Fixed HUD in the opposite corner from the minimap, listing the same 4
@@ -9,7 +10,7 @@ import { HOUSES } from './tileMap';
 // that house and in via onSelect (or back to the start for Intro), so a
 // visitor doesn't have to tap their way along the whole route to reach a
 // section they already know they want.
-function SectionNav({ activeId, introActive, onSelect }) {
+const SectionNav = memo(function SectionNav({ activeId, introActive, onSelect }) {
   return (
     <nav className="section-nav" aria-label="Go to section">
       <button
@@ -33,6 +34,6 @@ function SectionNav({ activeId, introActive, onSelect }) {
       ))}
     </nav>
   );
-}
+});
 
 export default SectionNav;

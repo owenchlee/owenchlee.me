@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { SEASON } from './season';
 
 // A few things drifting down over the town for the season: leaves in
@@ -48,4 +48,4 @@ function SeasonFx() {
   );
 }
 
-export default SeasonFx;
+export default memo(SeasonFx);
