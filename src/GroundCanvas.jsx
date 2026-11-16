@@ -458,7 +458,7 @@ const GroundCanvas = forwardRef(function GroundCanvas({ children }, ref) {
       {children}
       {CHUNKS.map((chunk, i) => (
         <canvas
-          key={i}
+          key={`${chunk.x}-${chunk.y}`}
           ref={(el) => {
             chunkRefs.current[i] = el;
           }}

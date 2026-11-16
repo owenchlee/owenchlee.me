@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { INTRO, PROJECTS, HOBBIES, CONTACT, EDUCATION, EXPERIENCE, SKILLS, RESUME_URL } from './content';
 import { Highlighted } from './Highlighted';
-import { CardThumb, GitHubIcon, useRowVideoPlayback } from './sections';
+import { CardThumb, GitHubIcon } from './sections';
+import { useRowVideoPlayback } from './useRowVideoPlayback';
 import './QuickView.css';
 
 function MailIcon() {

@@ -13,13 +13,14 @@ const TAG_COLORS = ['#7393ad', '#4da338', '#da6359', '#d4b23c'];
 export function Highlighted({ text }) {
   const parts = text.split(/(\*\*[^*]+\*\*)/g);
   let tagIndex = 0;
-  return parts.map((part, i) => {
+  return parts.map((part) => {
     const match = part.match(/^\*\*([^*]+)\*\*$/);
     if (!match) return part;
-    const color = TAG_COLORS[tagIndex % TAG_COLORS.length];
+    const n = tagIndex;
     tagIndex += 1;
+    const color = TAG_COLORS[n % TAG_COLORS.length];
     return (
-      <span key={i} className="hud-tag" style={{ '--tag-color': color }}>
+      <span key={n} className="hud-tag" style={{ '--tag-color': color }}>
         {match[1]}
       </span>
     );

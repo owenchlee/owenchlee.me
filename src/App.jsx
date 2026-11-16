@@ -34,7 +34,8 @@ import {
 import { ProjectsPanel, ExperiencePanel, HobbiesPanel, ContactPanel } from './sections';
 import { INTRO, RESUME_URL } from './content';
 import { Highlighted } from './Highlighted';
-import Minimap, { minimapPoint } from './Minimap';
+import Minimap from './Minimap';
+import { minimapPoint } from './minimapPoint';
 import SectionNav from './SectionNav';
 import MusicPlayer from './MusicPlayer';
 import GroundCanvas from './GroundCanvas';
@@ -1267,13 +1268,13 @@ function App() {
               );
             })}
 
-            {LIVE_TREES.map((tree, i) => {
+            {LIVE_TREES.map((tree) => {
               const { x, y } = tileToPx(tree.col, tree.row);
               const groundY = y + TILE_SIZE;
               const versions = seasonTrees?.[tree.variant];
               return (
                 <img
-                  key={`tree-${i}`}
+                  key={`tree-${tree.col}-${tree.row}`}
                   src={versions ? versions[treeVariant(tree, versions.length)] : TREE_SPRITES[tree.variant]}
                   className="tree"
                   style={{ left: x + TILE_SIZE / 2, top: groundY, zIndex: zFromGroundY(groundY) }}
