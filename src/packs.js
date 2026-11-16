@@ -77,9 +77,18 @@ export const FAN_QUESTIONS = [
   { q: 'Who is the Normal-type Pokémon that can transform into anything?', a: ['ditto'] },
 ];
 
+const FILLER = ['it', 'its', 'a', 'an', 'the', 'type', 'pokemon', 'or', 'and'];
+
+// Accept "Water-type", "It's Ditto", "Grass, Electric": drop filler words, then
+// every remaining word must be a right answer (so "fire or grass" fails).
 export const checkFanAnswer = (question, answer) => {
-  const clean = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
-  return question.a.includes(clean(answer));
+  const words = answer
+    .normalize('NFD')
+    .toLowerCase()
+    .replace(/['’̀-ͯ]/g, '')
+    .split(/[^a-z0-9]+/)
+    .filter((w) => w && !FILLER.includes(w));
+  return words.length > 0 && words.every((w) => question.a.includes(w));
 };
 
 const UNLOCK_KEY = 'pack-unlocked-v1';
