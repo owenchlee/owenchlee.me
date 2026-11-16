@@ -1,5 +1,6 @@
 import { forwardRef, memo } from 'react';
 import { WAYPOINTS_PX, HOUSES, DECOR_HOUSES, WATER_PATCHES, TILE_SIZE, WORLD_W, WORLD_H } from './tileMap';
+import { minimapPoint } from './minimapPoint';
 
 const pathPoints = WAYPOINTS_PX.map((p) => `${p.x},${p.y}`).join(' ');
 
