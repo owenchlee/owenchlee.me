@@ -39,34 +39,56 @@ function hueRotate(r, g, b, deg) {
 
 const clamp = (v) => Math.min(255, Math.max(0, Math.round(v)));
 
-function recolor(img, fn) {
-  const canvas = document.createElement('canvas');
+// One recolored canvas per fn, all from a single read of the source pixels.
+function recolorAll(img, fns) {
   const w = img.naturalWidth || img.width;
   const h = img.naturalHeight || img.height;
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(img, 0, 0);
-  const data = ctx.getImageData(0, 0, w, h);
+  const src = document.createElement('canvas');
+  src.width = w;
+  src.height = h;
+  const sctx = src.getContext('2d');
+  sctx.drawImage(img, 0, 0);
+  const data = sctx.getImageData(0, 0, w, h);
   const px = data.data;
   const alphaAt = (x, y) => (x < 0 || y < 0 || x >= w || y >= h ? 0 : px[(y * w + x) * 4 + 3]);
-  // Decide from the untouched pixels, then write, so one change can't
-  // feed into the next pixel's test.
-  const out = new Uint8ClampedArray(px);
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      const i = (y * w + x) * 4;
-      const rgb = fn(px[i], px[i + 1], px[i + 2], px[i + 3], x, y, alphaAt);
-      if (!rgb) continue;
-      out[i] = clamp(rgb[0]);
-      out[i + 1] = clamp(rgb[1]);
-      out[i + 2] = clamp(rgb[2]);
+  return fns.map((fn, n) => {
+    const canvas = n === 0 ? src : document.createElement('canvas');
+    if (n > 0) {
+      canvas.width = w;
+      canvas.height = h;
     }
-  }
-  data.data.set(out);
-  ctx.putImageData(data, 0, 0);
-  return canvas;
+    const ctx = canvas.getContext('2d');
+    if (n > 0) ctx.drawImage(img, 0, 0); // canvas 0 already holds the original
+    // Decide from the untouched pixels, then write, so one change can't
+    // feed into the next pixel's test.
+    const o = new Uint8ClampedArray(px);
+    let x0 = w, y0 = h, x1 = -1, y1 = -1;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4;
+        const rgb = fn(px[i], px[i + 1], px[i + 2], px[i + 3], x, y, alphaAt);
+        if (!rgb) continue;
+        o[i] = clamp(rgb[0]);
+        o[i + 1] = clamp(rgb[1]);
+        o[i + 2] = clamp(rgb[2]);
+        if (x < x0) x0 = x;
+        if (x > x1) x1 = x;
+        if (y < y0) y0 = y;
+        if (y > y1) y1 = y;
+      }
+    }
+    // Only the changed box is written back; the rest is already on the canvas.
+    if (x1 >= 0) {
+      const bw = x1 - x0 + 1;
+      const box = new ImageData(bw, y1 - y0 + 1);
+      for (let y = y0; y <= y1; y++) box.data.set(o.subarray((y * w + x0) * 4, (y * w + x1 + 1) * 4), (y - y0) * bw * 4);
+      ctx.putImageData(box, x0, y0);
+    }
+    return canvas;
+  });
 }
+
+const recolor = (img, fn) => recolorAll(img, [fn])[0];
 
 const mix = (rgb, to, t) => rgb.map((v, i) => v + (to[i] - v) * t);
 
@@ -81,8 +103,9 @@ const AUTUMN_HUES = [-58, -44, -30];
 function treeVariants(sprite, isPine) {
   if (SEASON === 'autumn') {
     if (isPine) return [sprite];
-    return AUTUMN_HUES.map((deg) =>
-      recolor(sprite, (r, g, b, a) => (isLeaf(r, g, b, a) ? hueRotate(r * 1.08, g, b, deg) : null)),
+    return recolorAll(
+      sprite,
+      AUTUMN_HUES.map((deg) => (r, g, b, a) => (isLeaf(r, g, b, a) ? hueRotate(r * 1.08, g, b, deg) : null)),
     );
   }
   if (SEASON === 'winter') {
@@ -108,8 +131,15 @@ function treeVariants(sprite, isPine) {
 }
 
 // One entry per tree sprite: the list of seasonal versions of it.
+// Cached by source URL: the ground canvas and the live <img> trees both ask,
+// so the recolor runs once. Callers only read the returned sprites.
+const treeSpriteCache = new Map();
 export function seasonTreeSprites(treeRound, treePine) {
-  return { round: treeVariants(treeRound, false), pine: treeVariants(treePine, true) };
+  const key = `${treeRound.src}|${treePine.src}`;
+  if (!treeSpriteCache.has(key)) {
+    treeSpriteCache.set(key, { round: treeVariants(treeRound, false), pine: treeVariants(treePine, true) });
+  }
+  return treeSpriteCache.get(key);
 }
 
 // Which of a sprite's seasonal versions a given tree uses — stable per

@@ -60,15 +60,27 @@ function brightnessMatrix(v) {
   return [v, 0, 0, 0, v, 0, 0, 0, v];
 }
 
-// Applies each matrix in turn (clamping between steps, as chained CSS
-// filters do) to a copy of `img`.
-function tinted(img, matrices) {
+// One tinted canvas per matrix list: each applies its matrices in turn
+// (clamping between steps, as chained CSS filters do) to `img`, which is
+// read back from the canvas only once.
+function tintedAll(img, matrixLists) {
+  const w = img.naturalWidth || img.width;
+  const h = img.naturalHeight || img.height;
+  const src = document.createElement('canvas');
+  src.width = w;
+  src.height = h;
+  const sctx = src.getContext('2d');
+  sctx.drawImage(img, 0, 0);
+  const base = sctx.getImageData(0, 0, w, h).data;
+  return matrixLists.map((matrices) => tinted(base, w, h, matrices));
+}
+
+function tinted(base, w, h, matrices) {
   const canvas = document.createElement('canvas');
-  canvas.width = img.naturalWidth || img.width;
-  canvas.height = img.naturalHeight || img.height;
+  canvas.width = w;
+  canvas.height = h;
   const ctx = canvas.getContext('2d');
-  ctx.drawImage(img, 0, 0);
-  const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = new ImageData(new Uint8ClampedArray(base), w, h);
   const px = data.data;
   for (let i = 0; i < px.length; i += 4) {
     let r = px[i];
@@ -218,7 +230,9 @@ const TREE_REACH_ROWS = 3;
 function paintForestTile(img, forestFloor) {
   const T = TILE_SIZE;
   const size = FOREST_PERIOD * T;
-  const canvas = document.createElement('canvas');
+  // Only ever encoded to an image, so use an OffscreenCanvas (async encode)
+  // where available.
+  const canvas = typeof OffscreenCanvas === 'function' ? new OffscreenCanvas(size, size) : document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
   const ctx = canvas.getContext('2d');
@@ -415,22 +429,25 @@ const GroundCanvas = forwardRef(function GroundCanvas({ children }, ref) {
       const plant = seasonGround(plantImg, 'plant');
       const trees = seasonTreeSprites(treeRound, treePine);
       const img = { grass, dirt, dirtEdge, plant, trees, pavement };
-      const grassVariants = {
-        grass,
-        'grass-b': tinted(grass, [hueRotateMatrix(-6), brightnessMatrix(0.94)]),
-        'grass-c': tinted(grass, [hueRotateMatrix(6), brightnessMatrix(1.05)]),
-        forest: tinted(grass, [brightnessMatrix(0.5), saturateMatrix(0.85)]),
-      };
+      const [grassB, grassC, forest] = tintedAll(grass, [
+        [hueRotateMatrix(-6), brightnessMatrix(0.94)],
+        [hueRotateMatrix(6), brightnessMatrix(1.05)],
+        [brightnessMatrix(0.5), saturateMatrix(0.85)],
+      ]);
+      const grassVariants = { grass, 'grass-b': grassB, 'grass-c': grassC, forest };
       stateRef.current.assets = { img, grassVariants };
       syncChunks();
 
       // A blob URL rather than toDataURL(), which would keep a few hundred
       // KB of base64 text alive in the style for the life of the page.
-      paintForestTile(img, grassVariants.forest).toBlob((blob) => {
+      const onBlob = (blob) => {
         if (cancelled || !blob || !backdropRef.current) return;
         backdropUrl = URL.createObjectURL(blob);
         backdropRef.current.style.backgroundImage = `url(${backdropUrl})`;
-      });
+      };
+      const forestTile = paintForestTile(img, grassVariants.forest);
+      if (forestTile.convertToBlob) forestTile.convertToBlob().then(onBlob);
+      else forestTile.toBlob(onBlob);
     });
     return () => {
       cancelled = true;
