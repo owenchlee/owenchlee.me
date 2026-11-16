@@ -130,7 +130,7 @@ export const ProjectsPanel = forwardRef(function ProjectsPanel({ active }, ref) 
   }, [openName]);
 
   return (
-    <div ref={ref} className={`section-panel section-panel--projects ${active ? 'visible' : ''}`}>
+    <div ref={ref} className={`section-panel section-panel--projects ${active ? 'visible' : ''}`} inert={!active}>
       <div className="section-panel-inner">
         <div className="section-content arcade-content">
           <div className="arcade">
@@ -319,7 +319,7 @@ export const ExperiencePanel = forwardRef(function ExperiencePanel({ active }, r
   const quest = openQuest != null ? EXPERIENCE[openQuest] : null;
 
   return (
-    <div ref={ref} className={`section-panel section-panel--experience ${active ? 'visible' : ''}`}>
+    <div ref={ref} className={`section-panel section-panel--experience ${active ? 'visible' : ''}`} inert={!active}>
       <div className="section-panel-inner">
         <div className="section-content guild-content">
           <div className="guild">
@@ -483,7 +483,7 @@ export const HobbiesPanel = forwardRef(function HobbiesPanel({ active }, ref) {
   const fillerCount = (HOBBY_COLS - (HOBBIES.length % HOBBY_COLS)) % HOBBY_COLS;
 
   return (
-    <div ref={ref} className={`section-panel section-panel--hobbies ${active ? 'visible' : ''}`}>
+    <div ref={ref} className={`section-panel section-panel--hobbies ${active ? 'visible' : ''}`} inert={!active}>
       <div className="section-panel-inner">
         <div className="section-content hobbies-content">
           <div className={`room room--${skyPhase}`}>
@@ -768,7 +768,7 @@ export const ContactPanel = forwardRef(function ContactPanel({ active }, ref) {
   const { championAt } = useAchievements();
   const [writing, setWriting] = useState(false);
   return (
-    <div ref={ref} className={`section-panel section-panel--contact ${active ? 'visible' : ''}`}>
+    <div ref={ref} className={`section-panel section-panel--contact ${active ? 'visible' : ''}`} inert={!active}>
       <div className="section-panel-inner">
         <div className="section-content po-content">
           <div className="po">

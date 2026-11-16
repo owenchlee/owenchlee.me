@@ -1122,7 +1122,7 @@ function App() {
           </div>
         </header>
 
-        <div className="hud-cta-block">
+        <div className="hud-cta-block" inert={activeHouse ? true : undefined}>
           <button
             type="button"
             className="hud-cta"
