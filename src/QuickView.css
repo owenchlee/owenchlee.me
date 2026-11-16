@@ -456,8 +456,18 @@
   }
 
   .quick-view-role-tag,
-  .quick-view-status {
-    font-size: 9px;
+  .quick-view-status,
+  .quick-view-close,
+  .quick-view .hud-tag,
+  .quick-view-highlights li::before,
+  .quick-view-skills-label,
+  .quick-view-links a,
+  .quick-view-hobbies h3,
+  .quick-view-contact a,
+  .qv-email-button {
+    font-size: 12px;
+    letter-spacing: 0;
+    overflow-wrap: anywhere;
   }
 }
 
