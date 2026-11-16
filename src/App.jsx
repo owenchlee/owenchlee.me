@@ -307,6 +307,7 @@ function App() {
   const facingRef = useRef({ direction: 'down', mirror: false });
   const houseElRefs = useRef({});
   const panelRefs = useRef({});
+  const seenRoomsRef = useRef({});
   const lastRevealRef = useRef({});
   const lightingRef = useRef(null);
   const characterWrapRef = useRef(null);
@@ -356,6 +357,8 @@ function App() {
   const [worldMounted, setWorldMounted] = useState(!isMobileLanding);
   if (!quickView && !worldMounted) setWorldMounted(true);
   const [welcomeSeen, setWelcomeSeen] = useState(readWelcomeSeen);
+  // Rooms mount on first approach, not at load: their content is heavy.
+  const [seenRooms, setSeenRooms] = useState({});
   const [workshopOpen, setWorkshopOpen] = useState(false);
   const [nowLogOpen, setNowLogOpen] = useState(false);
   const packOpen = usePackOpener();
@@ -797,7 +800,8 @@ function App() {
       kickRef.current();
     };
 
-    updateCenter();
+    // observe() delivers an initial callback after the first layout, so no
+    // forced synchronous measure is needed here.
     const observer = new ResizeObserver(updateCenter);
     observer.observe(box);
     return () => observer.disconnect();
@@ -892,6 +896,10 @@ function App() {
       const house = houseId ? HOUSES.find((h) => h.id === houseId) : null;
       const walkT = clamp01(houseT / HOUSE_WALK_PORTION);
       const reveal = smoothstep(clamp01((houseT - HOUSE_IRIS_START) / (1 - HOUSE_IRIS_START)));
+      if (houseId && !seenRoomsRef.current[houseId]) {
+        seenRoomsRef.current = { ...seenRoomsRef.current, [houseId]: true };
+        setSeenRooms(seenRoomsRef.current);
+      }
       const nearId = houseT === 0 && !pathMoved ? nearbyHouseId(progress) : null;
 
       HOUSES.forEach((h) => {
@@ -1517,30 +1525,38 @@ function App() {
             />
           </div>
 
+          {(seenRooms.projects || activeHouse === 'projects') && (
           <ProjectsPanel
             ref={(el) => {
               panelRefs.current.projects = el;
             }}
             active={activeHouse === 'projects'}
           />
+          )}
+          {(seenRooms.experience || activeHouse === 'experience') && (
           <ExperiencePanel
             ref={(el) => {
               panelRefs.current.experience = el;
             }}
             active={activeHouse === 'experience'}
           />
+          )}
+          {(seenRooms.hobbies || activeHouse === 'hobbies') && (
           <HobbiesPanel
             ref={(el) => {
               panelRefs.current.hobbies = el;
             }}
             active={activeHouse === 'hobbies'}
           />
+          )}
+          {(seenRooms.contact || activeHouse === 'contact') && (
           <ContactPanel
             ref={(el) => {
               panelRefs.current.contact = el;
             }}
             active={activeHouse === 'contact'}
           />
+          )}
 
           {activeHouse && (
             <button type="button" className="leave-house" onClick={leaveHouse}>

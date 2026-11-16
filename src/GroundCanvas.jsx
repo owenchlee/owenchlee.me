@@ -375,19 +375,57 @@ const GroundCanvas = forwardRef(function GroundCanvas({ children }, ref) {
   // bitmap, the last view, and the last spans (to skip no-op updates).
   const stateRef = useRef({ assets: null, painted: new Set(), view: null, spanKey: '' });
 
+  // The forest tile only shows past the ground canvas's padded edge, so
+  // it's painted the first time the view reaches that far.
+  function syncBackdrop() {
+    const s = stateRef.current;
+    const v = s.view;
+    if (s.backdropStarted || !s.assets || !v) return;
+    if (
+      v.x - v.halfW >= -PAD_PX && v.y - v.halfH >= -PAD_PX &&
+      v.x + v.halfW <= WORLD_W + PAD_PX && v.y + v.halfH <= WORLD_H + PAD_PX
+    ) return;
+    s.backdropStarted = true;
+    // A blob URL rather than toDataURL(), which would keep a few hundred
+    // KB of base64 text alive in the style for the life of the page.
+    const onBlob = (blob) => {
+      if (s.cancelled || !blob || !backdropRef.current) return;
+      s.backdropUrl = URL.createObjectURL(blob);
+      backdropRef.current.style.backgroundImage = `url(${s.backdropUrl})`;
+    };
+    const forestTile = paintForestTile(s.assets.img, s.assets.grassVariants.forest);
+    if (forestTile.convertToBlob) forestTile.convertToBlob().then(onBlob);
+    else forestTile.toBlob(onBlob);
+  }
+
   function syncChunks() {
     const s = stateRef.current;
     if (!s.assets || !s.view) return;
+    syncBackdrop();
     const paint = chunkSpan(s.view, PAINT_MARGIN);
     const keep = chunkSpan(s.view, FREE_MARGIN);
-    const key = `${paint.c0},${paint.c1},${paint.r0},${paint.r1}|${keep.c0},${keep.c1},${keep.r0},${keep.r1}`;
+    // At startup only the on-screen chunks paint now; the margin ring waits
+    // for an idle slot, then paints as usual from there on.
+    const visible = s.marginReady ? paint : chunkSpan(s.view, 0);
+    if (!s.marginReady && !s.marginScheduled) {
+      s.marginScheduled = true;
+      const ready = () => {
+        if (s.cancelled) return;
+        s.marginReady = true;
+        s.spanKey = '';
+        syncChunks();
+      };
+      if (window.requestIdleCallback) window.requestIdleCallback(ready, { timeout: 1500 });
+      else setTimeout(ready, 300);
+    }
+    const key = `${visible.c0},${visible.c1},${visible.r0},${visible.r1}|${keep.c0},${keep.c1},${keep.r0},${keep.r1}`;
     if (key === s.spanKey) return;
     s.spanKey = key;
     CHUNKS.forEach((chunk, i) => {
       const canvas = chunkRefs.current[i];
       if (!canvas) return;
       const isPainted = s.painted.has(i);
-      if (!isPainted && inSpan(chunk, paint)) {
+      if (!isPainted && inSpan(chunk, visible)) {
         canvas.width = chunk.w;
         canvas.height = chunk.h;
         const ctx = canvas.getContext('2d');
@@ -412,7 +450,9 @@ const GroundCanvas = forwardRef(function GroundCanvas({ children }, ref) {
 
   useEffect(() => {
     let cancelled = false;
-    let backdropUrl = null;
+    const state = stateRef.current;
+    // StrictMode re-runs this effect after a cleanup; clear the flag it set.
+    state.cancelled = false;
     Promise.all([
       loadImage(grassUrl),
       loadImage(dirtUrl),
@@ -437,21 +477,11 @@ const GroundCanvas = forwardRef(function GroundCanvas({ children }, ref) {
       const grassVariants = { grass, 'grass-b': grassB, 'grass-c': grassC, forest };
       stateRef.current.assets = { img, grassVariants };
       syncChunks();
-
-      // A blob URL rather than toDataURL(), which would keep a few hundred
-      // KB of base64 text alive in the style for the life of the page.
-      const onBlob = (blob) => {
-        if (cancelled || !blob || !backdropRef.current) return;
-        backdropUrl = URL.createObjectURL(blob);
-        backdropRef.current.style.backgroundImage = `url(${backdropUrl})`;
-      };
-      const forestTile = paintForestTile(img, grassVariants.forest);
-      if (forestTile.convertToBlob) forestTile.convertToBlob().then(onBlob);
-      else forestTile.toBlob(onBlob);
     });
     return () => {
       cancelled = true;
-      if (backdropUrl) URL.revokeObjectURL(backdropUrl);
+      state.cancelled = true;
+      if (state.backdropUrl) URL.revokeObjectURL(state.backdropUrl);
     };
   }, []);
 

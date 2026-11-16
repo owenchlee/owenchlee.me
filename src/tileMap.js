@@ -355,8 +355,9 @@ function buildTileGrid() {
 
   // The picnic sprite is ~5x3 tiles from its top-left (col, row); keep its
   // patch of grass (plus a tile of margin) clear of trees too.
+  const houseLike = [...HOUSES, WORKSHOP];
   const nearAnyHouse = (c, r) =>
-    [...HOUSES, WORKSHOP].some((h) => Math.abs(h.col - c) <= 3 && Math.abs(h.row - r) <= 3) ||
+    houseLike.some((h) => Math.abs(h.col - c) <= 3 && Math.abs(h.row - r) <= 3) ||
     PICNICS.some((p) => c >= p.col - 1 && c <= p.col + 6 && r >= p.row - 1 && r <= p.row + 3) ||
     (Math.abs(NOTICE_BOARD.col - c) <= 1 && Math.abs(NOTICE_BOARD.row - r) <= 1);
 
