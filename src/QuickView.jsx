@@ -229,7 +229,7 @@ function QuickView({ onClose, isMobileLanding }) {
             <ul className="quick-view-hobbies">
               {HOBBIES.map((h) => (
                 <li key={h.label} style={{ '--accent': h.color }}>
-                  {h.image && <img src={h.image} alt="" className="quick-view-hobby-img" />}
+                  {h.image && <img src={h.image} alt="" className="quick-view-hobby-img" loading="lazy" decoding="async" />}
                   <h3>{h.label}</h3>
                   <p>{h.desc}</p>
                 </li>

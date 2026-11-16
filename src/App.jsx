@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { Fragment, startTransition, useEffect, useRef, useState } from 'react';
 import './App.css';
 import {
   TILE_SIZE,
@@ -1560,7 +1560,7 @@ function App() {
         onClick={() => {
           closeDialogue();
           stopFishing();
-          setQuickView(true);
+          startTransition(() => setQuickView(true));
         }}
         aria-pressed={quickView}
       >

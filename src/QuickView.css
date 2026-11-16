@@ -460,3 +460,10 @@
     font-size: 9px;
   }
 }
+
+/* Skip layout and paint of sections below the fold until scrolled near, so
+   opening the view stays fast. "auto" remembers the real size once rendered. */
+.quick-view-panel > section:nth-of-type(n + 3) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 500px;
+}
