@@ -1,4 +1,5 @@
 import { forwardRef, memo, useEffect, useRef, useState } from 'react';
+import { nearestSpin } from './nearestSpin';
 import { PROJECTS, HOBBIES, CONTACT, EDUCATION, EXPERIENCE, SKILLS, RESUME_URL, SECRET_NOTE } from './content';
 import { markHobbySeen, useAchievements } from './achievements';
 import { openPackOpener } from './packs';
@@ -140,6 +141,48 @@ const ProjectsBody = memo(function ProjectsBody() {
   const open = PROJECTS.find((p) => p.name === openName);
   const highScore = PROJECTS.find((p) => p.live);
 
+  // The cabinets stand in a ring that turns about its vertical axis.
+  // `spin` is how many cabinets it has turned (a fraction mid-drag); the
+  // CSS does the 3D (see .arcade-row). Drag sideways, use the arrows, or
+  // tab to a cabinet to bring it round to the front.
+  // Every project stands in the ring twice, on opposite sides: twice the
+  // cabinets makes a circle twice as wide, so the front one's neighbours
+  // sit at a shallow angle with only a small wedge between them. The far
+  // half is hidden, so a project and its twin are never seen together.
+  const ring = [...PROJECTS, ...PROJECTS];
+  const n = ring.length;
+  const [spin, setSpin] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const drag = useRef(null);
+  const dragged = useRef(false);
+  const onPointerDown = (e) => {
+    dragged.current = false;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    drag.current = { x: e.clientX, spin, moved: false };
+  };
+  const onPointerMove = (e) => {
+    const d = drag.current;
+    if (!d) return;
+    const dx = e.clientX - d.x;
+    if (!d.moved) {
+      if (Math.abs(dx) < 8) return;
+      d.moved = true;
+      e.currentTarget.setPointerCapture(e.pointerId);
+      setDragging(true);
+    }
+    // One cabinet-width of drag turns the ring by one cabinet.
+    setSpin(d.spin - dx / e.currentTarget.offsetWidth);
+  };
+  const endDrag = () => {
+    const d = drag.current;
+    drag.current = null;
+    if (!d?.moved) return;
+    dragged.current = true; // swallow the click that ends a drag
+    setDragging(false);
+    setSpin((s) => Math.round(s));
+  };
+  const step = (by) => setSpin((s) => Math.round(s) + by);
+
   // Escape closes an open cabinet first (capture phase, so it doesn't also
   // walk the visitor out of the room).
   useEffect(() => {
@@ -200,33 +243,85 @@ const ProjectsBody = memo(function ProjectsBody() {
               </span>
             </div>
 
-            <div className="arcade-back">
-              <div className="arcade-row">
-                {PROJECTS.map((p) => (
-                  <button
-                    key={p.name}
-                    type="button"
-                    className={`cabinet ${matches(p) ? '' : 'is-off'}`}
-                    style={{ '--cab': p.color }}
-                    onClick={() => setOpenName(p.name)}
-                    onPointerEnter={(e) => playCabinet(e, true)}
-                    onPointerLeave={(e) => playCabinet(e, false)}
-                    onFocus={(e) => playCabinet(e, true)}
-                    onBlur={(e) => playCabinet(e, false)}
-                    aria-label={`${p.name}: open game`}
-                  >
-                    <span className="cabinet-marquee">{p.name}</span>
-                    <span className="cabinet-screen">
-                      <CabinetScreen project={p} />
-                    </span>
-                    <span className="cabinet-deck" aria-hidden="true">
-                      <span className="cabinet-stick" />
-                      <span className="cabinet-btn cabinet-btn--a" />
-                      <span className="cabinet-btn cabinet-btn--b" />
-                    </span>
-                    <span className="cabinet-slot" aria-hidden="true" />
-                  </button>
-                ))}
+            <div
+              className="arcade-back"
+              onPointerDown={onPointerDown}
+              onPointerMove={onPointerMove}
+              onPointerUp={endDrag}
+              onPointerCancel={endDrag}
+              onClickCapture={(e) => {
+                if (!dragged.current) return;
+                dragged.current = false;
+                e.stopPropagation();
+              }}
+            >
+              <button type="button" className="arcade-spin arcade-spin--prev" onClick={() => step(-1)} aria-label="Previous game">
+                ◀
+              </button>
+              <button type="button" className="arcade-spin arcade-spin--next" onClick={() => step(1)} aria-label="Next game">
+                ▶
+              </button>
+              <div
+                className={`arcade-row ${dragging ? 'is-dragging' : ''}`}
+                style={{ '--n': n, '--ring': 0.5 / Math.tan(Math.PI / n), '--spin': spin }}
+              >
+                {ring.map((p, i) => {
+                  const twin = i >= PROJECTS.length;
+                  const away = Math.abs(nearestSpin(spin, i, n) - spin);
+                  return (
+                    <div
+                      key={`${p.name}-${twin ? 'b' : 'a'}`}
+                      className="cab3d"
+                      style={{ '--cab': p.color, '--i': i, visibility: away > n / 4 + 0.6 ? 'hidden' : undefined }}
+                      aria-hidden={twin || undefined}
+                    >
+                      <button
+                        type="button"
+                        className={`cabinet ${matches(p) ? '' : 'is-off'}`}
+                        tabIndex={twin ? -1 : undefined}
+                        onClick={() => {
+                          setSpin((s) => nearestSpin(Math.round(s), i, n));
+                          setOpenName(p.name);
+                        }}
+                        onPointerEnter={(e) => playCabinet(e, true)}
+                        onPointerLeave={(e) => playCabinet(e, false)}
+                        onFocus={(e) => {
+                          playCabinet(e, true);
+                          // Keyboard focus only: a mouse press also focuses, and
+                          // turning the ring then would fight the drag.
+                          if (e.currentTarget.matches(':focus-visible')) setSpin((s) => nearestSpin(Math.round(s), i, n));
+                        }}
+                        onBlur={(e) => playCabinet(e, false)}
+                        aria-label={`${p.name}: open game`}
+                      >
+                        {/* The face, top to bottom: seven panels that follow
+                            the cabinet's side silhouette (see .cab-face). */}
+                        <span className="cab-face cab-face--marquee">
+                          <span className="cabinet-marquee">{p.name}</span>
+                        </span>
+                        <span className="cab-face cab-face--under" aria-hidden="true" />
+                        <span className="cab-face cab-face--screen">
+                          <span className="cabinet-screen">
+                            <CabinetScreen project={p} />
+                          </span>
+                        </span>
+                        <span className="cab-face cab-face--deck" aria-hidden="true">
+                          <span className="cabinet-stick" />
+                          <span className="cabinet-btn cabinet-btn--a" />
+                          <span className="cabinet-btn cabinet-btn--b" />
+                        </span>
+                        <span className="cab-face cab-face--lip" aria-hidden="true" />
+                        <span className="cab-face cab-face--kick" aria-hidden="true" />
+                        <span className="cab-face cab-face--base" aria-hidden="true">
+                          <span className="cabinet-slot" />
+                        </span>
+                      </button>
+                      <span className="cab3d-side cab3d-side--l" aria-hidden="true" />
+                      <span className="cab3d-side cab3d-side--r" aria-hidden="true" />
+                      <span className="cab3d-back" aria-hidden="true" />
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -258,7 +353,7 @@ const ProjectsBody = memo(function ProjectsBody() {
                 <p className="arcade-counter-status" aria-live="polite">
                   {tag
                     ? `${matchCount} ${matchCount === 1 ? 'game runs' : 'games run'} ${tag}`
-                    : `${PROJECTS.length} games. Tap one to play.`}
+                    : `${PROJECTS.length} games. Drag to spin, tap one to play.`}
                 </p>
               </div>
               {highScore && (

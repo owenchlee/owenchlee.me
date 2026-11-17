@@ -5483,17 +5483,18 @@
   --floor-h: clamp(170px, 24vh, 260px);
   /* How far below the ceiling the neon sign hangs. */
   --sign-top: clamp(64px, 9vh, 120px);
-  /* Cabinets fill the room: nine share the full width, unless the wall
-     isn't tall enough for that (cabinets are 2.25x as tall as wide, sunk
-     a little into the floor, and must clear the hanging sign), in which
-     case height decides. */
+  /* Cabinets are as big as the wall's height allows (2.25x as tall as
+     wide, sunk a little into the floor, and they must clear the hanging
+     sign), unless the room is too narrow for the ring they stand in,
+     which shows about 3.4 cabinet-widths across. */
   --cab-w: max(
     104px,
-    min(calc((100vw - 96px) / 9 - 14px), calc((100vh - var(--floor-h) - var(--sign-top) - 150px) / 2.07))
+    min(calc((100vw - 96px) / 3.4), calc((100vh - var(--floor-h) - var(--sign-top) - 150px) / 2.07))
   );
   position: absolute;
   inset: 0;
   z-index: 1;
+  overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -5558,6 +5559,10 @@
 
 .arcade-back {
   margin-bottom: calc(var(--cab-w) * -0.18);
+  /* Scales with the cabinets so the ring looks the same at every size; the
+     eye is level with the floor line, so every cabinet's base lands on it. */
+  perspective: calc(var(--cab-w) * 5);
+  perspective-origin: 50% 92%;
 }
 
 /* Neon sign: pink tube lettering (and a tube border) on a dark backboard,
@@ -5842,38 +5847,165 @@
   }
 }
 
+/* The cabinets stand in a ring, like a revolver cylinder turning about
+   the vertical axis, backs to the middle. Each is a box --d deep: its back
+   sits on a circle of radius --r (--ring is that radius in cabinet-widths
+   for --n cabinets, set from JS) so the backs just touch, and its face is
+   --d further out, which leaves a wedge between neighbours where the side
+   panels show. The whole ring turns by --spin cabinets, and is set back so
+   the front cabinet's face stands at its natural size. */
 .arcade-row {
-  display: flex;
-  align-items: flex-end;
-  gap: 14px;
-  max-width: 100%;
+  --d: calc(var(--cab-w) * 0.7);
+  --r: calc((var(--cab-w) + 14px) * var(--ring));
+  position: relative;
+  width: var(--cab-w);
+  height: calc(var(--cab-w) * 2.25);
+  transform-style: preserve-3d;
+  transform: translateZ(calc((var(--r) + var(--d)) * -1)) rotateY(calc(var(--spin) * -1turn / var(--n)));
+  transition: transform 0.35s ease-out;
 }
 
-/* One cabinet, proportioned like the mockup's (about 2.25:1): marquee,
-   screen in a dark bezel, the control deck with stick and two buttons,
-   and a coin slot. Body tinted per project, lit on the left edge. */
-.cabinet {
+/* One cabinet: the face (the .cabinet button and its panels), two side
+   panels hinged back from its edges, and a back panel. */
+.cab3d {
   --cab: #ad372f;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--cab-w);
+  height: calc(var(--cab-w) * 2.25);
+  transform-style: preserve-3d;
+  transform: rotateY(calc(var(--i) * 1turn / var(--n))) translateZ(calc(var(--r) + var(--d)));
+  transition: translate 0.15s ease;
+}
+
+.cab3d:hover,
+.cab3d:has(.cabinet:focus-visible) {
+  translate: 0 -5px;
+}
+
+.arcade-row.is-dragging {
+  transition: none;
+}
+
+/* Spin arrows: just outside the ring, or at the screen's edges when the
+   room is too narrow to show the whole ring (50% - 50vw is the viewport's
+   edge, since the ring is centred). */
+.arcade-spin {
+  --out: max(calc(var(--cab-w) * -2.5 - 60px), calc(50% - 50vw + 12px));
+  position: absolute;
+  top: 38%;
+  z-index: 3;
+  width: 60px;
+  height: 76px;
+  padding: 0;
+  font-family: var(--font-pixel);
+  font-size: 24px;
+  /* Yellow on ink, with a glow: has to stand out over any cabinet colour. */
+  color: var(--pal-ink);
+  background: #ffe066;
+  border: 4px solid var(--pal-ink);
+  box-shadow: 0 0 0 4px #ffe066, 0 0 18px 6px rgba(255, 224, 102, 0.55), 6px 6px 0 4px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+}
+
+.arcade-spin:hover {
+  background: #fff3b0;
+}
+
+.arcade-spin--prev {
+  left: var(--out);
+}
+
+.arcade-spin--next {
+  right: var(--out);
+}
+
+.arcade-spin:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 7px;
+}
+
+.cab3d-side,
+.cab3d-back {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  touch-action: pan-y;
+}
+
+/* The classic upright's silhouette, seen from the side: an overhanging
+   marquee, a screen set back under it and leaning back, a control deck
+   that juts out, and a recessed base. The side panels are cut to it here;
+   the face panels (.cab-face) follow the same points. Each point is
+   (depth behind the front plane, height from the top) as a share of the
+   panel, which is 0.7 cabinet-widths deep and 2.25 tall. */
+.cab3d-side {
+  --outline: polygon(
+    0 0,
+    0 16%,
+    37.1% 18.7%,
+    18.6% 54.2%,
+    0 59.6%,
+    0 65.8%,
+    14.3% 68.4%,
+    14.3% 100%,
+    100% 100%,
+    100% 0
+  );
+  width: var(--d);
+  transform-origin: 0 50%;
+  transform: rotateY(90deg);
+  background: var(--pal-ink);
+  clip-path: var(--outline);
+}
+
+/* The coloured panel sits just inside the ink silhouette, which is left
+   showing as its outline. In shade (the left one catches the light, like
+   the face's left edge), with a dark kick strip at the base. */
+.cab3d-side::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  clip-path: var(--outline);
+  background-color: var(--cab);
+  background-image:
+    linear-gradient(to top, rgba(0, 0, 0, 0.45) 0 7%, transparent 7%),
+    linear-gradient(rgba(0, 0, 0, var(--shade)), rgba(0, 0, 0, var(--shade)));
+}
+
+.cab3d-side--l {
+  --shade: 0.2;
+  left: 0;
+}
+
+.cab3d-side--r {
+  --shade: 0.42;
+  left: 100%;
+}
+
+.cab3d-back {
+  left: 0;
+  width: 100%;
+  box-sizing: border-box;
+  transform: translateZ(calc(var(--d) * -1));
+  background: #1a1226;
+  border: 4px solid var(--pal-ink);
+}
+
+/* The button is only the frame the face panels hang in. */
+.cabinet {
   position: relative;
-  flex: none;
+  display: block;
   width: var(--cab-w);
   height: calc(var(--cab-w) * 2.25);
   padding: 0;
   font: inherit;
-  background-color: var(--cab);
-  background-image:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.22) 0 6%, transparent 6% 94%, rgba(0, 0, 0, 0.18) 94%),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.12));
-  border: 4px solid var(--pal-ink);
-  border-radius: 10px 10px 0 0;
-  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.3);
+  background: none;
+  border: 0;
   cursor: pointer;
-  transition: translate 0.15s ease, filter 0.2s ease;
-}
-
-.cabinet:hover,
-.cabinet:focus-visible {
-  translate: 0 -5px;
+  transform-style: preserve-3d;
+  touch-action: pan-y; /* sideways drags spin the ring, vertical ones still scroll */
 }
 
 .cabinet:focus-visible {
@@ -5881,8 +6013,88 @@
   outline-offset: 3px;
 }
 
-/* Filtered out: powered down. */
-.cabinet.is-off {
+/* One panel of the face. --y and --z place its top edge (height from the
+   cabinet's top, depth behind the front plane); --dy and --dz are how far
+   it runs down and back from there. All four are in cabinet-widths, and
+   are the silhouette's points above (0.7 deep, 2.25 tall). */
+.cab-face {
+  position: absolute;
+  left: 0;
+  top: calc(var(--y) * var(--cab-w));
+  width: 100%;
+  height: calc(hypot(var(--dy), var(--dz)) * var(--cab-w));
+  box-sizing: border-box;
+  transform-origin: 50% 0;
+  transform: translateZ(calc(var(--z) * var(--cab-w) * -1)) rotateX(calc(atan2(var(--dz), var(--dy)) * -1));
+  background-color: var(--cab);
+  background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.22) 0 6%, transparent 6% 94%, rgba(0, 0, 0, 0.18) 94%);
+  border: solid var(--pal-ink);
+  border-width: 2px 4px;
+  transition: filter 0.2s ease;
+  touch-action: pan-y;
+}
+
+.cab-face--marquee {
+  --y: 0;
+  --z: 0;
+  --dy: 0.36;
+  --dz: 0;
+  border-top-width: 4px;
+}
+
+/* Underside of the marquee overhang, in shadow. */
+.cab-face--under {
+  --y: 0.36;
+  --z: 0;
+  --dy: 0.06;
+  --dz: 0.26;
+  background: #1c1d22;
+}
+
+.cab-face--screen {
+  --y: 0.42;
+  --z: 0.26;
+  --dy: 0.8;
+  --dz: -0.13;
+}
+
+.cab-face--deck {
+  --y: 1.22;
+  --z: 0.13;
+  --dy: 0.12;
+  --dz: -0.13;
+  background: linear-gradient(#3a3c44, #1c1d22);
+}
+
+.cab-face--lip {
+  --y: 1.34;
+  --z: 0;
+  --dy: 0.14;
+  --dz: 0;
+  background: #1c1d22;
+}
+
+/* Underside of the deck, in shadow. */
+.cab-face--kick {
+  --y: 1.48;
+  --z: 0;
+  --dy: 0.06;
+  --dz: 0.1;
+  background: #101016;
+}
+
+.cab-face--base {
+  --y: 1.54;
+  --z: 0.1;
+  --dy: 0.71;
+  --dz: 0;
+  border-bottom-width: 4px;
+}
+
+/* Filtered out: powered down. (On the panels, not the button: a filter on
+   the button would flatten its 3D.) */
+.cabinet.is-off .cab-face,
+.cabinet.is-off ~ .cab3d-side {
   filter: brightness(0.45) saturate(0.4);
 }
 
@@ -5893,10 +6105,7 @@
 
 .cabinet-marquee {
   position: absolute;
-  left: 7%;
-  right: 7%;
-  top: 3%;
-  height: 12%;
+  inset: 14% 7%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -5912,10 +6121,7 @@
 
 .cabinet-screen {
   position: absolute;
-  left: 9%;
-  right: 9%;
-  top: 18%;
-  height: 33%;
+  inset: 5% 9% 7%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -5958,24 +6164,13 @@
   color: #7dff8c;
 }
 
-.cabinet-deck {
-  position: absolute;
-  left: -2%;
-  right: -2%;
-  top: 55%;
-  height: 15%;
-  background: linear-gradient(#3a3c44 0 18%, #1c1d22 18%);
-  border: 3px solid var(--pal-ink);
-  border-radius: 4px;
-  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.35);
-}
-
 .cabinet-stick {
   position: absolute;
   left: 18%;
-  top: 30%;
-  width: 14%;
+  top: 12%;
+  height: 76%;
   aspect-ratio: 1;
+  box-sizing: border-box;
   border-radius: 50%;
   background: #ad372f;
   border: 3px solid #f3ead2;
@@ -5983,8 +6178,8 @@
 
 .cabinet-btn {
   position: absolute;
-  top: 38%;
-  width: 10%;
+  top: 22%;
+  height: 56%;
   aspect-ratio: 1;
   border-radius: 50%;
 }
@@ -6003,8 +6198,8 @@
   position: absolute;
   left: 30%;
   right: 30%;
-  bottom: 9%;
-  height: 7%;
+  bottom: 22%;
+  height: 22%;
   background: #1c1d22;
   border: 3px solid var(--pal-ink);
   border-radius: 3px;
@@ -6170,18 +6365,8 @@
   line-height: 1.6;
 }
 
-/* Too narrow for the row: it scrolls sideways like an arcade aisle, and
-   the high-score note joins the floor's flow. */
+/* Narrow room: the high-score note joins the floor's flow. */
 @media (max-width: 1100px) {
-  .arcade-content {
-    --cab-w: 120px;
-  }
-
-  .arcade-row {
-    overflow-x: auto;
-    padding: 6px 4px 12px;
-  }
-
   .arcade-front {
     flex-direction: column;
     gap: 16px;
