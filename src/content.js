@@ -193,6 +193,7 @@ export const PROJECTS = [
     date: 'Oct 2026',
     color: '#d96fa8',
     video: glowireDemo,
+    letterbox: true, // extra-wide clip: fit whole on the cabinet screen instead of cropping the sides
     link: 'https://github.com/owenchlee/Glowire',
     live: 'https://glowire.vercel.app',
     tech: ['TypeScript', 'React Native', 'Expo', 'Three.js', 'Vitest'],

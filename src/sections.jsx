@@ -115,7 +115,7 @@ function CabinetScreen({ project }) {
         ref={videoRef}
         src={project.video}
         poster={near ? project.video.replace(/\.mp4$/, '-poster.webp') : undefined}
-        className={`cabinet-screen-media ${project.portrait ? 'cabinet-screen-media--portrait' : ''}`}
+        className={`cabinet-screen-media ${project.portrait || project.letterbox ? 'cabinet-screen-media--portrait' : ''}`}
         muted
         loop
         playsInline
