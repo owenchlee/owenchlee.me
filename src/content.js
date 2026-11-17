@@ -62,7 +62,8 @@ export const INTRO = {
   status: 'Open to Summer 2027 co-op',
   highlights: [
     'Builds **full-stack apps**, **games**, and **computer vision** tools, plus the odd breadboard circuit',
-    'Won **1st place** out of 115+ competitors at the Daydream Hackathon with Just Die',
+    'Software Engineer Intern at **Magic Hour** (YC W24), building developer apps on its AI video and image APIs',
+    '**4x hackathon winner**, including 1st place out of 115+ competitors at Daydream with Just Die',
     'President of the **Trudeau Athletic Council**, running events for ~1,800 students',
   ],
 };
@@ -77,7 +78,7 @@ export const EDUCATION = [
     school: 'University of Waterloo',
     location: 'Waterloo, ON',
     dates: 'Sept 2026 – June 2031',
-    notes: [],
+    notes: ['4x Hackathon Winner (Daydream, Chatforce, Communihacks, QOLLAB)'],
   },
   {
     program: 'High School Diploma',
@@ -98,43 +99,58 @@ export const EDUCATION = [
 // still underway can leave it out (its notice shows "Reward: ???").
 export const EXPERIENCE = [
   {
-    role: 'Campus Ambassador',
-    org: 'ElevenLabs',
-    reward: 'Selected for the 2026 cohort to promote ElevenReader',
-    location: 'Waterloo, ON',
-    dates: 'Aug 2026 – Present',
+    role: 'Software Engineer Intern',
+    org: 'Magic Hour (YC W24)',
+    reward: 'Shipped Desk Buddy with 53 end-to-end tests',
+    location: 'Remote',
+    dates: 'Nov 2026 – Present',
     bullets: [
-      "Selected for ElevenLabs' 2026 Campus Ambassador Program, representing ElevenReader at the University of Waterloo",
-      'Promoting ElevenReader, an AI app that turns course readings into audio, through campus outreach and events',
+      "Creating developer-facing TypeScript apps on Magic Hour's AI video and image generation APIs, expanding API use cases",
+      "Built Desk Buddy, a web and desktop app that animates a user's pet photo through Magic Hour's API and uses in-browser MediaPipe pose tracking to keep developers active, with 53 end-to-end tests",
     ],
   },
   {
-    role: 'Autonomy Software Member',
+    role: 'Autonomy Team Member',
     org: 'Waterloo Aerial Robotics Group (WARG)',
+    reward: 'An autonomous drone mission flown in simulation',
     location: 'Waterloo, ON',
     dates: 'Sept 2026 – Present',
-    bullets: ["Designing autonomy software for the team's aircraft"],
+    bullets: [
+      'Root-caused Docker shutdowns that stripped metadata from drone flight logs and fixed them with SIGINT handling',
+      'Implemented a Python perception behavior tree and simulated camera, flying an autonomous drone mission in simulation',
+    ],
   },
   {
-    role: "Founder & Web Developer",
+    role: 'Founder & Web Developer',
     org: "Catch 'Em Crate",
-    reward: '$1,000 revenue + a Youth Startups award',
+    reward: '$1,000+ revenue, a $3,000 grant + a Youth Startups award',
     location: 'Markham, ON',
     dates: 'June 2025 – Sept 2025',
     bullets: [
-      'Built a trading card subscription box business that generated $1,000 in revenue, earning the Markham Youth Startups award',
-      'Developed the e-commerce site with HTML, CSS, JavaScript, and Shopify integrations, acquiring 200+ visitors',
+      'Built a Shopify store with HTML, CSS and JavaScript for a card subscription business (200+ users)',
+      'Generated $1,000+ in revenue and secured a $3,000 grant, winning the Markham Youth Startups award',
     ],
   },
   {
-    role: 'President',
+    role: 'Campus Ambassador',
+    org: 'ElevenLabs',
+    reward: 'A UW hackathon backed by ElevenLabs + 5 YC startups',
+    location: 'Waterloo, ON',
+    dates: 'Sept 2026 – Present',
+    bullets: [
+      'Recruited and led 3 students to run a UW hackathon backed by ElevenLabs, Front Row Ventures and 5 YC startups',
+      "Researched student needs and promoted ElevenReader, ElevenLabs' reading app, and its free student plan",
+    ],
+  },
+  {
+    role: 'President & Event Executive',
     org: 'Trudeau Athletic Council',
     reward: '$5,700 raised for charity',
     location: 'Markham, ON',
     dates: 'Sept 2024 – June 2026',
     bullets: [
-      'Lead a team of 24 members creating events for ~1,800 attendees, including a fundraiser that earned $5,700 for charity',
-      'Designed and launched new initiatives, including an internal mentorship program and inclusivity efforts across events',
+      'Led a team of 24 members to create events for ~1,800 attendees, including a fundraiser earning $5,700 for charity',
+      'Redesigned a school event from survey feedback with crowd-drafted teams, filling the gym with 165+ students',
     ],
   },
   {
@@ -162,14 +178,25 @@ export const EXPERIENCE = [
 ];
 
 export const SKILLS = [
-  { category: 'Languages', items: ['Python', 'Java', 'C++', 'JavaScript', 'HTML/CSS'] },
-  { category: 'Tools & Platforms', items: ['Git', 'GitHub', 'OpenCV', 'GameMaker', 'Shopify', 'MS Office'] },
+  { category: 'Languages', items: ['Python', 'Java', 'C++', 'JavaScript/TypeScript', 'SQL', 'HTML/CSS'] },
+  { category: 'Frameworks', items: ['React', 'React Native', 'Node.js', 'Express', 'FastAPI', 'PyTorch', 'ROS 2'] },
+  { category: 'Tools & Platforms', items: ['Git/GitHub', 'Docker', 'SQLite', 'OpenCV', 'GameMaker', 'Shopify', 'MS Office', 'pytest', 'Vitest'] },
   { category: 'Soft Skills', items: ['Communication', 'Adaptability', 'Teamwork', 'Pitching'] },
 ];
 
 export const RESUME_URL = '/resume.pdf';
 
 export const PROJECTS = [
+  {
+    name: 'Glowire',
+    date: 'Oct 2026',
+    color: '#d96fa8',
+    image: null, // no demo clip yet: shows the colored placeholder
+    link: 'https://github.com/owenchlee/Glowire',
+    live: 'https://glowire.vercel.app',
+    tech: ['TypeScript', 'React Native', 'Expo', 'Three.js', 'Vitest'],
+    desc: 'A pixel-art circuit puzzle game where a DC circuit solver using modified nodal analysis decides whether the circuit you wire actually works. Chapters cover LEDs, resistors, transistors and capacitors, backed by 37 Vitest test files.',
+  },
   {
     name: 'Fits',
     date: 'Aug 2026',
@@ -186,7 +213,7 @@ export const PROJECTS = [
     date: 'Jul 2026',
     color: '#26a8b1',
     video: karaokeDemo,
-    link: 'https://github.com/owenchlee/Personal-Karaoke',
+    link: 'https://github.com/owenchlee/SingScore',
     tech: ['Python', 'PyTorch', 'FastAPI', 'React', 'TypeScript'],
     desc: 'A self-hosted, Rock Band-style karaoke game. Point it at any song and it separates vocals from instrumentals with Demucs, extracts a reference melody and lyrics, then scores your live mic pitch against a scrolling note highway.',
   },
@@ -443,7 +470,7 @@ export const DIALOGUE = {
   'npc-8': {
     name: 'Coach',
     lines: [
-      'Owen runs the Trudeau Athletic Council: 24 members, events for about 1,800 students.',
+      'Owen ran the Trudeau Athletic Council: 24 members, events for about 1,800 students.',
       'Their charity fundraiser brought in $5,700, too.',
     ],
   },
