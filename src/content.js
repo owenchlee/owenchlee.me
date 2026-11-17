@@ -42,6 +42,7 @@ const karaokeDemo = '/projects/karaoke-demo.mp4';
 const ladderGameDemo = '/projects/ladder-game-demo.mp4';
 const fitsDemo = '/projects/fits-demo.mp4';
 const thumbDetectorDemo = '/projects/thumb-detector-demo.mp4';
+const glowireDemo = '/projects/glowire-demo.mp4';
 
 // `**word**` inside `bio` or a `highlights` entry renders as a colored tag
 // chip (see Highlighted in App.jsx) instead of plain text — same "bold
@@ -191,7 +192,7 @@ export const PROJECTS = [
     name: 'Glowire',
     date: 'Oct 2026',
     color: '#d96fa8',
-    image: null, // no demo clip yet: shows the colored placeholder
+    video: glowireDemo,
     link: 'https://github.com/owenchlee/Glowire',
     live: 'https://glowire.vercel.app',
     tech: ['TypeScript', 'React Native', 'Expo', 'Three.js', 'Vitest'],
